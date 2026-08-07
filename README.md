@@ -2,6 +2,8 @@
 
 我的个人学术博客：**https://neurpulse.github.io**
 
+> 📖 写作时的注意事项（公式、图片、格式坑）看单独的 [写作指南.md](写作指南.md)
+
 | 项目 | 信息 |
 |---|---|
 | 线上地址 | https://neurpulse.github.io |
