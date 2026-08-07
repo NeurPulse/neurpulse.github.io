@@ -6,14 +6,14 @@ category: 'PyTorch'
 tags: ['梯度']
 ---
 
-### 自动求导
+## 自动求导
 
 PyTorch 中，所有神经网络的核心是 `autograd `包。autograd包为张量上的所有操作提供了自动求导机制。它是一个在运行时定义 ( define-by-run ）的框架，这意味着反向传播是根据代码如何运行来决定的，并且每次迭代可以是不同的。
 
 * autograd的求导机制
 * 梯度的反向传播
 
-#### Autograd简介
+### Autograd简介
 
 `torch.Tensor `是这个包的核心类。
 
@@ -108,7 +108,7 @@ True
 <SumBackward0 object at 0x000001CB4A19FB50>
 ```
 
-#### 梯度
+### 梯度
 
 反向传播
 
