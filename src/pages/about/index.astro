@@ -1,0 +1,38 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { AUTHOR, RESEARCH_INTERESTS } from '../../consts';
+---
+
+<BaseLayout title="关于">
+  <h1>关于我</h1>
+  <div class="about-grid">
+    <p>
+      我是{AUTHOR}，计算机科学与技术专业硕士研究生。研究方向为深度学习在金融工程中的应用，
+      欢迎关注我的博客，也欢迎邮件交流。
+    </p>
+
+    <h2>研究方向</h2>
+    <ul>
+      {RESEARCH_INTERESTS.map((item) => <li>{item}</li>)}
+    </ul>
+
+    <h2>教育背景</h2>
+    <ul>
+      <li>20XX.09 – 至今：XX大学，计算机科学与技术，硕士（在读）</li>
+      <li>20XX.09 – 20XX.06：XX大学，XX专业，本科</li>
+    </ul>
+
+    <h2>技能</h2>
+    <ul>
+      <li>编程：Python（PyTorch / NumPy / Pandas）、C++、MATLAB</li>
+      <li>工具：Git、Linux、LaTeX</li>
+      <li>英语：CET-6</li>
+    </ul>
+
+    <h2>联系方式</h2>
+    <ul>
+      <li>邮箱：your.email@example.com</li>
+      <li>GitHub：<a href="https://github.com/your-username">@your-username</a></li>
+    </ul>
+  </div>
+</BaseLayout>

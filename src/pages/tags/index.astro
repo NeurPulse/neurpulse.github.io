@@ -1,0 +1,28 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const notes = await getCollection('notes', ({ data }) => !data.draft);
+const research = await getCollection('research', ({ data }) => !data.draft);
+
+const counts = new Map<string, number>();
+for (const p of [...notes, ...research]) {
+  for (const t of p.data.tags) {
+    counts.set(t, (counts.get(t) ?? 0) + 1);
+  }
+}
+const tags = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+---
+
+<BaseLayout title="标签">
+  <h1>标签</h1>
+  <div class="tags" style="margin-top: 16px;">
+    {
+      tags.map(([tag, count]) => (
+        <a class="tag" href={`/tags/${tag}/`}>
+          {tag}（{count}）
+        </a>
+      ))
+    }
+  </div>
+</BaseLayout>

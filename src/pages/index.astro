@@ -1,0 +1,42 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PostCard from '../components/PostCard.astro';
+import { AUTHOR, RESEARCH_INTERESTS } from '../consts';
+
+const notes = (await getCollection('notes', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+const research = (
+  await getCollection('research', ({ data }) => !data.draft)
+).sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+---
+
+<BaseLayout>
+  <section class="hero">
+    <h1>你好，我是{AUTHOR}</h1>
+    <p>
+      计算机科学与技术专业研究生。这里记录我在量化金融与数值计算方向的学习笔记、
+      论文阅读和研究进展。
+    </p>
+    <ul class="interests">
+      {RESEARCH_INTERESTS.map((item) => <li>{item}</li>)}
+    </ul>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>最新笔记</h2>
+      <a href="/notes/">全部笔记 →</a>
+    </div>
+    {notes.slice(0, 5).map((p) => <PostCard post={p} base="/notes" />)}
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>研究记录</h2>
+      <a href="/research/">全部记录 →</a>
+    </div>
+    {research.slice(0, 3).map((p) => <PostCard post={p} base="/research" />)}
+  </section>
+</BaseLayout>

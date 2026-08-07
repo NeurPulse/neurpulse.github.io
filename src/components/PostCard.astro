@@ -1,0 +1,31 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { formatDate } from '../utils/date';
+
+interface Props {
+  post: CollectionEntry<'notes'> | CollectionEntry<'research'>;
+  base: '/notes' | '/research';
+}
+
+const { post, base } = Astro.props;
+---
+
+<article class="post-card">
+  <a href={`${base}/${post.id}/`} class="post-card-title">{post.data.title}</a>
+  <div class="post-meta">
+    <time>{formatDate(post.data.pubDate)}</time>
+    <span class="post-category">{post.data.category}</span>
+  </div>
+  {post.data.description && <p class="post-desc">{post.data.description}</p>}
+  {
+    post.data.tags.length > 0 && (
+      <div class="tags">
+        {post.data.tags.map((t) => (
+          <a class="tag" href={`/tags/${t}/`}>
+            {t}
+          </a>
+        ))}
+      </div>
+    )
+  }
+</article>

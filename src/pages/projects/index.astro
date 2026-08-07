@@ -1,0 +1,31 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { projects } from '../../data/projects';
+---
+
+<BaseLayout title="项目">
+  <h1>项目</h1>
+  <p style="color: var(--text-muted);">
+    课程项目与课题相关的代码实践，源码均托管在 GitHub。
+  </p>
+  <div class="project-grid">
+    {
+      projects.map((p) => (
+        <div class="project-card">
+          <h3>
+            {p.github ? <a href={p.github}>{p.title}</a> : p.title}
+          </h3>
+          <p>{p.description}</p>
+          <div class="project-meta">
+            <div class="tech-list">
+              {p.tech.map((t) => (
+                <span class="tech">{t}</span>
+              ))}
+            </div>
+            {p.year && <span class="project-year">{p.year}</span>}
+          </div>
+        </div>
+      ))
+    }
+  </div>
+</BaseLayout>
