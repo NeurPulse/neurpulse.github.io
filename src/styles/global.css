@@ -383,6 +383,12 @@ body {
 .prose {
   font-size: 1rem;
 }
+/* 目录跳转时为吸顶头部预留空间，否则标题会被盖住 */
+.prose h2,
+.prose h3,
+.prose h4 {
+  scroll-margin-top: 80px;
+}
 .prose h2 {
   font-size: 1.35rem;
   margin: 2em 0 0.6em;
