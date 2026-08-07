@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build && pagefind --site dist",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "new": "node scripts/new-post.mjs"
   },
   "dependencies": {
     "astro": "^5.13.0",
