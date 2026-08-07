@@ -10,8 +10,8 @@ interface Props {
 }
 
 const { headings } = Astro.props;
-// 只取 h2/h3，避免目录过长
-const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+// 收录 h2/h3/h4 三级标题
+const toc = headings.filter((h) => h.depth >= 2 && h.depth <= 4);
 ---
 
 {

@@ -315,6 +315,10 @@ body {
 .toc li.depth-3 {
   padding-left: 14px;
 }
+.toc li.depth-4 {
+  padding-left: 28px;
+  font-size: 0.84rem;
+}
 .toc a {
   color: var(--text-muted);
   display: block;
