@@ -9,7 +9,7 @@ import { spawn } from 'node:child_process';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const rl = createInterface({ input: process.stdin, output: process.stdout });
 
-const CATEGORIES = ['数学建模', '深度学习', '深入浅出PyTorch', 'Transformer', '论文精读', '未分类'];
+const CATEGORIES = ['数学建模', '深度学习', 'PyTorch', 'Transformer', '论文精读', '未分类'];
 
 // 本地时区的今天，格式 YYYY-MM-DD
 function today() {
