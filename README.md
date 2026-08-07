@@ -116,7 +116,7 @@ import numpy as np
 
 ### 插入图片
 
-1. 把图片放进 `public/images/` 文件夹（没有就自己建一个）
+1. 把图片放进 `public/images/` 文件夹（可按文章建子文件夹，如 `public/images/deep-learning/`）
 2. 文章里引用：
 
 ```markdown
@@ -124,6 +124,12 @@ import numpy as np
 ```
 
 > 注意是 `/images/` 开头（正斜杠），不要写 `public/`。
+
+**从 Typora 迁移文章时要特别注意图片**：
+
+- ❌ `C:/Users/...` 这样的**本地绝对路径**——网站上不存在这些文件，必须先把图片复制到 `public/images/` 再改引用
+- ❌ `http://` 开头的**外链图片**——网站是 https，浏览器会拦截 http 图片。解决办法同上：下载到 `public/images/` 本地化
+- 图多的话直接找 Claude 帮忙批量处理，一句话的事
 
 ---
 
