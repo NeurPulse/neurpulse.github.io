@@ -1,46 +1,67 @@
 ---
 import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import TableOfContents from '../../components/TableOfContents.astro';
+import PostNav from '../../components/PostNav.astro';
 import { formatDate } from '../../utils/date';
 
 export async function getStaticPaths() {
-  const posts = await getCollection('notes', ({ data }) => !data.draft);
-  return posts.map((post) => ({
+  // 按时间升序，上一篇 = 更早，下一篇 = 更新
+  const posts = (await getCollection('notes', ({ data }) => !data.draft)).sort(
+    (a, b) => a.data.pubDate.valueOf() - b.data.pubDate.valueOf()
+  );
+  return posts.map((post, i) => ({
     params: { slug: post.id },
-    props: { post },
+    props: {
+      post,
+      prev:
+        i > 0
+          ? { id: posts[i - 1].id, title: posts[i - 1].data.title }
+          : null,
+      next:
+        i < posts.length - 1
+          ? { id: posts[i + 1].id, title: posts[i + 1].data.title }
+          : null,
+    },
   }));
 }
 
-const { post } = Astro.props;
-const { Content } = await render(post);
+const { post, prev, next } = Astro.props;
+const { Content, headings } = await render(post);
 ---
 
-<BaseLayout title={post.data.title} description={post.data.description}>
-  <a href="/notes/" class="back-link">← 返回笔记列表</a>
-  <div class="post-header">
-    <h1>{post.data.title}</h1>
-    <div class="post-meta">
-      <time>{formatDate(post.data.pubDate)}</time>
-      {
-        post.data.updatedDate && (
-          <span>更新于 {formatDate(post.data.updatedDate)}</span>
-        )
-      }
-      <span class="post-category">{post.data.category}</span>
-    </div>
-    {
-      post.data.tags.length > 0 && (
-        <div class="tags">
-          {post.data.tags.map((t) => (
-            <a class="tag" href={`/tags/${t}/`}>
-              {t}
-            </a>
-          ))}
+<BaseLayout title={post.data.title} description={post.data.description} wide>
+  <div class="post-wrapper">
+    <div>
+      <a href="/notes/" class="back-link">← 返回笔记列表</a>
+      <div class="post-header">
+        <h1>{post.data.title}</h1>
+        <div class="post-meta">
+          <time>{formatDate(post.data.pubDate)}</time>
+          {
+            post.data.updatedDate && (
+              <span>更新于 {formatDate(post.data.updatedDate)}</span>
+            )
+          }
+          <span class="post-category">{post.data.category}</span>
         </div>
-      )
-    }
+        {
+          post.data.tags.length > 0 && (
+            <div class="tags">
+              {post.data.tags.map((t) => (
+                <a class="tag" href={`/tags/${t}/`}>
+                  {t}
+                </a>
+              ))}
+            </div>
+          )
+        }
+      </div>
+      <article class="prose">
+        <Content />
+      </article>
+      <PostNav prev={prev} next={next} base="/notes" />
+    </div>
+    <TableOfContents headings={headings} />
   </div>
-  <article class="prose">
-    <Content />
-  </article>
 </BaseLayout>

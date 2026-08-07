@@ -1,0 +1,56 @@
+---
+interface Heading {
+  depth: number;
+  slug: string;
+  text: string;
+}
+
+interface Props {
+  headings: Heading[];
+}
+
+const { headings } = Astro.props;
+// 只取 h2/h3，避免目录过长
+const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+---
+
+{
+  toc.length > 1 && (
+    <nav class="toc" aria-label="文章目录">
+      <div class="toc-title">目录</div>
+      <ul>
+        {toc.map((h) => (
+          <li class={`depth-${h.depth}`}>
+            <a href={`#${h.slug}`} data-toc-link={h.slug}>
+              {h.text}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
+}
+
+<script>
+  // 滚动时高亮当前小节
+  const tocLinks = document.querySelectorAll<HTMLAnchorElement>('[data-toc-link]');
+  if (tocLinks.length > 0) {
+    const headingEls = [...tocLinks]
+      .map((l) => document.getElementById(l.dataset.tocLink!))
+      .filter((el): el is HTMLElement => el !== null);
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            tocLinks.forEach((l) =>
+              l.classList.toggle('active', l.dataset.tocLink === entry.target.id)
+            );
+          }
+        }
+      },
+      { rootMargin: '-80px 0px -70% 0px' }
+    );
+    headingEls.forEach((el) => observer.observe(el));
+  }
+</script>

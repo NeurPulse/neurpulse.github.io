@@ -9,6 +9,7 @@ const postSchema = z.object({
   category: z.string().default('未分类'),
   tags: z.array(z.string()).default([]),
   draft: z.boolean().default(false),
+  featured: z.boolean().default(false),
 });
 
 const notes = defineCollection({

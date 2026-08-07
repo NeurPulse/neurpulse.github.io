@@ -1,0 +1,37 @@
+---
+interface NavPost {
+  id: string;
+  title: string;
+}
+
+interface Props {
+  prev: NavPost | null;
+  next: NavPost | null;
+  base: '/notes' | '/research';
+}
+
+const { prev, next, base } = Astro.props;
+---
+
+{
+  (prev || next) && (
+    <nav class="post-nav">
+      {prev ? (
+        <a href={`${base}/${prev.id}/`}>
+          <span class="nav-label">← 上一篇</span>
+          <span class="nav-title">{prev.title}</span>
+        </a>
+      ) : (
+        <span class="spacer" />
+      )}
+      {next ? (
+        <a href={`${base}/${next.id}/`} class="next">
+          <span class="nav-label">下一篇 →</span>
+          <span class="nav-title">{next.title}</span>
+        </a>
+      ) : (
+        <span class="spacer" />
+      )}
+    </nav>
+  )
+}

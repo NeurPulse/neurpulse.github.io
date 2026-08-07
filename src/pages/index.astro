@@ -10,6 +10,12 @@ const notes = (await getCollection('notes', ({ data }) => !data.draft)).sort(
 const research = (
   await getCollection('research', ({ data }) => !data.draft)
 ).sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+// 精选文章（frontmatter 里 featured: true）
+const featured = [
+  ...notes.map((post) => ({ post, base: '/notes' as const })),
+  ...research.map((post) => ({ post, base: '/research' as const })),
+].filter((x) => x.post.data.featured);
 ---
 
 <BaseLayout>
@@ -23,6 +29,19 @@ const research = (
       {RESEARCH_INTERESTS.map((item) => <li>{item}</li>)}
     </ul>
   </section>
+
+  {
+    featured.length > 0 && (
+      <section>
+        <div class="section-head">
+          <h2>精选文章</h2>
+        </div>
+        {featured.map(({ post, base }) => (
+          <PostCard post={post} base={base} />
+        ))}
+      </section>
+    )
+  }
 
   <section>
     <div class="section-head">

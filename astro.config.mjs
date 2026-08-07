@@ -11,7 +11,11 @@ export default defineConfig({
     remarkPlugins: [remarkMath],
     rehypePlugins: [rehypeKatex],
     shikiConfig: {
-      theme: 'github-light',
+      // 双主题：配合深色模式，通过 CSS 变量切换
+      themes: {
+        light: 'github-light',
+        dark: 'github-dark',
+      },
     },
   },
 });

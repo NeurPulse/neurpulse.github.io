@@ -8,9 +8,10 @@ import 'katex/dist/katex.min.css';
 interface Props {
   title?: string;
   description?: string;
+  wide?: boolean;
 }
 
-const { title, description = SITE_DESCRIPTION } = Astro.props;
+const { title, description = SITE_DESCRIPTION, wide = false } = Astro.props;
 const pageTitle = title ? `${title} | ${SITE_TITLE}` : SITE_TITLE;
 ---
 
@@ -23,10 +24,26 @@ const pageTitle = title ? `${title} | ${SITE_TITLE}` : SITE_TITLE;
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
     <title>{pageTitle}</title>
+    {/* 在页面绘制前确定主题，避免闪烁 */}
+    <script is:inline>
+      (function () {
+        var saved = null;
+        try {
+          saved = localStorage.getItem('theme');
+        } catch (e) {}
+        var theme =
+          saved ||
+          (window.matchMedia('(prefers-color-scheme: dark)').matches
+            ? 'dark'
+            : 'light');
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
+    <slot name="head" />
   </head>
   <body>
     <Header />
-    <main class="container">
+    <main class:list={['container', { wide }]}>
       <slot />
     </main>
     <Footer />

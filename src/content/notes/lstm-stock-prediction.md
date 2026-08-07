@@ -4,6 +4,7 @@ description: 'LSTM 的门控机制推导、股价预测中的数据构造细节�
 pubDate: 2026-08-01
 category: '深度学习'
 tags: ['LSTM', '时间序列', 'PyTorch']
+featured: true
 ---
 
 ## 为什么用 LSTM

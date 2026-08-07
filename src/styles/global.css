@@ -7,10 +7,47 @@
   --accent: #3b5bdb;
   --accent-soft: #edf0ff;
   --border: #e5e7eb;
+  --header-bg: rgba(255, 255, 255, 0.92);
   --radius: 10px;
   --font-main: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
     'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
   --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  color-scheme: light;
+}
+
+/* ===== 深色主题 ===== */
+[data-theme='dark'] {
+  --bg: #0d1117;
+  --bg-subtle: #161b22;
+  --text: #e6e9ee;
+  --text-muted: #959ca8;
+  --accent: #82a0ff;
+  --accent-soft: #1d2742;
+  --border: #2b303b;
+  --header-bg: rgba(13, 17, 23, 0.9);
+  color-scheme: dark;
+
+  /* Pagefind 搜索框暗色适配 */
+  --pagefind-ui-primary: #82a0ff;
+  --pagefind-ui-text: #e6e9ee;
+  --pagefind-ui-background: #0d1117;
+  --pagefind-ui-border: #2b303b;
+  --pagefind-ui-tag: #161b22;
+  --pagefind-ui-border-width: 1px;
+  --pagefind-ui-border-radius: 8px;
+  --pagefind-ui-font: var(--font-main);
+}
+
+/* 深色模式下切换代码块为 github-dark 主题（Shiki 双主题输出 CSS 变量） */
+[data-theme='dark'] .astro-code,
+[data-theme='dark'] .astro-code span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+}
+
+/* KaTeX 公式继承文字颜色 */
+[data-theme='dark'] .katex {
+  color: var(--text);
 }
 
 * {
@@ -54,7 +91,7 @@ main.container {
   border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--header-bg);
   backdrop-filter: blur(8px);
   z-index: 10;
 }
@@ -91,6 +128,36 @@ main.container {
 .site-header nav a.active {
   color: var(--accent);
   font-weight: 600;
+}
+
+/* 主题切换按钮 */
+#theme-toggle {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 4px 8px;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+}
+#theme-toggle:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+}
+#theme-toggle .icon-sun {
+  display: none;
+}
+[data-theme='dark'] #theme-toggle .icon-sun {
+  display: block;
+}
+[data-theme='dark'] #theme-toggle .icon-moon {
+  display: none;
+}
+
+body {
+  transition: background-color 0.2s, color 0.2s;
 }
 
 /* ===== 首页 Hero ===== */
@@ -212,6 +279,104 @@ main.container {
   margin: 0 0 8px;
   font-size: 1.75rem;
   line-height: 1.4;
+}
+
+/* 文章页宽布局：正文 + 目录侧栏 */
+.container.wide {
+  max-width: 1120px;
+}
+.post-wrapper {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 230px;
+  gap: 48px;
+  align-items: start;
+}
+
+/* ===== 目录导航（TOC） ===== */
+.toc {
+  position: sticky;
+  top: 90px;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  font-size: 0.88rem;
+  border-left: 1px solid var(--border);
+  padding-left: 16px;
+}
+.toc-title {
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+.toc ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.toc li.depth-3 {
+  padding-left: 14px;
+}
+.toc a {
+  color: var(--text-muted);
+  display: block;
+  padding: 3px 0;
+  line-height: 1.5;
+}
+.toc a:hover {
+  color: var(--text);
+  text-decoration: none;
+}
+.toc a.active {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ===== 上一篇 / 下一篇 ===== */
+.post-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+.post-nav a {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  color: var(--text);
+  transition: border-color 0.2s;
+  min-width: 0;
+}
+.post-nav a:hover {
+  border-color: var(--accent);
+  text-decoration: none;
+}
+.post-nav .nav-label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.post-nav .nav-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.post-nav .next {
+  text-align: right;
+}
+.post-nav .spacer {
+  flex: 1;
+}
+
+/* ===== 精选标记 ===== */
+.featured-badge {
+  color: #e8a33d;
+  font-size: 0.85rem;
+  margin-right: 4px;
 }
 
 /* ===== Markdown 正文排版 ===== */
@@ -380,6 +545,15 @@ main.container {
 }
 
 /* ===== 移动端 ===== */
+@media (max-width: 1000px) {
+  .post-wrapper {
+    grid-template-columns: 1fr;
+  }
+  .toc {
+    display: none;
+  }
+}
+
 @media (max-width: 640px) {
   .hero h1 {
     font-size: 1.5rem;
@@ -392,5 +566,8 @@ main.container {
   }
   .post-header h1 {
     font-size: 1.4rem;
+  }
+  .post-nav {
+    flex-direction: column;
   }
 }

@@ -1,0 +1,36 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="搜索">
+  <link href="/pagefind/pagefind-ui.css" rel="stylesheet" slot="head" />
+  <h1>搜索</h1>
+  <div id="search"></div>
+
+  <script src="/pagefind/pagefind-ui.js" is:inline></script>
+  <script is:inline>
+    window.addEventListener('DOMContentLoaded', function () {
+      if (typeof PagefindUI === 'undefined') {
+        document.getElementById('search').innerHTML =
+          '<p style="color: var(--text-muted)">本地 dev 模式下搜索不可用（搜索索引在构建时生成）。请先运行 <code>npm run build</code>，再用 <code>npm run preview</code> 预览。线上网站不受影响。</p>';
+        return;
+      }
+      new PagefindUI({
+        element: '#search',
+        showSubResults: true,
+        showImages: false,
+        translations: {
+          placeholder: '搜索笔记、研究记录…',
+          clear_search: '清除',
+          load_more: '加载更多结果',
+          search_label: '站内搜索',
+          filters_label: '筛选',
+          zero_results: '没有找到「[SEARCH_TERM]」的相关内容',
+          many_results: '找到 [COUNT] 条「[SEARCH_TERM]」的结果',
+          one_result: '找到 1 条「[SEARCH_TERM]」的结果',
+          searching: '正在搜索「[SEARCH_TERM]」…',
+        },
+      });
+    });
+  </script>
+</BaseLayout>
