@@ -287,7 +287,7 @@ tensor([[2., 3.],
 
 ### 完整模型 LeNet
 
-![3.4.1](https://datawhalechina.github.io/thorough-pytorch/_images/3.4.1.png)
+![LeNet](../../../public/images/pytorch/LeNet.png)
 
 这是一个简单的前馈神经网络 (feed-forward network）（LeNet）。它接受一个输入，然后将它送入下一层，一层接一层的传递，最后给出输出。
 
@@ -390,7 +390,7 @@ out.backward(torch.randn(1, 10))
 
 #### **AlexNet**
 
-![3.4.2](https://datawhalechina.github.io/thorough-pytorch/_images/3.4.2.png)
+![AlexNet](../../../public/images/pytorch/AlexNet.png)
 
 ```
 class AlexNet(nn.Module):
