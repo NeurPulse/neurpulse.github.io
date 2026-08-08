@@ -165,7 +165,7 @@ iy3 = spi.splev(new_x, ipo3)   # 代入新x，算出插值得到的y值
 
 对于一组数据\(\{y\}\)和下标\(\{x\}\)，定义 n 个拉格朗日插值基函数：
 $$
-l_k(x) = \prod_{\substack{i=0,i\neq k}}^{n} \frac{x - x_i}{x_k - x_i} \tag{6.5.5}
+l_k(x) = \prod_{\substack{i=0,i\neq k}}^{n} \frac{x - x_i}{x_k - x_i} 
 $$
 解释：
 
@@ -187,7 +187,7 @@ $k=1$时$l_1(x)=\frac{x-x_0}{x_1-x_0}$，$x=x_1$时$l_1=1$，$x=x_0$时$l_1=0$�
 
 这本质上是一个分式，当$x=x_k$时$l_k(x)=1$，这一操作实现了离散数据的连续化。按照对应下标的函数值加权求和可以得到整体的拉格朗日插值函数：
 $$
-L(x) = \sum_{k=0}^{n} y_k l_k(x) \tag{6.5.6}
+L(x) = \sum_{k=0}^{n} y_k l_k(x) 
 $$
 
 代入任意节点$x_m$：除了$k=m$那一项$y_m l_m(x_m)=y_m\times1=y_m$，其余所有$k\neq m$的项$y_k l_k(x_m)=y_k\times0=0$，最终$\boldsymbol{L(x_m)=y_m}$，完美贴合已知点；
