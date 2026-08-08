@@ -42,7 +42,13 @@ npm run new
 
 **第 4 步**：Typora 会自动打开新文件，frontmatter 和当天日期都已填好。把 `## 小节标题` 改成你的第一个小节，开始写正文。
 
-**第 5 步**：发布后上线（见下面第 3 节的三条 git 命令）。
+**第 5 步**：如果用 Typora 编辑过已发布的文章，提交前先跑一次：
+
+```bash
+npm run fix-images
+```
+
+这会自动把 Typora 改乱的图片路径修回来。然后发布（见下面第 3 节的三条 git 命令）。
 
 小提示：
 
@@ -89,9 +95,11 @@ tags: ['LSTM', '时间序列']
 
 ### 3. 发布到网站
 
-在项目目录打开终端（Git Bash），执行三条命令：
+在项目目录打开终端（Git Bash），执行：
 
 ```bash
+npm run fix-images   # 修复 Typora 可能改乱的图片路径（用 Typora 编辑过已发文章时必跑）
+npm run build        # 确认没有错误（推荐，尤其是加了很多图片时）
 git add .
 git commit -m "添加文章：文章标题"
 git push
