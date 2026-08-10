@@ -73,7 +73,7 @@ $$
    f = \frac{1}{\sqrt{2\pi \sigma}} e^{-\frac{(x-\mu)^2}{2\sigma^2}}
    $$
 
-![屏幕截图 2026-07-28 163842](../../../public/images/math-modeling/屏幕截图 2026-07-28 163842.png)
+![N](../../../public/images/math-modeling/N.png)
 
 2. 卡方分布：
 
@@ -89,7 +89,7 @@ $$
 
    常见统计量例如样本方差等都服从卡方分布。
 
-![屏幕截图 2026-07-28 163815](../../../public/images/math-modeling/屏幕截图 2026-07-28 163815.png)
+![卡方](../../../public/images/math-modeling/卡方.png)
 
 3. t-分布：
 
@@ -107,7 +107,7 @@ $$
 
    由于*t*分布对样本大小和方差的变化较为稳健，因此在实践中常常用来进行假设检验和置信区间的计算。同时，*t*分布也是构建其他统计量的基础，如Z分布、F分布等。
 
-   ![屏幕截图 2026-07-28 163827](C:/Users/lichi/Pictures/Screenshots/屏幕截图 2026-07-28 163827.png)
+   ![t](../../../public/images/math-modeling/t.png)
 
 4.  F-分布：
 
@@ -127,7 +127,7 @@ $$
 
    在回归分析中，通过计算决定系数R²，可以评估模型对数据的拟合程度。
 
-![屏幕截图 2026-07-28 163836](C:/Users/lichi/Pictures/Screenshots/屏幕截图 2026-07-28 163836.png)
+![F](../../../public/images/math-modeling/F.png)
 
 ```python
 import numpy as np
