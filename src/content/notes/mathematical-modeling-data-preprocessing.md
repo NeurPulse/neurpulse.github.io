@@ -6,7 +6,7 @@ category: '数学建模'
 tags: ['数据预处理','插值','Pandas','Scikit-learn']
 ---
 
-## 数据处理与拟合模型
+## 数据处理
 
 
 
