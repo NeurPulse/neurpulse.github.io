@@ -10,11 +10,11 @@ tags: ['二分类交叉熵损失函数', '交叉熵损失函数', 'L1损失函�
 
 > 一个模型想要达到很好的效果需要**学习**，也就是我们常说的训练。一个好的训练离不开优质的负反馈，这里的损失函数就是模型的负反馈。
 
-<img src="../../../public/images/pytorch/lossfunciton.png" alt="lossfunciton" />
+
 
 **损失函数是数据输入到模型当中，产生的结果与真实标签的评价指标，模型可以按照损失函数的目标来做出改进。**
 
-
+![lossfunciton](../../../public/images/pytorch/lossfunciton.png)
 
 ## 二分类交叉熵损失函数
 
