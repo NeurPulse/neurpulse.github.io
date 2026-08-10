@@ -8,7 +8,7 @@ tags: ['优化算法','遗传算法','粒子群算法','蚁群算法','模拟退
 
 ## 进化计算与群体智能
 
-![Pasted image 20240513112233](/images/math-modeling/Pasted image 20240513112233.png)
+![Pasted image 20240513112233](../../../public/images/math-modeling/Pasted image 20240513112233.png)
 
 ### 线性规划
 
@@ -166,7 +166,7 @@ else:
 
 
 
-![Pasted image 20240513112312](/images/math-modeling/Pasted image 20240513112312.png)
+![Pasted image 20240513112312](../../../public/images/math-modeling/Pasted image 20240513112312.png)
 
 #### case1：**二元函数的寻优**
 
@@ -202,7 +202,7 @@ ax = fig.add_subplot(projection='3d')
 plot_3d(ax)              # 调用绘图函数
 ```
 
-![Pasted image 20240513112352](/images/math-modeling/Pasted image 20240513112352.png)
+![Pasted image 20240513112352](../../../public/images/math-modeling/Pasted image 20240513112352.png)
 
 [代码讲解文档](E:\math_model\notebook\代码讲解-遗传算法香蕉函数.md)
 
@@ -496,7 +496,7 @@ $$
 5. 更新每一微粒的速度与位置。
 6. 回到步骤 2 继续执行，直到获得一个令人满意的结果或符合终止条件为止。
 
-![Pasted image 20240513113053](/images/math-modeling/Pasted image 20240513113053.png)
+![Pasted image 20240513113053](../../../public/images/math-modeling/Pasted image 20240513113053.png)
 
 #### case1:求函数的极值：
 
@@ -614,7 +614,7 @@ for i in range(T):
 
 > 注：蚁群算法的过程中边上信息素的一些状态和蚂蚁的行进信息可以用一个表格（数组）存储起来，这个表叫==禁忌表==。
 
-![Pasted image 20240513113701](/images/math-modeling/Pasted image 20240513113701.png)
+![Pasted image 20240513113701](../../../public/images/math-modeling/Pasted image 20240513113701.png)
 
 实现：
 
@@ -733,7 +733,7 @@ P = \exp(-\frac{E_{new}-E_{old}}{T})
 $$
 直接使用 Metropolis 算法可能会导致寻优速度太慢，以至于无法实际使用，为了确保在有限的时间收敛，必须设定控制算法收敛的参数，在上面的公式中，可以调节的参数就是 *T*，*T* 如果过大，就会导致退火太快，达到局部最优值就会结束迭代，如果取值较小，则计算时间会增加，实际应用中采用退火温度表，在退火初期采用较大的 *T* 值，随着退火的进行，逐步降低。
 
-![Pasted image 20240513113856](/images/math-modeling/Pasted image 20240513113856.png)
+![Pasted image 20240513113856](../../../public/images/math-modeling/Pasted image 20240513113856.png)
 
 > 注：速度上模拟退火和粒子群都很快，但模拟退火略快一些，比遗传更快，蚁群的速度是最慢的。但粒子群求解大规模函数极值的时候容易碰到边界陷入的情况。模拟退火则相对比较稳定一些。
 

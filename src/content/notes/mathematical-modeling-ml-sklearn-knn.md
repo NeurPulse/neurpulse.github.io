@@ -65,7 +65,7 @@ tags: ['scikit-learn','KNN','机器学习']
 >
 > 欠拟合和过拟合
 >
-> ![image-15](/images/math-modeling/image-15.png)
+> ![image-15](../../../public/images/math-modeling/image-15.png)
 >
 > 欠拟合是指模型在训练数据上的表现不佳，无法充分拟合训练数据，导致在新的数据集上表现也不佳，就像第一张图。这通常是因为模型过于简单，无法捕捉到数据的复杂模式和规律。
 >

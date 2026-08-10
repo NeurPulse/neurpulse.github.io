@@ -26,7 +26,7 @@ $$
 
 
 
-![Pasted image 20240423220303](/images/math-modeling/Pasted image 20240423220303.png)
+![Pasted image 20240423220303](../../../public/images/math-modeling/Pasted image 20240423220303.png)
 
 > 微分实际上描述的是点*M*处切线的斜率；导数则描述的是割线*MN*的斜率。但当d*x*足够小的时候，切线的斜率和割线的斜率就会非常接近
 >

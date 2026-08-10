@@ -34,7 +34,7 @@ tags: ['神经网络','MLP','深度学习']
 
 3. 通过这种链式求导过程，我们可以计算出每一层权重对损失函数的梯度，从而更新权重以最小化误
 
-![mlp](/images/math-modeling/mlp.svg)
+![mlp](../../../public/images/math-modeling/mlp.svg)
 
 我们通过矩阵$\boldsymbol{X} \in \mathbb{R}^{n\times d}$来表示$n$个样本的小批量，其中每个样本具有$d$个输入特征。对于具有$h$个隐藏单元的单隐藏层多层感知机，用$\boldsymbol{H} \in \mathbb{R}^{n\times h}$表示隐藏层的输出，称为**隐藏表示（hidden representations）**。在数学或代码中，$\boldsymbol{H}$也被称为隐藏层变量（hidden-layer variable）或隐藏变量（hidden variable）。因为隐藏层和输出层都是全连接的，所以我们有隐藏层权重$\boldsymbol{W}^{(1)} \in \mathbb{R}^{d\times h}$和隐藏层偏置$\boldsymbol{b}^{(1)} \in \mathbb{R}^{1\times h}$以及输出层权重$\boldsymbol{W}^{(2)} \in \mathbb{R}^{h\times q}$和输出层偏置$\boldsymbol{b}^{(2)} \in \mathbb{R}^{1\times q}$。形式上，我们按如下方式计算单隐藏层多层感知机的输出$\boldsymbol{O} \in \mathbb{R}^{n\times q}$：
 $$
@@ -65,11 +65,11 @@ $$
 
    > ReLU函数通过将相应的活性值设为0，仅保留正元素并丢弃所有负元素。
    >
-   > ![output_mlp_76f463_18_1](/images/math-modeling/output_mlp_76f463_18_1.svg)
+   > ![output_mlp_76f463_18_1](../../../public/images/math-modeling/output_mlp_76f463_18_1.svg)
    >
    > 输入为负时，ReLU函数的导数为0，而当输入为正时，ReLU函数的导数为1。 注意，当输入值精确等于0时，ReLU函数不可导。 在此时，我们默认使用左侧的导数，即当输入为0时导数为0。 我们可以忽略这种情况，因为输入可能永远都不会是0。 这里引用一句古老的谚语，“如果微妙的边界条件很重要，我们很可能是在研究数学而非工程”， 这个观点正好适用于这里。 下面我们绘制ReLU函数的导数。
    >
-   > ![output_mlp_76f463_33_1](/images/math-modeling/output_mlp_76f463_33_1.svg)
+   > ![output_mlp_76f463_33_1](../../../public/images/math-modeling/output_mlp_76f463_33_1.svg)
    >
    > 使用ReLU的原因是，它求导表现得特别好：要么让参数消失，要么让参数通过。 这使得优化表现得更好，并且ReLU减轻了困扰以往神经网络的梯度消失问题
 
@@ -82,7 +82,7 @@ $$
 
    > 对“激发”或“不激发”的生物神经元进行建模.sigmoid函数是一个自然的选择，因为它是一个平滑的、可微的阈值单元近似。 当我们想要将输出视作二元分类问题的概率时， sigmoid仍然被广泛用作输出单元上的激活函数 （sigmoid可以视为softmax的特例）。
    >
-   > ![output_mlp_76f463_48_0](/images/math-modeling/output_mlp_76f463_48_0.svg)
+   > ![output_mlp_76f463_48_0](../../../public/images/math-modeling/output_mlp_76f463_48_0.svg)
 
 3.  tanh(双曲正切)函数:
 

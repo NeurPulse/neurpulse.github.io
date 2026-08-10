@@ -16,22 +16,25 @@ for (const name of readdirSync(notesDir)) {
   let content = readFileSync(file, 'utf8');
   const original = content;
 
-  // Typora 把 /images/math-modeling/ 改成了 assets/
-  content = content.replace(/\(assets\//g, '(/images/math-modeling/');
-  // Typora 把 /images/deep-learning/ 改成了本地绝对路径
+  // Typora 把相对路径改成了 assets/ （每种图片类型各自修正）
   content = content.replace(
-    /E:\\selfdocument\\web\\public\\images\/deep-learning\//g,
-    '/images/deep-learning/'
+    /\(assets\//g,
+    '(../../../public/images/math-modeling/'
   );
-  // Typora 把 /images/deep-learning/ 改成各种本地写法
+  // Typora 把 deep-learning 相对路径改成了本地绝对路径
   content = content.replace(
-    /E:\\selfdocument\\web\\public\\images\/math-modeling\//g,
-    '/images/math-modeling/'
+    /E:\\selfdocument\\web\\public\\images[\\/]deep-learning[\\/]/g,
+    '../../../public/images/deep-learning/'
   );
-  // 从 QQ/微信拖进的图片（本地绝对路径）
+  // Typora 把 math-modeling 相对路径改成了本地绝对路径
+  content = content.replace(
+    /E:\\selfdocument\\web\\public\\images[\\/]math-modeling[\\/]/g,
+    '../../../public/images/math-modeling/'
+  );
+  // 从 QQ/微信拖进的图片（本地绝对路径）→ math-modeling
   content = content.replace(
     /\(D:\/QQ[^)]*\/([a-f0-9]{32}\.(?:png|jpg))\)/g,
-    '(/images/math-modeling/$1)'
+    '(../../../public/images/math-modeling/$1)'
   );
 
   if (content !== original) {

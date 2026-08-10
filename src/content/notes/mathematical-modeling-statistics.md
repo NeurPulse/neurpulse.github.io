@@ -73,7 +73,7 @@ $$
    f = \frac{1}{\sqrt{2\pi \sigma}} e^{-\frac{(x-\mu)^2}{2\sigma^2}}
    $$
 
-![屏幕截图 2026-07-28 163842](/images/math-modeling/屏幕截图 2026-07-28 163842.png)
+![屏幕截图 2026-07-28 163842](../../../public/images/math-modeling/屏幕截图 2026-07-28 163842.png)
 
 2. 卡方分布：
 
@@ -89,7 +89,7 @@ $$
 
    常见统计量例如样本方差等都服从卡方分布。
 
-![屏幕截图 2026-07-28 163815](/images/math-modeling/屏幕截图 2026-07-28 163815.png)
+![屏幕截图 2026-07-28 163815](../../../public/images/math-modeling/屏幕截图 2026-07-28 163815.png)
 
 3. t-分布：
 
@@ -532,7 +532,7 @@ w = \frac{ \sum ^n _{i = 1}x_iy_i - n \bar{x} \bar{y} } {\sum^n _{i = 1}x_i ^2 -
 b = \bar{y} - w \bar{x}
 \end{cases}
 $$
-![03dd83bfbc9e56122c2ff97b695913b1](/images/math-modeling/03dd83bfbc9e56122c2ff97b695913b1.png)
+![03dd83bfbc9e56122c2ff97b695913b1](../../../public/images/math-modeling/03dd83bfbc9e56122c2ff97b695913b1.png)
 
 均方误差——损失函数 ：实际值和预测值的偏差方差：
 $$
@@ -655,7 +655,7 @@ plt.plot(X,Pfun(X,*popt),'b-')
 plt.show()
 ```
 
-![屏幕截图 2026-07-28 151406](/images/math-modeling/屏幕截图 2026-07-28 151406.png)
+![屏幕截图 2026-07-28 151406](../../../public/images/math-modeling/屏幕截图 2026-07-28 151406.png)
 
 ### **scipy&statsmodels**
 
