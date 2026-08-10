@@ -28,6 +28,11 @@ for (const name of readdirSync(notesDir)) {
     /E:\\selfdocument\\web\\public\\images\/math-modeling\//g,
     '/images/math-modeling/'
   );
+  // 从 QQ/微信拖进的图片（本地绝对路径）
+  content = content.replace(
+    /\(D:\/QQ[^)]*\/([a-f0-9]{32}\.(?:png|jpg))\)/g,
+    '(/images/math-modeling/$1)'
+  );
 
   if (content !== original) {
     writeFileSync(file, content, 'utf8');

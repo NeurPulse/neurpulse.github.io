@@ -50,7 +50,7 @@ p = (
 p.draw()
 ```
 
-![0888992627a39a805051af5e895a00ad](D:/QQ文件夹/Tencent Files/2512388681/nt_qq/nt_data/Pic/2026-08/Ori/0888992627a39a805051af5e895a00ad.png)
+![0888992627a39a805051af5e895a00ad](/images/math-modeling/0888992627a39a805051af5e895a00ad.png)
 
 ```python
 # 柱状图
@@ -84,7 +84,7 @@ p = (
 p.draw()
 ```
 
-![f5d42be59fab57626b120b19999ba90e](D:/QQ文件夹/Tencent Files/2512388681/nt_qq/nt_data/Pic/2026-08/Ori/f5d42be59fab57626b120b19999ba90e.png)
+![f5d42be59fab57626b120b19999ba90e](/images/math-modeling/f5d42be59fab57626b120b19999ba90e.png)
 
 #### python中数据可视化的3个工具库：
 
@@ -128,7 +128,7 @@ plt.subplots_adjust(bottom=0.15)
 plt.show()
 ```
 
-![4e3571892914cee0170fae07c5a250ea](D:/QQ文件夹/Tencent Files/2512388681/nt_qq/nt_data/Pic/2026-08/Ori/4e3571892914cee0170fae07c5a250ea.png)
+![4e3571892914cee0170fae07c5a250ea](/images/math-modeling/4e3571892914cee0170fae07c5a250ea.png)
 
 
 
@@ -175,7 +175,7 @@ sns.lmplot(x="x", y="y", data=df)
 plt.show()
 ```
 
-![a2e1f9a4c74ce3717daa2aec3152ba47](D:/QQ文件夹/Tencent Files/2512388681/nt_qq/nt_data/Pic/2026-08/Ori/a2e1f9a4c74ce3717daa2aec3152ba47.png)
+![a2e1f9a4c74ce3717daa2aec3152ba47](/images/math-modeling/a2e1f9a4c74ce3717daa2aec3152ba47.png)
 
 ##### Plotnine
 
@@ -221,7 +221,7 @@ p1 = (
 p1.draw()  
 ```
 
-![13fef4176ca2dd2ed0fe8d6614f9f407](D:/QQ文件夹/Tencent Files/2512388681/nt_qq/nt_data/Pic/2026-08/Ori/13fef4176ca2dd2ed0fe8d6614f9f407.png)
+![13fef4176ca2dd2ed0fe8d6614f9f407](/images/math-modeling/13fef4176ca2dd2ed0fe8d6614f9f407.png)
 
 缺点：只能实现直角坐标系
 
@@ -291,7 +291,7 @@ ax1.legend()
 plt.show()
 ```
 
-![ba69d96bfe3e520e9e71e396c3822102](D:/QQ文件夹/Tencent Files/2512388681/nt_qq/nt_data/Pic/2026-08/Ori/ba69d96bfe3e520e9e71e396c3822102.png)
+![ba69d96bfe3e520e9e71e396c3822102](/images/math-modeling/ba69d96bfe3e520e9e71e396c3822102.png)
 
 
 
@@ -312,7 +312,7 @@ p_single_bar = (
 p_single_bar.draw()
 ```
 
-![43767ffad8340325d5dbc47b80ac77cf](D:/QQ文件夹/Tencent Files/2512388681/nt_qq/nt_data/Pic/2026-08/Ori/43767ffad8340325d5dbc47b80ac77cf.png)
+![43767ffad8340325d5dbc47b80ac77cf](/images/math-modeling/43767ffad8340325d5dbc47b80ac77cf.png)
 
 
 
@@ -359,7 +359,7 @@ plt.legend()
 plt.show()
 ```
 
-![e14cb84ea5a8e800bc6863e6e23e9959](D:/QQ文件夹/Tencent Files/2512388681/nt_qq/nt_data/Pic/2026-08/Ori/e14cb84ea5a8e800bc6863e6e23e9959.png)
+![e14cb84ea5a8e800bc6863e6e23e9959](/images/math-modeling/e14cb84ea5a8e800bc6863e6e23e9959.png)
 
 
 
@@ -402,7 +402,7 @@ p_mult_bar = (
 p_mult_bar
 ```
 
-![58f947779f67e2678e43e00bd805f961](D:/QQ文件夹/Tencent Files/2512388681/nt_qq/nt_data/Pic/2026-08/Ori/58f947779f67e2678e43e00bd805f961.png)
+![58f947779f67e2678e43e00bd805f961](/images/math-modeling/58f947779f67e2678e43e00bd805f961.png)
 
 
 
@@ -443,7 +443,7 @@ plt.legend()
 plt.show()
 ```
 
-![d3d50ca430755231980e0801751b0db4](D:/QQ文件夹/Tencent Files/2512388681/nt_qq/nt_data/Pic/2026-08/Ori/d3d50ca430755231980e0801751b0db4.png)
+![d3d50ca430755231980e0801751b0db4](/images/math-modeling/d3d50ca430755231980e0801751b0db4.png)
 
 
 
@@ -488,7 +488,7 @@ plt.tight_layout()
 plt.show()
 ```
 
-![6bf8643e0b62adc21a146b5003a699d9](D:/QQ文件夹/Tencent Files/2512388681/nt_qq/nt_data/Pic/2026-08/Ori/6bf8643e0b62adc21a146b5003a699d9.png)
+![6bf8643e0b62adc21a146b5003a699d9](/images/math-modeling/6bf8643e0b62adc21a146b5003a699d9.png)
 
 
 
@@ -517,7 +517,7 @@ plt.legend()
 plt.show()
 ```
 
-![4470edade1f6d49b881ce49dada9ed3b](D:/QQ文件夹/Tencent Files/2512388681/nt_qq/nt_data/Pic/2026-08/Ori/4470edade1f6d49b881ce49dada9ed3b.png)
+![4470edade1f6d49b881ce49dada9ed3b](/images/math-modeling/4470edade1f6d49b881ce49dada9ed3b.png)
 
 ##### 关系型图表
 
@@ -564,7 +564,7 @@ plt.title("y4与x存在关联关系")
 plt.show()
 ```
 
-![953223de7d32553e51b30a79525c87d0](D:/QQ文件夹/Tencent Files/2512388681/nt_qq/nt_data/Pic/2026-08/Ori/953223de7d32553e51b30a79525c87d0.png)
+![953223de7d32553e51b30a79525c87d0](/images/math-modeling/953223de7d32553e51b30a79525c87d0.png)
 
 
 
@@ -591,7 +591,7 @@ p1 = (
 p1.draw()
 ```
 
-![bfc177762e662524b5299297e9bccfd7](D:/QQ文件夹/Tencent Files/2512388681/nt_qq/nt_data/Pic/2026-08/Ori/bfc177762e662524b5299297e9bccfd7.png)
+![bfc177762e662524b5299297e9bccfd7](/images/math-modeling/bfc177762e662524b5299297e9bccfd7.png)
 
 
 
@@ -641,7 +641,7 @@ plt.title("带 loess平滑线的散点图")
 plt.show()
 ```
 
-![3ee3c7577d8d41f2f9b521b7c3fc7402](D:/QQ文件夹/Tencent Files/2512388681/nt_qq/nt_data/Pic/2026-08/Ori/3ee3c7577d8d41f2f9b521b7c3fc7402.png)
+![3ee3c7577d8d41f2f9b521b7c3fc7402](/images/math-modeling/3ee3c7577d8d41f2f9b521b7c3fc7402.png)
 
 
 
@@ -682,7 +682,7 @@ plt.legend(title="鸢尾花类别")
 plt.show()
 ```
 
-![8107d5f13d2892c350715984f6ebe073](D:/QQ文件夹/Tencent Files/2512388681/nt_qq/nt_data/Pic/2026-08/Ori/8107d5f13d2892c350715984f6ebe073.png)
+![8107d5f13d2892c350715984f6ebe073](/images/math-modeling/8107d5f13d2892c350715984f6ebe073.png)
 
 
 
@@ -743,7 +743,7 @@ p2.draw()
 p3.draw()
 ```
 
-![b094cc3e9f9078d53da55a8e0c9cc154](D:/QQ文件夹/Tencent Files/2512388681/nt_qq/nt_data/Pic/2026-08/Ori/b094cc3e9f9078d53da55a8e0c9cc154.png)
+![b094cc3e9f9078d53da55a8e0c9cc154](/images/math-modeling/b094cc3e9f9078d53da55a8e0c9cc154.png)
 
 ```python
 import numpy as np
@@ -765,7 +765,7 @@ ax.set_ylabel("Y轴")
 plt.show()
 ```
 
-![c1f93357b0ef5c628be95f2fb2f5c4e5](D:/QQ文件夹/Tencent Files/2512388681/nt_qq/nt_data/Pic/2026-08/Ori/c1f93357b0ef5c628be95f2fb2f5c4e5.png)
+![c1f93357b0ef5c628be95f2fb2f5c4e5](/images/math-modeling/c1f93357b0ef5c628be95f2fb2f5c4e5.png)
 
 
 
@@ -809,7 +809,7 @@ plt.title("汽车油耗mpg分布直方图")
 plt.show()
 ```
 
-![e7261ab42ca13e7392d6b1a6201e7f3e](D:/QQ文件夹/Tencent Files/2512388681/nt_qq/nt_data/Pic/2026-08/Ori/e7261ab42ca13e7392d6b1a6201e7f3e.png)
+![e7261ab42ca13e7392d6b1a6201e7f3e](/images/math-modeling/e7261ab42ca13e7392d6b1a6201e7f3e.png)
 
 
 
@@ -844,7 +844,7 @@ plt.title('boxenplot增强箱线图')
 plt.show()
 ```
 
-![63ad3cb681e8b10551761416e6a3cd97](D:/QQ文件夹/Tencent Files/2512388681/nt_qq/nt_data/Pic/2026-08/Ori/63ad3cb681e8b10551761416e6a3cd97.png)
+![63ad3cb681e8b10551761416e6a3cd97](/images/math-modeling/63ad3cb681e8b10551761416e6a3cd97.png)
 
 
 
@@ -902,7 +902,7 @@ plt.tight_layout()
 plt.show()
 ```
 
-![73a1464273dc6fcb2b9e6c5775587300](D:/QQ文件夹/Tencent Files/2512388681/nt_qq/nt_data/Pic/2026-08/Ori/73a1464273dc6fcb2b9e6c5775587300.png)
+![73a1464273dc6fcb2b9e6c5775587300](/images/math-modeling/73a1464273dc6fcb2b9e6c5775587300.png)
 
 
 
@@ -967,7 +967,7 @@ plt.tight_layout()
 plt.show()
 ```
 
-![5739e877005fb2aa97c0425d986d17aa](D:/QQ文件夹/Tencent Files/2512388681/nt_qq/nt_data/Pic/2026-08/Ori/5739e877005fb2aa97c0425d986d17aa.png)
+![5739e877005fb2aa97c0425d986d17aa](/images/math-modeling/5739e877005fb2aa97c0425d986d17aa.png)
 
 
 
@@ -1027,7 +1027,7 @@ p1 = (
 p1.draw()
 ```
 
-![91f2ac6e889735915c585abe2df03e11](D:/QQ文件夹/Tencent Files/2512388681/nt_qq/nt_data/Pic/2026-08/Ori/91f2ac6e889735915c585abe2df03e11.png)
+![91f2ac6e889735915c585abe2df03e11](/images/math-modeling/91f2ac6e889735915c585abe2df03e11.png)
 
 
 
@@ -1056,7 +1056,7 @@ plt.tight_layout()
 plt.show()
 ```
 
-![cb520095c8f09659bde26355252b9815](D:/QQ文件夹/Tencent Files/2512388681/nt_qq/nt_data/Pic/2026-08/Ori/cb520095c8f09659bde26355252b9815.png)
+![cb520095c8f09659bde26355252b9815](/images/math-modeling/cb520095c8f09659bde26355252b9815.png)
 
 
 
@@ -1099,7 +1099,7 @@ p1 = (
 p1.draw()
 ```
 
-![678e6ff31b87e217ca6d80d0e12a7e35](D:/QQ文件夹/Tencent Files/2512388681/nt_qq/nt_data/Pic/2026-08/Ori/678e6ff31b87e217ca6d80d0e12a7e35.png)
+![678e6ff31b87e217ca6d80d0e12a7e35](/images/math-modeling/678e6ff31b87e217ca6d80d0e12a7e35.png)
 
 
 
@@ -1142,7 +1142,7 @@ plt.tight_layout()
 plt.show()
 ```
 
-![d0b2fe3928e9b232f2283e41947c3201](D:/QQ文件夹/Tencent Files/2512388681/nt_qq/nt_data/Pic/2026-08/Ori/d0b2fe3928e9b232f2283e41947c3201.png)
+![d0b2fe3928e9b232f2283e41947c3201](/images/math-modeling/d0b2fe3928e9b232f2283e41947c3201.png)
 
 
 
