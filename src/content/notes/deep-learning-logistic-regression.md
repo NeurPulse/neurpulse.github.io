@@ -18,7 +18,7 @@ Sigmoid函数：
 
 ​                   $$ sigmoid(x) = \frac{1}{1 + e^{-x}} $$
 
-![Sigmoid函数](<../../../public/images/deep-learning/0703.png>)
+<img src="../../../public/images/deep-learning/0703.png" alt="Sigmoid函数" style="zoom: 50%;" />
 
 > Sigmoid函数有很好的特性，它的输出值区间为[0,1]，而且只有x取值在0附近时，函数值有明显的变化，其他区间都很非常接近0或者1。
 
@@ -74,7 +74,7 @@ Sigmoid函数：
 
  $$ BCELoss = -log(\hat{y}) $$​ 
 
-![BCELoss y=1](<../../../public/images/deep-learning/0710.png>)
+<img src="../../../public/images/deep-learning/0710.png" alt="img" style="zoom:50%;" />
 
 > 因为Label值为1，预测值为Sigmoid函数的输出，取值为从0到1。从Loss曲线可以看到，当预测值越接近0，Loss值越大，越接近1，Loss值越小。当预测值和Label相等，等于1时，Loss值为0。
 
@@ -82,7 +82,7 @@ Sigmoid函数：
 
  $$ BCELoss = -log(1 - \hat{y}) $$ 
 
-![BCELoss y=0](<../../../public/images/deep-learning/0711.png>)
+<img src="../../../public/images/deep-learning/0711.png" alt="img" style="zoom: 50%;" />
 
 > 因为Label值为0，预测值为Sigmoid函数的输出，取值为从0到1。从Loss曲线可以看到，当预测值越接近1，Loss值越大，越接近0，Loss值越小。当预测值和Label相等，等于0时，Loss值为0。
 
