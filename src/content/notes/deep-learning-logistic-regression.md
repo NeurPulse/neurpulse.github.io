@@ -80,7 +80,7 @@ Sigmoid函数：
 
  $$ BCELoss = -log(\hat{y}) $$​ 
 
-<img src="../../../public/images/deep-learning/0710.png" alt="img"/>
+![img](../../../public/images/deep-learning/0710.png)
 
 > 因为Label值为1，预测值为Sigmoid函数的输出，取值为从0到1。从Loss曲线可以看到，当预测值越接近0，Loss值越大，越接近1，Loss值越小。当预测值和Label相等，等于1时，Loss值为0。
 
@@ -88,7 +88,7 @@ Sigmoid函数：
 
  $$ BCELoss = -log(1 - \hat{y}) $$ 
 
-<img src="../../../public/images/deep-learning/0711.png" alt="img" style="zoom:50%;" />
+![img](../../../public/images/deep-learning/0711.png)
 
 > 因为Label值为0，预测值为Sigmoid函数的输出，取值为从0到1。从Loss曲线可以看到，当预测值越接近1，Loss值越大，越接近0，Loss值越小。当预测值和Label相等，等于0时，Loss值为0。
 
