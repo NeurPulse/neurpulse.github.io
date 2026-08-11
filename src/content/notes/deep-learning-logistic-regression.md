@@ -18,7 +18,7 @@ Sigmoid函数：
 
 ​                   $$ sigmoid(x) = \frac{1}{1 + e^{-x}} $$
 
-<img src="../../../public/images/deep-learning/0703.png" alt="Sigmoid函数" style="zoom: 50%;" />
+![Sigmoid函数](<../../../public/images/deep-learning/0703.png>)
 
 > Sigmoid函数有很好的特性，它的输出值区间为[0,1]，而且只有x取值在0附近时，函数值有明显的变化，其他区间都很非常接近0或者1。
 
@@ -60,6 +60,12 @@ Sigmoid函数：
 >
 > 在逻辑回归里，Sigmoid函数的输入是线性回归的结果，所以线性回归的作用，就是将Feature通过参数w和b的线性变化，让正例的线性变化结果大于0，让负例的线性变化结果小于0。再由Sigmoid函数将线性回归的结果映射到0-1之间。
 
+
+
+
+
+
+
 ### 逻辑回归损失函数
 
 > 训练一个模型，就需要定义损失函数，然后利用梯度下降算法，让损失越来越小。最终得到让损失最小的模型参数。
@@ -74,7 +80,7 @@ Sigmoid函数：
 
  $$ BCELoss = -log(\hat{y}) $$​ 
 
-<img src="../../../public/images/deep-learning/0710.png" alt="img" style="zoom:50%;" />
+<img src="../../../public/images/deep-learning/0710.png" alt="img"/>
 
 > 因为Label值为1，预测值为Sigmoid函数的输出，取值为从0到1。从Loss曲线可以看到，当预测值越接近0，Loss值越大，越接近1，Loss值越小。当预测值和Label相等，等于1时，Loss值为0。
 
@@ -82,7 +88,7 @@ Sigmoid函数：
 
  $$ BCELoss = -log(1 - \hat{y}) $$ 
 
-<img src="../../../public/images/deep-learning/0711.png" alt="img" style="zoom: 50%;" />
+<img src="../../../public/images/deep-learning/0711.png" alt="img" style="zoom:50%;" />
 
 > 因为Label值为0，预测值为Sigmoid函数的输出，取值为从0到1。从Loss曲线可以看到，当预测值越接近1，Loss值越大，越接近0，Loss值越小。当预测值和Label相等，等于0时，Loss值为0。
 
