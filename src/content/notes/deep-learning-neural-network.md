@@ -10,13 +10,13 @@ tags: ['神经网络','反向传播','激活函数','Softmax','多分类']
 
 > 在深度学习的神经网络里，一般按层进行划分。整体上神经网络会被分为输入层，隐藏层，和输出层。输入层就是原始特征，输出层就神经网络最终的输出。除了输入层和输出层，剩下的层都是隐藏层。
 
-<img src="../../../public/images/deep-learning/0806.png" alt="img" style="zoom: 67%;" />
+![img](../../../public/images/deep-learning/0806.png)
 
 > 神经网络中的一层我们叫做线性层（Linear Layer），因为其中每个神经元都是一个线性回归加上激活函数。或者叫做全连接层、稠密层（Dense Layer），因为每一层的每个神经元都和前一层的每个神经元进行连接，所以叫做全连接、稠密连接。
 
 ### 神经网络与矩阵计算
 
-<img src="../../../public/images/deep-learning/0807.png" alt="img" style="zoom:67%;" />
+![img](../../../public/images/deep-learning/0807.png)
 
 解释:
 
@@ -73,7 +73,7 @@ $b_2^1$ 表示第一层第二个神经元的偏置值。
 
 1. $$ sigmoid(x) = \frac{1}{1 + e^{-x}} $$
 
-<img src="../../../public/images/deep-learning/0703.png" alt="img" style="zoom: 50%;" />
+![img](../../../public/images/deep-learning/0703.png)
 
 > 可以将x映射到0到1之间。
 >
@@ -85,11 +85,11 @@ $b_2^1$ 表示第一层第二个神经元的偏置值。
 
 2. $$ tanh(x) = \frac{e^x - e^{-x}}{e^x + e^{-x}} $$
 
-<img src="../../../public/images/deep-learning/0815.png" alt="img" style="zoom: 80%;" />
+![img](../../../public/images/deep-learning/0815.png)
 
 3. $ReLU(x)=max(x,0)$
 
-<img src="../../../public/images/deep-learning/0816.png" alt="img" style="zoom:67%;" />
+![img](../../../public/images/deep-learning/0816.png)
 
 > 当输入当x>0 时，输出为 x；当输入 x≤0 时，输出为 0。
 
@@ -99,7 +99,7 @@ $b_2^1$ 表示第一层第二个神经元的偏置值。
 
 > 其中α*α*一般取小于1的数，比如0.1。这样当x取负值是也会有一个微小的梯度，可以更新参数。
 
-<img src="../../../public/images/deep-learning/0820.png" alt="img" style="zoom:67%;" />
+![img](../../../public/images/deep-learning/0820.png)
 
 ### 神经网络的多分类
 
@@ -162,7 +162,7 @@ $b_2^1$ 表示第一层第二个神经元的偏置值。
 
 #### **网络结构**
 
-<img src="../../../public/images/deep-learning/0821.png" alt="神经网络图" style="zoom:67%;" />
+![神经网络图](../../../public/images/deep-learning/0821.png)
 
 - **输入**：2 个特征 x₁, x₂
 - **隐藏层 1**：2 个神经元，权重矩阵 W¹ (2×2)，偏置 b¹ (1×2)
@@ -368,5 +368,5 @@ $x$是输入向量，$y$是one-hot的label向量。
 
  $$ a^0 = x $$
 
-<img src="../../../public/images/deep-learning/backprop-1.png" alt="image-20260702104414688" style="zoom:67%;" />
+![image-20260702104414688](../../../public/images/deep-learning/backprop-1.png)
 

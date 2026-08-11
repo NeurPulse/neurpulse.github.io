@@ -37,6 +37,12 @@ for (const name of readdirSync(notesDir)) {
     '(../../../public/images/math-modeling/$1)'
   );
 
+  // Typora 把 ![]() markdown 图片转成了 <img> HTML 标签（Astro 不处理 <img> 相对路径）
+  content = content.replace(
+    /<img src="(\.\.\/\.\.\/\.\.\/public\/images\/[^"]+)" alt="([^"]*)"[^>]*\/>/g,
+    '![$2]($1)'
+  );
+
   if (content !== original) {
     writeFileSync(file, content, 'utf8');
     console.log(`  已修复: ${name}`);
