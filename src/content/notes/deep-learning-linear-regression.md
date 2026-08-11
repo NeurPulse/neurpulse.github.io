@@ -124,3 +124,273 @@ $$ h_w(x) = w_0 + w_1 x_1 + w_2 x_2 + \dots + w_n x_n $$
 
 > 如果模型有多个特征，还可以构造出多个特征之间相乘的高次项。
 
+
+
+### 实现多元线性回归：
+#### 已知条件
+
+##### 数据
+
+| 温度 | 价格 (元) | 销量 (个) |
+| ---- | --------- | --------- |
+| 10   | 3         | 60        |
+| 20   | 3         | 85        |
+| 25   | 3         | 100       |
+| 28   | 2.5       | 120       |
+| 30   | 2         | 140       |
+| 35   | 2.5       | 145       |
+| 40   | 2.5       | 163       |
+
+#### 多元线性回归公式
+
+我们用$x_1$表示温度，$x_2$表示价格，$y$表示销量。
+$w_0$表示截距，$w_1$表示温度对应的权重，$w_2$表示价格对应的权重。
+则预测的销量为：
+$$
+\hat{y} = w_0 + w_1x_1 + w_2x_2
+$$
+
+#### 损失函数
+损失函数我们用MSE，我们有7个数据，所以：
+$$
+loss = \frac{1}{7}\sum_{i=1}^{7}(\hat{y}^i - y^i)^2
+$$
+带入线性回归方程有：
+$$
+loss = \frac{1}{7}\sum_{i=1}^{7}(w_0 + w_1x_1^i + w_2x_2^i - y^i)^2
+$$
+
+#### 用梯度下降算法更新参数
+
+我们用梯度下降算法逐步来更新参数$w_0,w_1,w_2$。
+
+#### 梯度计算
+
+利用损失函数对每个参数求偏导：
+- $w_0$的偏导数：
+  $$
+  \frac{\partial loss}{\partial w_0} = \frac{2}{7}\sum_{i=1}^{7}(w_0 + w_1x_1^i + w_2x_2^i - y^i)
+  $$
+- $w_1$的偏导数：
+  $$
+  \frac{\partial loss}{\partial w_1} = \frac{2}{7}\sum_{i=1}^{7}(w_0 + w_1x_1^i + w_2x_2^i - y^i) \cdot x_1^i
+  $$
+- $w_2$的偏导数：
+  $$
+  \frac{\partial loss}{\partial w_2} = \frac{2}{7}\sum_{i=1}^{7}(w_0 + w_1x_1^i + w_2x_2^i - y^i) \cdot x_2^i
+  $$
+  
+
+#### 参数更新
+
+在每次迭代中，参数按照以下规则更新：
+
+$$
+w_0 = w_0 - lr \cdot \frac{\partial loss}{\partial w_0}
+$$
+
+$$
+w_1 = w_1 - lr \cdot \frac{\partial loss}{\partial w_1}
+$$
+
+$$
+w_2 = w_2 - lr \cdot \frac{\partial loss}{\partial w_2}
+$$
+
+其中$lr$为学习率。
+
+~~~python
+# Feature 数据
+X = [[10, 3], [20, 3], [25, 3], [28, 2.5], [30, 2], [35, 2.5], [40, 2.5]]
+y = [60, 85, 100, 120, 140, 145, 163]  # Label 数据
+# 初始化参数
+w = [0.0, 0.0, 0.0]  # w0, w1, w2
+lr = 0.0001  # 学习率
+num_iterations = 10000  # 迭代次数
+# 梯度下降
+for i in range(num_iterations):
+    # 预测值 列表形式
+    y_pred = [w[0] + w[1] * x[0] + w[2] * x[1] for x in X]
+    # 计算损失
+    loss = sum((y_pred[j] - y[j]) ** 2 for j in range(len(y))) / len(y)
+    # 计算梯度
+    grad_w0 = 2 * sum(y_pred[j] - y[j] for j in range(len(y))) / len(y)
+    grad_w1 = 2 * sum((y_pred[j] - y[j]) * X[j][0] for j in range(len(y))) / len(y)
+    grad_w2 = 2 * sum((y_pred[j] - y[j]) * X[j][1] for j in range(len(y))) / len(y)
+    # 更新参数
+    w[0] -= lr * grad_w0
+    w[1] -= lr * grad_w1
+    w[2] -= lr * grad_w2
+    # 打印损失
+    if i % 100 == 0:
+        print(f"Iteration {i}: Loss = {loss}")
+# 输出最终参数
+print(f"Final parameters: w0 = {w[0]}, w1 = {w[1]}, w2 = {w[2]}")
+~~~
+
+
+
+```python
+# ============================================================
+# 多元线性回归 — 梯度下降手写实现（MSE 损失）
+# 模型公式: y_hat = w0 + w1 * x1 + w2 * x2
+# ============================================================
+
+# --- 1. 数据 ---
+# X: 7 个样本，每个样本有 2 个特征（例如 x1=面积, x2=房间数）
+#    每个 x 是一个 [特征1, 特征2] 的列表
+X = [[10, 3], [20, 3], [25, 3], [28, 2.5], [30, 2], [35, 2.5], [40, 2.5]]
+y = [60, 85, 100, 120, 140, 145, 163]  # 真实标签（房价，单位：万）
+
+# --- 2. 初始化参数 ---
+w = [0.0, 0.0, 0.0]   # [w0(偏置/截距), w1(特征1权重), w2(特征2权重)]
+lr = 0.0001            # 学习率：控制每次参数更新的步长，太大会震荡，太小收敛慢
+num_iterations = 10000 # 迭代次数：梯度下降走多少步
+
+# --- 3. 梯度下降循环 ---
+for i in range(num_iterations):
+
+    # 3.1 计算所有样本的预测值（列表推导式）
+    #     等价于:
+    #     y_pred = []
+    #     for x in X:
+    #         pred = w[0] + w[1] * x[0] + w[2] * x[1]
+    #         y_pred.append(pred)
+    #
+    #     x[0] = 样本的第1个特征, x[1] = 样本的第2个特征
+    #     这里必须用列表 [...]，不能用生成器 (...)，因为后面要多次遍历并做索引取值
+    y_pred = [w[0] + w[1] * x[0] + w[2] * x[1] for x in X]
+
+    # 3.2 计算均方误差损失: MSE = (1/n) * Σ(预测值 - 真实值)²
+    loss = sum((y_pred[j] - y[j]) ** 2 for j in range(len(y))) / len(y)
+
+    # 3.3 计算梯度（MSE 对每个参数的偏导数）
+    #     grad_w0 = ∂loss/∂w0 = (2/n) * Σ(预测值 - 真实值)
+    #     grad_w1 = ∂loss/∂w1 = (2/n) * Σ(预测值 - 真实值) * x1
+    #     grad_w2 = ∂loss/∂w2 = (2/n) * Σ(预测值 - 真实值) * x2
+    #
+    #     梯度的含义: 损失函数在当前参数处的"坡度"，
+    #     指向损失上升最快的方向，所以更新时往反方向（负梯度）走
+    grad_w0 = 2 * sum(y_pred[j] - y[j] for j in range(len(y))) / len(y)
+    grad_w1 = 2 * sum((y_pred[j] - y[j]) * X[j][0] for j in range(len(y))) / len(y)
+    grad_w2 = 2 * sum((y_pred[j] - y[j]) * X[j][1] for j in range(len(y))) / len(y)
+
+    # 3.4 参数更新: w_new = w_old - lr * grad
+    #     沿着梯度的反方向走一小步（步长 = 学习率 × 梯度）
+    w[0] -= lr * grad_w0
+    w[1] -= lr * grad_w1
+    w[2] -= lr * grad_w2
+
+    # 3.5 每 100 次打印一次损失，观察是否在下降
+    if i % 100 == 0:
+        print(f"Iteration {i}: Loss = {loss}")
+
+# --- 4. 输出最终训练结果 ---
+print(f"Final parameters: w0 = {w[0]}, w1 = {w[1]}, w2 = {w[2]}")
+# 最终模型: y ≈ 2.11 + 3.91 * x1 + 3.22 * x2
+```
+
+```python
+Iteration 0: Loss = 14631.285714285714
+Iteration 100: Loss = 76.144943048227
+Iteration 200: Loss = 75.34515908380763
+Iteration 300: Loss = 74.58501440666258
+Iteration 400: Loss = 73.86251347394905
+Iteration 500: Loss = 73.17576121076728
+Iteration 600: Loss = 72.52295795197715
+Iteration 700: Loss = 71.90239463868159
+Iteration 800: Loss = 71.31244825654672
+Iteration 900: Loss = 70.75157750378692
+Iteration 1000: Loss = 70.21831867724987
+Iteration 1100: Loss = 69.71128176562073
+Iteration 1200: Loss = 69.22914673931989
+Iteration 1300: Loss = 68.7706600271886
+Iteration 1400: Loss = 68.33463117056202
+Iteration 1500: Loss = 67.91992964579549
+Iteration 1600: Loss = 67.52548184676445
+Iteration 1700: Loss = 67.15026821928475
+Iteration 1800: Loss = 66.79332053980403
+Iteration 1900: Loss = 66.45371933109946
+Iteration 2000: Loss = 66.13059140808637
+Iteration 2100: Loss = 65.8231075471858
+Iteration 2200: Loss = 65.53048027302972
+Iteration 2300: Loss = 65.25196175659896
+Iteration 2400: Loss = 64.98684181917966
+Iteration 2500: Loss = 64.7344460368146
+Iteration 2600: Loss = 64.49413394018758
+Iteration 2700: Loss = 64.2652973051365
+Iteration 2800: Loss = 64.04735852923301
+Iteration 2900: Loss = 63.83976909009523
+Iteration 3000: Loss = 63.642008081317805
+Iteration 3100: Loss = 63.45358082211327
+Iteration 3200: Loss = 63.27401753695216
+Iteration 3300: Loss = 63.10287210167807
+Iteration 3400: Loss = 62.93972085275144
+Iteration 3500: Loss = 62.784161456443094
+Iteration 3600: Loss = 62.635811834959654
+Iteration 3700: Loss = 62.49430914663436
+Iteration 3800: Loss = 62.35930881746174
+Iteration 3900: Loss = 62.23048362139032
+Iteration 4000: Loss = 62.10752280691907
+Iteration 4100: Loss = 61.99013126766744
+Iteration 4200: Loss = 61.87802875470216
+Iteration 4300: Loss = 61.770949128522616
+Iteration 4400: Loss = 61.66863964870333
+Iteration 4500: Loss = 61.570860299303284
+Iteration 4600: Loss = 61.47738314823518
+Iteration 4700: Loss = 61.387991738890285
+Iteration 4800: Loss = 61.302480512391995
+Iteration 4900: Loss = 61.22065425893586
+Iteration 5000: Loss = 61.14232759675425
+Iteration 5100: Loss = 61.067324477311374
+Iteration 5200: Loss = 60.99547771541081
+Iteration 5300: Loss = 60.92662854296058
+Iteration 5400: Loss = 60.86062618520397
+Iteration 5500: Loss = 60.79732745828501
+Iteration 5600: Loss = 60.73659638707648
+Iteration 5700: Loss = 60.67830384224716
+Iteration 5800: Loss = 60.622327195602246
+Iteration 5900: Loss = 60.56854999277664
+Iteration 6000: Loss = 60.51686164240532
+Iteration 6100: Loss = 60.46715712094362
+Iteration 6200: Loss = 60.41933669234987
+Iteration 6300: Loss = 60.37330564187844
+Iteration 6400: Loss = 60.32897402327734
+Iteration 6500: Loss = 60.286256418712604
+Iteration 6600: Loss = 60.24507171077988
+Iteration 6700: Loss = 60.205342865993806
+Iteration 6800: Loss = 60.16699672917894
+Iteration 6900: Loss = 60.12996382821093
+Iteration 7000: Loss = 60.094178188589275
+Iteration 7100: Loss = 60.05957715734553
+Iteration 7200: Loss = 60.0261012358164
+Iteration 7300: Loss = 59.99369392083711
+Iteration 7400: Loss = 59.96230155392858
+Iteration 7500: Loss = 59.93187317807916
+Iteration 7600: Loss = 59.90236040173598
+Iteration 7700: Loss = 59.87371726964342
+Iteration 7800: Loss = 59.84590014018527
+Iteration 7900: Loss = 59.818867568901666
+Iteration 8000: Loss = 59.79258019787044
+Iteration 8100: Loss = 59.76700065065866
+Iteration 8200: Loss = 59.74209343256111
+Iteration 8300: Loss = 59.717824835863375
+Iteration 8400: Loss = 59.694162849873486
+Iteration 8500: Loss = 59.67107707548274
+Iteration 8600: Loss = 59.64853864402952
+Iteration 8700: Loss = 59.62652014024667
+Iteration 8800: Loss = 59.60499552908839
+Iteration 8900: Loss = 59.583940086242016
+Iteration 9000: Loss = 59.56333033213691
+Iteration 9100: Loss = 59.54314396927699
+Iteration 9200: Loss = 59.523359822727635
+Iteration 9300: Loss = 59.50395778359869
+Iteration 9400: Loss = 59.48491875537359
+Iteration 9500: Loss = 59.46622460294042
+Iteration 9600: Loss = 59.447858104188015
+Iteration 9700: Loss = 59.42980290404065
+Iteration 9800: Loss = 59.412043470806005
+Iteration 9900: Loss = 59.394565054720495
+Final parameters: w0 = 2.111728802228473, w1 = 3.9059202091756244, w2 = 3.21719404307381
+```
+
