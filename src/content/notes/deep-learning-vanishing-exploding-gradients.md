@@ -46,7 +46,7 @@ $$
 
 ### 2.1 Sigmoid — 不适合隐藏层
 
-![sigmoid](http://rethink.fun/imgs/0818.png)
+![sigmoid](../../../public/images/deep-learning/0818.png)
 
 | 属性 | 值 |
 |------|-----|
@@ -59,7 +59,7 @@ $$
 
 ### 2.2 Tanh — 比 Sigmoid 好，但仍有问题
 
-![tanh](http://rethink.fun/imgs/0819.png)
+![tanh](../../../public/images/deep-learning/0819.png)
 
 | 属性 | 值 |
 |------|-----|
@@ -70,7 +70,7 @@ $$
 
 ### 2.3 ReLU — 深度学习默认选择
 
-![RELU](http://rethink.fun/imgs/0839.png)
+![RELU](../../../public/images/deep-learning/0839.png)
 
 | 属性 | 值 |
 |------|-----|
