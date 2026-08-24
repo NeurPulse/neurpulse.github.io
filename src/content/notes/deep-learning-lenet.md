@@ -2,6 +2,7 @@
 title: '深度学习:LeNet — 第一个成功的卷积神经网络'
 description: '理解 LeNet-5 的里程碑地位、逐层网络结构与尺寸变化、PyTorch 实现，以及它开创的卷积+池化+全连接范式如何奠定现代 CNN 的基础'
 pubDate: 2026-08-16
+order: 33
 category: '深度学习'
 tags: ['LeNet', 'LeNet-5', 'CNN', '卷积神经网络', '手写数字识别']
 ---

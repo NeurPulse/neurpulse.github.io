@@ -2,6 +2,7 @@
 title: 'LSTM 股价预测笔记：原理与 PyTorch 实现'
 description: 'LSTM 的门控机制推导、股价预测中的数据构造细节，以及一个最小可复现的 PyTorch 实现。'
 pubDate: 2026-08-01
+order: 47
 category: '深度学习'
 tags: ['LSTM', '时间序列', 'PyTorch']
 featured: False

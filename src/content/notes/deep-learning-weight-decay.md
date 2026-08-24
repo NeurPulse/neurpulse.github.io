@@ -2,6 +2,7 @@
 title: '深度学习:权重衰减 — 直接缩小参数的防过拟合技术'
 description: '理解权重衰减的原理（每次更新时直接缩小参数）、与 L2 正则化在 SGD 下等价但在 Adam 下不等价的数学推导，以及 PyTorch 中的一行实现'
 pubDate: 2026-08-12
+order: 18
 category: '深度学习'
 tags: ['权重衰减', 'Weight Decay', 'L2正则化', '过拟合', 'Adam']
 ---

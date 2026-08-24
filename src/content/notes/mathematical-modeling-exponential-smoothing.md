@@ -2,6 +2,7 @@
 title: '数学建模：时间序列之指数平滑法'
 description: '常用于大趋势建模'
 pubDate: 2026-08-10
+order: 8
 category: '数学建模'
 tags: ['指数平滑法']
 

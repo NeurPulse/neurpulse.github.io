@@ -2,6 +2,7 @@
 title: '深度学习:目标检测 — 从分类定位到 YOLO'
 description: '理解目标检测与图像分类的区别、边界框与 Ground Truth 的标注格式、分类+定位的联合损失设计、滑动窗口法与卷积共享计算，以及 R-CNN 和 YOLO 两大流派'
 pubDate: 2026-08-17
+order: 40
 category: '深度学习'
 tags: ['目标检测', '边界框', '滑动窗口', 'R-CNN', 'YOLO', '定位']
 ---

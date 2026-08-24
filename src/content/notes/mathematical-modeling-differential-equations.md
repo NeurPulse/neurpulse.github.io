@@ -2,6 +2,7 @@
 title: '数学建模：微分方程'
 description: '微分方程基础、数值解法与Python实现'
 pubDate: 2026-08-07
+order: 5
 category: '数学建模'
 tags: ['微分方程','数值方法','SciPy','SymPy']
 ---

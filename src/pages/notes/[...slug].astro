@@ -3,38 +3,70 @@ import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import TableOfContents from '../../components/TableOfContents.astro';
 import PostNav from '../../components/PostNav.astro';
+import SeriesNavigation from '../../components/SeriesNavigation.astro';
 import { formatDate } from '../../utils/date';
+import { compareReadingOrder } from '../../utils/post-order';
 
 export async function getStaticPaths() {
-  // 按时间升序，上一篇 = 更早，下一篇 = 更新
-  const posts = (await getCollection('notes', ({ data }) => !data.draft)).sort(
-    (a, b) => a.data.pubDate.valueOf() - b.data.pubDate.valueOf()
-  );
-  return posts.map((post, i) => ({
-    params: { slug: post.id },
-    props: {
-      post,
-      prev:
-        i > 0
-          ? { id: posts[i - 1].id, title: posts[i - 1].data.title }
-          : null,
-      next:
-        i < posts.length - 1
-          ? { id: posts[i + 1].id, title: posts[i + 1].data.title }
-          : null,
-    },
-  }));
+  const posts = await getCollection('notes', ({ data }) => !data.draft);
+
+  const byCategory = new Map<string, typeof posts>();
+  for (const post of posts) {
+    const list = byCategory.get(post.data.category) ?? [];
+    list.push(post);
+    byCategory.set(post.data.category, list);
+  }
+  for (const list of byCategory.values()) list.sort(compareReadingOrder);
+
+  return posts.map((post) => {
+    const series = byCategory.get(post.data.category) ?? [post];
+    const index = series.findIndex((item) => item.id === post.id);
+    return {
+      params: { slug: post.id },
+      props: {
+        post,
+        series: series.map((item) => ({
+          id: item.id,
+          title: item.data.title,
+        })),
+        prev:
+          index > 0
+            ? { id: series[index - 1].id, title: series[index - 1].data.title }
+            : null,
+        next:
+          index < series.length - 1
+            ? { id: series[index + 1].id, title: series[index + 1].data.title }
+            : null,
+      },
+    };
+  });
 }
 
-const { post, prev, next } = Astro.props;
+const { post, series, prev, next } = Astro.props;
 const { Content, headings } = await render(post);
+const currentIndex = series.findIndex((item) => item.id === post.id);
 ---
 
 <BaseLayout title={post.data.title} description={post.data.description} wide>
-  <div class="post-wrapper">
-    <div>
+  <div class:list={['post-wrapper', { 'single-series': series.length <= 1 }]}>
+    {
+      series.length > 1 && (
+        <aside class="series-sidebar">
+          <SeriesNavigation
+            posts={series}
+            currentId={post.id}
+            category={post.data.category}
+          />
+        </aside>
+      )
+    }
+    <div class="post-main">
       <a href="/notes/" class="back-link">← 返回笔记列表</a>
       <div class="post-header">
+        <div class="reading-status">
+          <span>{post.data.category}</span>
+          <span>第 {currentIndex + 1} / {series.length} 篇</span>
+        </div>
         <h1>{post.data.title}</h1>
         <div class="post-meta">
           <time>{formatDate(post.data.pubDate)}</time>
@@ -57,11 +89,27 @@ const { Content, headings } = await render(post);
           )
         }
       </div>
+      {
+        series.length > 1 && (
+          <details class="series-mobile">
+            <summary>
+              查看“{post.data.category}”专题目录（{currentIndex + 1}/{series.length}）
+            </summary>
+            <SeriesNavigation
+              posts={series}
+              currentId={post.id}
+              category={post.data.category}
+            />
+          </details>
+        )
+      }
       <article class="prose">
         <Content />
       </article>
       <PostNav prev={prev} next={next} base="/notes" />
     </div>
-    <TableOfContents headings={headings} />
+    <aside class="toc-sidebar">
+      <TableOfContents headings={headings} />
+    </aside>
   </div>
 </BaseLayout>

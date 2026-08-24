@@ -2,6 +2,7 @@
 title: '深度学习:激活函数 — Sigmoid、Tanh、ReLU、Leaky ReLU'
 description: '理解激活函数的核心作用（引入非线性）、若无激活函数则多层退化为单层的数学证明，以及四种常用激活函数的公式、图像与适用场景'
 pubDate: 2026-08-11
+order: 9
 category: '深度学习'
 tags: ['激活函数', 'Sigmoid', 'Tanh', 'ReLU', 'Leaky ReLU', '非线性']
 ---

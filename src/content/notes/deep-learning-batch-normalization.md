@@ -2,6 +2,7 @@
 title: '深度学习:批量归一化 — 让深层网络每一层的输入都稳定'
 description: '理解 Batch Normalization 的核心操作（标准化 → 缩放平移）、γ/β 可学习参数的意义、为什么 BN 前不加 bias、推理时的指数加权平均切换，以及 PyTorch 实现'
 pubDate: 2026-08-12
+order: 26
 category: '深度学习'
 tags: ['Batch Normalization', '批量归一化', 'BN', '训练稳定性', '正则化']
 ---

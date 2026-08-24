@@ -2,6 +2,7 @@
 title: '深度学习:词典生成 — Token、特殊符号与 BPE 算法'
 description: '理解 NLP 中 Token 与词典的概念、特殊 Token（UNK/BOS/EOS/SEP）的作用、词典大小的设计权衡，以及字节对编码 BPE 算法如何用词根思想构建词典'
 pubDate: 2026-08-17
+order: 45
 category: '深度学习'
 tags: ['词典', 'Token', 'BPE', '字节对编码', '分词', 'NLP']
 ---

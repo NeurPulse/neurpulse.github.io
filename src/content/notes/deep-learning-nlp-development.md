@@ -2,6 +2,7 @@
 title: '深度学习:自然语言处理的发展 — 从规则到 ChatGPT'
 description: '理解 NLP 四个发展阶段的演进逻辑（人工规则→概率统计→神经网络→大语言模型），以及每个阶段的代表方法、突破与局限'
 pubDate: 2026-08-17
+order: 42
 category: '深度学习'
 tags: ['NLP', '自然语言处理', 'Transformer', '大语言模型', 'Word2Vec', '发展史']
 ---

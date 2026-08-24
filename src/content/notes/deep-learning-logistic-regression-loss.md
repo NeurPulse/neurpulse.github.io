@@ -2,6 +2,7 @@
 title: '深度学习:逻辑回归的损失函数 — 为什么用交叉熵而不是 MSE'
 description: '从 MSE 在逻辑回归上的失败出发，理解二分类交叉熵损失（BCELoss）的设计动机、数学形式、统一公式和损失曲面的优越性'
 pubDate: 2026-08-11
+order: 5
 category: '深度学习'
 tags: ['逻辑回归', '损失函数', '交叉熵', 'BCELoss', 'MSE']
 ---

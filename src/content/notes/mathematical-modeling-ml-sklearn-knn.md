@@ -2,6 +2,7 @@
 title: '数学建模：scikit-learn与KNN'
 description: 'scikit-learn入门与基于距离的KNN模型'
 pubDate: 2026-08-07
+order: 9
 category: '数学建模'
 tags: ['scikit-learn','KNN','机器学习']
 ---

@@ -2,6 +2,7 @@
 title: '数学建模：统计模型与假设检验'
 description: '统计分布、假设检验、t检验与回归分析'
 pubDate: 2026-08-07
+order: 3
 category: '数学建模'
 tags: ['统计','假设检验','t检验','回归','SciPy']
 ---

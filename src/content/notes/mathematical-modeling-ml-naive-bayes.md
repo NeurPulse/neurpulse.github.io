@@ -2,6 +2,7 @@
 title: '数学建模：朴素贝叶斯'
 description: '朴素贝叶斯分类器的原理与应用'
 pubDate: 2026-08-07
+order: 10
 category: '数学建模'
 tags: ['朴素贝叶斯','分类','机器学习']
 ---

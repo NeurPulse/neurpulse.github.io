@@ -2,6 +2,7 @@
 title: '数学建模：聚类算法'
 description: 'K-Means、DBSCAN等无监督聚类方法'
 pubDate: 2026-08-07
+order: 13
 category: '数学建模'
 tags: ['聚类','K-Means','DBSCAN','无监督学习']
 ---

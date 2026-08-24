@@ -2,6 +2,7 @@
 title: '深度学习:Adam 优化器 — Momentum + RMSProp = 默认选择'
 description: '理解 Adam 如何融合动量（一阶矩）与 RMSProp（二阶矩）、偏差修正的作用、各超参数的默认值，以及它在显存上的代价'
 pubDate: 2026-08-12
+order: 25
 category: '深度学习'
 tags: ['Adam', '优化器', 'Momentum', 'RMSProp', '自适应学习率']
 ---

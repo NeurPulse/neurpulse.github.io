@@ -2,6 +2,7 @@
 title: '深度学习:ResNet 实现 — BasicBlock、Bottleneck 与整体架构'
 description: '理解 ResNet 六阶段整体架构、BasicBlock 与 Bottleneck 两种残差块的实现细节、下采样捷径连接的 1×1 卷积，以及 BatchNorm 在卷积网络中的通道维度处理'
 pubDate: 2026-08-16
+order: 38
 category: '深度学习'
 tags: ['ResNet', 'BasicBlock', 'Bottleneck', '残差块', '下采样', '实现']
 ---

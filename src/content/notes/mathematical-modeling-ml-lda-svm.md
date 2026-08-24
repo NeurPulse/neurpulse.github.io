@@ -2,6 +2,7 @@
 title: '数学建模：线性判别与支持向量机'
 description: '线性判别分析（LDA）与支持向量机（SVM）'
 pubDate: 2026-08-07
+order: 11
 category: '数学建模'
 tags: ['线性判别','SVM','机器学习','分类']
 ---

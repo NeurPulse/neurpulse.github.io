@@ -2,6 +2,7 @@
 title: '数学建模：数据预处理与插值'
 description: '数据清洗、标准化与插值方法'
 pubDate: 2026-08-07
+order: 1
 category: '数学建模'
 tags: ['数据预处理','插值','Pandas','Scikit-learn']
 ---

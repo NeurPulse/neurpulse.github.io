@@ -2,9 +2,10 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PostCard from '../../components/PostCard.astro';
+import { compareCategories, compareReadingOrder } from '../../utils/post-order';
 
 const posts = (await getCollection('notes', ({ data }) => !data.draft)).sort(
-  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+  compareReadingOrder
 );
 
 // 按分类分组，保持日期排序
@@ -14,20 +15,41 @@ for (const p of posts) {
   list.push(p);
   byCategory.set(p.data.category, list);
 }
+
+const categories = [...byCategory.entries()].sort(([a], [b]) =>
+  compareCategories(a, b)
+);
 ---
 
 <BaseLayout title="学习笔记">
   <h1>学习笔记</h1>
+  <p class="page-intro">
+    选择一个专题，从第 1 篇开始按顺序阅读。进入文章后，可以通过专题目录和上一篇、下一篇连续学习。
+  </p>
+  <nav class="category-jumps" aria-label="笔记专题">
+    {
+      categories.map(([category, list], index) => (
+        <a href={`#category-${index}`}>
+          {category}<span>{list.length}</span>
+        </a>
+      ))
+    }
+  </nav>
   {
-    [...byCategory.entries()].map(([category, list]) => (
-      <section>
+    categories.map(([category, list], categoryIndex) => (
+      <section id={`category-${categoryIndex}`} class="note-category">
         <div class="section-head">
           <h2>
             {category}
-            <span class="count">{list.length} 篇</span>
+            <span class="count">{list.length} 篇 · 按学习顺序</span>
           </h2>
         </div>
-        {list.map((p) => <PostCard post={p} base="/notes" />)}
+        {list.map((p, index) => (
+          <div class="ordered-post">
+            <span class="order-number">{String(index + 1).padStart(2, '0')}</span>
+            <PostCard post={p} base="/notes" />
+          </div>
+        ))}
       </section>
     ))
   }

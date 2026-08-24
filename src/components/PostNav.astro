@@ -15,23 +15,26 @@ const { prev, next, base } = Astro.props;
 
 {
   (prev || next) && (
-    <nav class="post-nav">
-      {prev ? (
-        <a href={`${base}/${prev.id}/`}>
-          <span class="nav-label">← 上一篇</span>
-          <span class="nav-title">{prev.title}</span>
-        </a>
-      ) : (
-        <span class="spacer" />
-      )}
-      {next ? (
-        <a href={`${base}/${next.id}/`} class="next">
-          <span class="nav-label">下一篇 →</span>
-          <span class="nav-title">{next.title}</span>
-        </a>
-      ) : (
-        <span class="spacer" />
-      )}
-    </nav>
+    <div class="post-nav-wrap">
+      <div class="post-nav-heading">继续学习本专题</div>
+      <nav class="post-nav" aria-label="专题上一篇和下一篇">
+        {prev ? (
+          <a href={`${base}/${prev.id}/`}>
+            <span class="nav-label">← 上一篇</span>
+            <span class="nav-title">{prev.title}</span>
+          </a>
+        ) : (
+          <span class="spacer" />
+        )}
+        {next ? (
+          <a href={`${base}/${next.id}/`} class="next">
+            <span class="nav-label">下一篇 →</span>
+            <span class="nav-title">{next.title}</span>
+          </a>
+        ) : (
+          <span class="spacer" />
+        )}
+      </nav>
+    </div>
   )
 }

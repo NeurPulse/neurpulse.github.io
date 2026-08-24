@@ -2,6 +2,7 @@
 title: '深度学习:语言模型采样 — 生成策略与随机性控制'
 description: '理解语言模型计算序列概率与逐词生成文本的机制、贪婪策略的陷阱与 Beam Search 的改进，以及 Top-k、Top-p、Temperature 三种随机生成策略'
 pubDate: 2026-08-17
+order: 46
 category: '深度学习'
 tags: ['语言模型', '文本生成', 'Beam Search', 'Top-k', 'Top-p', 'Temperature']
 ---

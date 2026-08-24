@@ -2,6 +2,7 @@
 title: '自动求导'
 description: ''
 pubDate: 2026-08-07
+order: 3
 category: 'PyTorch'
 tags: ['梯度']
 ---

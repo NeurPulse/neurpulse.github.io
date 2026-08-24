@@ -2,6 +2,7 @@
 title: '数学建模：树模型与集成学习'
 description: '决策树、随机森林、XGBoost等集成方法'
 pubDate: 2026-08-07
+order: 12
 category: '数学建模'
 tags: ['决策树','随机森林','XGBoost','集成学习','机器学习']
 ---

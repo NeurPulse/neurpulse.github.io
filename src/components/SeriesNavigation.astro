@@ -1,0 +1,42 @@
+---
+interface SeriesPost {
+  id: string;
+  title: string;
+}
+
+interface Props {
+  posts: SeriesPost[];
+  currentId: string;
+  category: string;
+}
+
+const { posts, currentId, category } = Astro.props;
+const currentIndex = posts.findIndex((post) => post.id === currentId);
+---
+
+<nav class="series-nav" aria-label={`${category}专题阅读顺序`}>
+  <div class="series-nav-head">
+    <div>
+      <span class="series-kicker">专题阅读</span>
+      <strong>{category}</strong>
+    </div>
+    <span class="series-progress">
+      {currentIndex + 1} / {posts.length}
+    </span>
+  </div>
+  <ol class="series-list">
+    {
+      posts.map((post, index) => (
+        <li class:list={[{ current: post.id === currentId }]}>
+          <a
+            href={`/notes/${post.id}/`}
+            aria-current={post.id === currentId ? 'page' : undefined}
+          >
+            <span>{String(index + 1).padStart(2, '0')}</span>
+            {post.title}
+          </a>
+        </li>
+      ))
+    }
+  </ol>
+</nav>

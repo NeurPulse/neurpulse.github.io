@@ -2,6 +2,7 @@
 title: '深度学习:一元逻辑回归 — 从 Sigmoid 到分类决策'
 description: '从线性回归的局限出发，理解 Sigmoid 函数的引入动机、w/b 参数的缩放平移作用，以及逻辑回归作为"线性变换 + 激活函数"原型的本质'
 pubDate: 2026-08-11
+order: 4
 category: '深度学习'
 tags: ['逻辑回归', 'Sigmoid', '分类', '激活函数']
 ---

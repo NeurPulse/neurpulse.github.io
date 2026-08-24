@@ -72,6 +72,7 @@ npm run fix-images
 title: '文章标题'
 description: '一句话描述（会显示在列表里）'
 pubDate: 2026-08-07
+order: 12
 category: '深度学习'
 tags: ['LSTM', '时间序列']
 ---
@@ -86,6 +87,7 @@ tags: ['LSTM', '时间序列']
 | `title` | ✅ | 文章标题 |
 | `description` | 建议 | 列表页显示的简介 |
 | `pubDate` | ✅ | 格式 `YYYY-MM-DD`，列表按它倒序排列 |
+| `order` | 可选 | 当前分类中的阅读顺序；专题目录和上一篇/下一篇会按它排列 |
 | `category` | 建议 | 分类，笔记列表页会按它分组，不填默认"未分类" |
 | `tags` | 可选 | 标签，可以有多个 |
 | `draft` | 可选 | 写 `draft: true` 表示草稿，**不会发布到网站** |

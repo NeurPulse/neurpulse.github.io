@@ -2,6 +2,7 @@
 title: 'PyTorch：基础配置'
 description: '一个PyTorch项目，需要导入一些Python常用的包来帮助我们快速实现功能。'
 pubDate: 2026-08-08
+order: 1
 category: 'PyTorch'
 tags: ['os', 'numpy', 'torch']
 ---

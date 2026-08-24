@@ -2,6 +2,7 @@
 title: '深度学习:GoogLeNet — Inception 模块与多尺度并行卷积'
 description: '理解 Inception 模块"不做选择全都要"的设计思想、1×1 卷积降维如何把参数和计算量缩减到十分之一，以及 GoogLeNet 的架构与辅助分类器的创新'
 pubDate: 2026-08-16
+order: 35
 category: '深度学习'
 tags: ['GoogLeNet', 'Inception', '1×1卷积', '多尺度卷积', 'CNN']
 ---

@@ -2,6 +2,7 @@
 title: '深度学习:手写数字识别 — 从零手动实现 vs PyTorch 框架实现'
 description: '基于 MNIST 数据集，先手动实现一个完整的多分类神经网络（前向/反向/参数更新），再用 PyTorch 的 nn.Module/CrossEntropyLoss/SGD 重写，对比两者理解框架帮我们做了什么'
 pubDate: 2026-08-12
+order: 27
 category: '深度学习'
 tags: ['MNIST', '手写数字识别', '反向传播', 'PyTorch', 'nn.Module', '从零实现']
 ---

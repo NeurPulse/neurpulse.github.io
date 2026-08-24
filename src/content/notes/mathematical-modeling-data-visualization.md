@@ -2,6 +2,7 @@
 title: '数学建模：数据可视化'
 description: 'Matplotlib与Plotnine绘图：柱状图、折线图、堆叠图'
 pubDate: 2026-08-07
+order: 2
 category: '数学建模'
 tags: ['数据可视化','Matplotlib','Plotnine']
 ---

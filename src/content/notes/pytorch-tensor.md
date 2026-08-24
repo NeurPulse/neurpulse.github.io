@@ -2,6 +2,7 @@
 title: '张量'
 description: ''
 pubDate: 2026-08-07
+order: 2
 category: 'PyTorch'
 tags: ['pytorch']
 ---

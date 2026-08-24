@@ -46,6 +46,13 @@ console.log('分类:  ' + CATEGORIES.map((c, i) => `${i + 1}=${c}`).join('  '));
 const catAns = (await rl.question('分类序号 [默认 未分类]: ')).trim();
 const category = CATEGORIES[parseInt(catAns, 10) - 1] ?? '未分类';
 
+const orderAns = (await rl.question('专题内阅读顺序（正整数，可留空排在末尾）: ')).trim();
+if (orderAns && !/^[1-9]\d*$/.test(orderAns)) {
+  console.log('阅读顺序只能是正整数，已取消。');
+  process.exit(1);
+}
+const order = orderAns ? Number(orderAns) : null;
+
 const tagsAns = (await rl.question('标签（逗号分隔，可留空）: ')).trim();
 const tags = tagsAns ? tagsAns.split(/[,，]/).map((t) => t.trim()).filter(Boolean) : [];
 
@@ -57,7 +64,7 @@ const content = `---
 title: ${yaml(title)}
 description: ''
 pubDate: ${today()}
-category: ${yaml(category)}
+${order ? `order: ${order}\n` : ''}category: ${yaml(category)}
 tags: [${tags.map(yaml).join(', ')}]
 ${featured ? 'featured: true\n' : ''}---
 

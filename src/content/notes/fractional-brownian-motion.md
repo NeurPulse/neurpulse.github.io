@@ -2,6 +2,7 @@
 title: '分数布朗运动：定义、性质与模拟方法'
 description: 'fBm 的协方差结构、Hurst 指数的含义，以及基于 Cholesky 分解与 FFT 的模拟方法。'
 pubDate: 2026-07-20
+order: 1
 category: '分数布朗运动'
 tags: ['分数布朗运动', 'Hurst 指数', '随机过程']
 ---

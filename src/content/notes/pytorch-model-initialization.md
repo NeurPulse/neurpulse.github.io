@@ -2,6 +2,7 @@
 title: '模型初始化'
 description: ''
 pubDate: 2026-08-08
+order: 6
 category: 'PyTorch'
 tags: ['模型初始化']
 ---

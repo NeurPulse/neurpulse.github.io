@@ -2,6 +2,7 @@
 title: '数学建模：时间序列'
 description: '介绍什么是时间序列，时间序列的应用'
 pubDate: 2026-08-10
+order: 6
 category: '数学建模'
 tags: ['时间序列']
 ---

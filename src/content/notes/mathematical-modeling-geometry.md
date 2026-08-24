@@ -2,6 +2,7 @@
 title: '数学建模：几何模型'
 description: '向量表示法、旋转矩阵与NumPy线性代数'
 pubDate: 2026-08-07
+order: 4
 category: '数学建模'
 tags: ['几何模型','向量','NumPy','线性代数']
 ---

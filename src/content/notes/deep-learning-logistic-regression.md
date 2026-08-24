@@ -2,6 +2,7 @@
 title: '深度学习：逻辑回归'
 description: 'Sigmoid激活函数、交叉熵损失、二元/多元逻辑回归与多分类'
 pubDate: 2026-08-07
+order: 3
 category: '深度学习'
 tags: ['逻辑回归','Sigmoid','交叉熵','二分类','过拟合','欠拟合']
 ---

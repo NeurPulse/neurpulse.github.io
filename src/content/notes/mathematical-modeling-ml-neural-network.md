@@ -2,6 +2,7 @@
 title: '数学建模：神经网络'
 description: '多层感知机（MLP）与反向传播'
 pubDate: 2026-08-07
+order: 14
 category: '数学建模'
 tags: ['神经网络','MLP','深度学习']
 ---

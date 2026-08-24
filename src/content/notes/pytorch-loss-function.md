@@ -2,6 +2,7 @@
 title: 'PyTorch:损失函数'
 description: ''
 pubDate: 2026-08-08
+order: 7
 category: 'PyTorch'
 tags: ['二分类交叉熵损失函数', '交叉熵损失函数', 'L1损失函数', 'MSE损失函数', '平滑L1 (Smooth L1)损失函数', '目标泊松分布的负对数似然损失', 'KL散度', 'MarginRankingLoss', '多标签边界损失函数', '二分类损失函数', '多分类的折页损失', '三元组损失', 'HingEmbeddingLoss', '余弦相似度', 'CTC损失函数']
 ---

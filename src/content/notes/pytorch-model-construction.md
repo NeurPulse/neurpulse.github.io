@@ -2,6 +2,7 @@
 title: 'Pytorch:模型构建'
 description: ''
 pubDate: 2026-08-08
+order: 5
 category: 'PyTorch'
 tags: ['神经网络的构造方法']
 featured: true
