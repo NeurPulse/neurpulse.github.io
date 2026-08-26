@@ -66,11 +66,11 @@ c_t：细胞状态，偏向长期记忆
 
 可以把 $c_t$ 理解成一条“记忆传送带”。信息沿着时间方向传递，只有在门控机制允许时才被删除或写入。
 
-![LSTM 整体结构图：一个重复模块中包含四个交互层](../../../public/images/deep-learning/lstm/LSTM3-1.png)
+![LSTM 整体结构图：一个重复模块中包含四个交互层](/images/deep-learning/lstm/LSTM3-1.png)
 
 这张图里，最重要的是上方的 $c_{t-1} \to c_t$。它让记忆可以更平滑地跨时间传播，而不是每一步都完全重算。
 
-![LSTM 细胞状态主通道：长期记忆像一条传送带](../../../public\images\deep-learning\lstm\LSTM3-C-line.png)
+![LSTM 细胞状态主通道：长期记忆像一条传送带](/images/deep-learning/lstm/LSTM3-C-line.png)
 
 ---
 
@@ -121,7 +121,7 @@ $$
 f_t = \sigma(x_t W_{xf} + h_{t-1}W_{hf} + b_f)
 $$
 
-![LSTM 遗忘门：控制旧细胞状态保留多少](../../../public\images\deep-learning\lstm\LSTM3-focus-C.png)
+![LSTM 遗忘门：控制旧细胞状态保留多少](/images/deep-learning/lstm/LSTM3-focus-f.png)
 
 
 
@@ -133,13 +133,13 @@ $$
 \tilde{c}_t = \tanh(x_t W_{xc} + h_{t-1}W_{hc} + b_c)
 $$
 
-![LSTM 输入门与候选记忆：决定写入什么新内容](../../../public/images/deep-learning/lstm/LSTM3-focus-i.png)
+![LSTM 输入门与候选记忆：决定写入什么新内容](/images/deep-learning/lstm/LSTM3-focus-i.png)
 
 $$
 c_t = f_t \odot c_{t-1} + i_t \odot \tilde{c}_t
 $$
 
-![LSTM 细胞状态更新：旧记忆乘遗忘门，新记忆乘输入门后相加](../../../public/images/deep-learning/lstm/LSTM3-focus-C.png)
+![LSTM 细胞状态更新：旧记忆乘遗忘门，新记忆乘输入门后相加](/images/deep-learning/lstm/LSTM3-focus-C.png)
 
 $$
 o_t = \sigma(x_t W_{xo} + h_{t-1}W_{ho} + b_o)
@@ -149,7 +149,7 @@ $$
 h_t = o_t \odot \tanh(c_t)
 $$
 
-![LSTM 输出门：决定细胞状态中哪些内容暴露为当前隐状态](../../../public\images\deep-learning\lstm\LSTM3-focus-o.png)
+![LSTM 输出门：决定细胞状态中哪些内容暴露为当前隐状态](/images/deep-learning/lstm/LSTM3-focus-o.png)
 
 这几行公式可以按顺序理解：
 
