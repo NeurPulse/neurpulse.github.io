@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="420" viewBox="0 0 980 420" role="img" aria-labelledby="title desc">
+  <title id="title">RNN 从折叠结构到时间展开结构</title>
+  <desc id="desc">左侧展示带循环箭头的 RNN 单元，右侧展示同一个 RNN 单元在时间维度上展开并共享参数。</desc>
+  <defs>
+    <style>
+      .bg{fill:#fbfcff}
+      .card{fill:#fff;stroke:#e2e8f0;stroke-width:2;rx:22}
+      .cell{fill:#eff6ff;stroke:#3b82f6;stroke-width:2.5;rx:18}
+      .x{fill:#ecfdf5;stroke:#22c55e;stroke-width:2;rx:12}
+      .y{fill:#fff7ed;stroke:#f97316;stroke-width:2;rx:12}
+      .h{fill:#f5f3ff;stroke:#8b5cf6;stroke-width:2;rx:12}
+      .title{font:700 25px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#172033}
+      .label{font:700 18px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#24324a}
+      .text{font:15px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#64748b}
+      .small{font:13px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#64748b}
+      .arrow{stroke:#64748b;stroke-width:2.4;fill:none;marker-end:url(#arrow)}
+      .blue{stroke:#3b82f6}
+      .purple{stroke:#8b5cf6}
+      .dash{stroke-dasharray:7 6}
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" width="980" height="420" rx="26"/>
+  <text class="title" x="42" y="52">RNN 的两种看法：折叠结构与时间展开</text>
+  <text class="text" x="42" y="82">左边是“一个带记忆的模块”，右边是它处理序列时在时间维度上的展开。</text>
+
+  <rect class="card" x="42" y="120" width="300" height="240"/>
+  <text class="label" x="72" y="158">折叠看法</text>
+  <rect class="x" x="92" y="278" width="80" height="42"/>
+  <text class="label" x="122" y="305">xₜ</text>
+  <rect class="cell" x="108" y="190" width="150" height="68"/>
+  <text class="label" x="145" y="230">RNN</text>
+  <rect class="y" x="200" y="120" width="80" height="42"/>
+  <text class="label" x="230" y="147">yₜ</text>
+  <path class="arrow" d="M132 277 L156 260"/>
+  <path class="arrow" d="M220 190 L236 164"/>
+  <path class="arrow blue" d="M255 214 C318 214 318 270 250 270 C215 270 205 258 205 258"/>
+  <text class="small" x="78" y="342">循环箭头表示：当前状态会传到下一步。</text>
+
+  <rect class="card" x="382" y="120" width="556" height="240"/>
+  <text class="label" x="412" y="158">展开看法</text>
+  <text class="small" x="412" y="182">同一个 RNN Cell 在不同时间步重复使用，参数共享。</text>
+
+  <g transform="translate(420 205)">
+    <rect class="x" x="24" y="95" width="64" height="38"/>
+    <text class="label" x="45" y="121">x₁</text>
+    <rect class="cell" x="0" y="25" width="112" height="56"/>
+    <text class="label" x="26" y="60">RNN</text>
+    <rect class="y" x="24" y="-35" width="64" height="38"/>
+    <text class="label" x="45" y="-10">y₁</text>
+    <path class="arrow" d="M56 94 L56 84"/>
+    <path class="arrow" d="M56 24 L56 6"/>
+  </g>
+
+  <g transform="translate(590 205)">
+    <rect class="x" x="24" y="95" width="64" height="38"/>
+    <text class="label" x="45" y="121">x₂</text>
+    <rect class="cell" x="0" y="25" width="112" height="56"/>
+    <text class="label" x="26" y="60">RNN</text>
+    <rect class="y" x="24" y="-35" width="64" height="38"/>
+    <text class="label" x="45" y="-10">y₂</text>
+    <path class="arrow" d="M56 94 L56 84"/>
+    <path class="arrow" d="M56 24 L56 6"/>
+  </g>
+
+  <g transform="translate(760 205)">
+    <rect class="x" x="24" y="95" width="64" height="38"/>
+    <text class="label" x="45" y="121">x₃</text>
+    <rect class="cell" x="0" y="25" width="112" height="56"/>
+    <text class="label" x="26" y="60">RNN</text>
+    <rect class="y" x="24" y="-35" width="64" height="38"/>
+    <text class="label" x="45" y="-10">y₃</text>
+    <path class="arrow" d="M56 94 L56 84"/>
+    <path class="arrow" d="M56 24 L56 6"/>
+  </g>
+
+  <rect class="h" x="392" y="243" width="52" height="34"/>
+  <text class="small" x="407" y="265">h₀</text>
+  <path class="arrow purple" d="M444 260 L420 260"/>
+  <path class="arrow purple" d="M532 260 L590 260"/>
+  <path class="arrow purple" d="M702 260 L760 260"/>
+  <text class="small" x="552" y="248">h₁</text>
+  <text class="small" x="722" y="248">h₂</text>
+  <path class="arrow dash" d="M872 260 L918 260"/>
+  <text class="small" x="424" y="342">核心：沿时间传递的是隐状态 h，重复使用的是同一套 RNN 参数。</text>
+</svg>

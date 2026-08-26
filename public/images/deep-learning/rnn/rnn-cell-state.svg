@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="360" viewBox="0 0 920 360" role="img" aria-labelledby="title desc">
+  <title id="title">一个 RNN 时间步的内部计算</title>
+  <desc id="desc">上一时刻隐状态和当前输入拼接后进入循环层，得到当前隐状态，再通过输出层得到当前输出。</desc>
+  <defs>
+    <style>
+      .bg{fill:#fbfcff}
+      .box{fill:#fff;stroke:#e2e8f0;stroke-width:2;rx:22}
+      .state{fill:#f5f3ff;stroke:#8b5cf6;stroke-width:2;rx:14}
+      .input{fill:#ecfdf5;stroke:#22c55e;stroke-width:2;rx:14}
+      .core{fill:#eff6ff;stroke:#3b82f6;stroke-width:2.5;rx:18}
+      .out{fill:#fff7ed;stroke:#f97316;stroke-width:2;rx:14}
+      .title{font:700 25px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#172033}
+      .label{font:700 18px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#24324a}
+      .text{font:15px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#64748b}
+      .formula{font:16px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;fill:#334155}
+      .arrow{stroke:#64748b;stroke-width:2.5;fill:none;marker-end:url(#arrow)}
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" width="920" height="360" rx="26"/>
+  <text class="title" x="42" y="52">一个时间步里，RNN 到底算了什么？</text>
+  <text class="text" x="42" y="82">当前输入不是单独被处理，而是和上一时刻的记忆一起决定新的记忆。</text>
+
+  <rect class="box" x="42" y="118" width="836" height="200"/>
+
+  <rect class="state" x="78" y="172" width="110" height="54"/>
+  <text class="label" x="111" y="205">hₜ₋₁</text>
+  <text class="text" x="86" y="249">历史记忆</text>
+
+  <rect class="input" x="78" y="252" width="110" height="54"/>
+  <text class="label" x="121" y="286">xₜ</text>
+  <text class="text" x="90" y="329">当前输入</text>
+
+  <rect class="core" x="300" y="190" width="210" height="82"/>
+  <text class="label" x="345" y="224">循环层</text>
+  <text class="formula" x="326" y="251">tanh([hₜ₋₁ | xₜ]Wₕ+bₕ)</text>
+
+  <rect class="state" x="604" y="204" width="110" height="54"/>
+  <text class="label" x="637" y="237">hₜ</text>
+  <text class="text" x="614" y="281">新的记忆</text>
+
+  <rect class="out" x="768" y="204" width="82" height="54"/>
+  <text class="label" x="790" y="237">yₜ</text>
+  <text class="text" x="760" y="281">当前输出</text>
+
+  <path class="arrow" d="M190 199 C236 199 250 219 296 224"/>
+  <path class="arrow" d="M190 279 C238 279 250 250 296 242"/>
+  <path class="arrow" d="M512 231 L600 231"/>
+  <path class="arrow" d="M716 231 L764 231"/>
+
+  <text class="formula" x="542" y="152">hₜ = tanh([hₜ₋₁ | xₜ]Wₕ + bₕ)</text>
+  <text class="formula" x="542" y="178">yₜ = softmax(hₜWᵧ + bᵧ)</text>
+</svg>

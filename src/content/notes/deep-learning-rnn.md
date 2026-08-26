@@ -121,8 +121,6 @@ tags: ['RNN', '循环神经网络', '序列建模', 'NLP', '隐状态']
 
 这类任务后来通常使用 Encoder-Decoder、Seq2Seq、Attention 和 Transformer 来处理。
 
-![序列任务的输入输出形式](/images/deep-learning/rnn/sequence-task-types.svg)
-
 ---
 
 ## 3. RNN 的核心直觉：带着记忆逐步读序列
@@ -182,7 +180,7 @@ $$
 
 也就是用一个全零向量表示“还没有读到任何内容”。
 
-![RNN 的时间展开结构](/images/deep-learning/rnn/rnn-unrolled.svg)
+![RNN 从折叠结构到时间展开结构](/images/deep-learning/rnn/rnn-fold-unfold.svg)
 
 ---
 
@@ -208,6 +206,8 @@ y_t = \operatorname{softmax}(h_t W_y + b_y)
 $$
 
 如果当前任务是分类，例如 NER 中的 BIO 标签分类，$y_t$ 就是当前 token 属于各个类别的概率分布。
+
+![一个 RNN 时间步的内部计算](/images/deep-learning/rnn/rnn-cell-state.svg)
 
 ---
 
@@ -318,10 +318,6 @@ $$
 
 所以 RNN 的本质不是“有很多层”，而是：**同一个循环层在时间维度上被重复调用。**
 
-![RNN 中循环层与普通输出层的区别](/images/deep-learning/rnn/recurrent-vs-output-layer.svg)
-
----
-
 ## 10. 以 NER 为例理解 RNN
 
 假设任务是识别人名：
@@ -350,6 +346,8 @@ $$
 输入：我 叫 李 宁
 输出：O  O  B-N I-N
 ```
+
+![RNN 在 NER 任务中的上下文记忆](/images/deep-learning/rnn/rnn-ner-example.svg)
 
 ---
 

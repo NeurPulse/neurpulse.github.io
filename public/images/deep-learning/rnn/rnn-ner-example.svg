@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="360" viewBox="0 0 920 360" role="img" aria-labelledby="title desc">
+  <title id="title">RNN 在 NER 任务中的上下文记忆</title>
+  <desc id="desc">用“我叫李宁”展示 RNN 如何逐步传递隐状态，并为每个 token 输出命名实体识别标签。</desc>
+  <defs>
+    <style>
+      .bg{fill:#fbfcff}
+      .token{fill:#ecfdf5;stroke:#22c55e;stroke-width:2;rx:14}
+      .cell{fill:#eff6ff;stroke:#3b82f6;stroke-width:2.5;rx:16}
+      .tag{fill:#fff7ed;stroke:#f97316;stroke-width:2;rx:13}
+      .hint{fill:#f8fafc;stroke:#cbd5e1;stroke-width:2;rx:18}
+      .title{font:700 25px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#172033}
+      .label{font:700 20px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#24324a}
+      .text{font:15px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#64748b}
+      .small{font:13px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#64748b}
+      .arrow{stroke:#64748b;stroke-width:2.4;fill:none;marker-end:url(#arrow)}
+      .mem{stroke:#8b5cf6}
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" width="920" height="360" rx="26"/>
+  <text class="title" x="42" y="52">例子：为什么“李宁”需要上下文？</text>
+  <text class="text" x="42" y="82">RNN 逐字读取时，会把前面的“我叫”压缩进隐状态，帮助后面判断“李宁”更像人名。</text>
+
+  <g transform="translate(96 132)">
+    <rect class="token" x="0" y="0" width="82" height="50"/>
+    <text class="label" x="31" y="33">我</text>
+    <rect class="cell" x="0" y="92" width="82" height="54"/>
+    <text class="small" x="22" y="124">RNN</text>
+    <rect class="tag" x="0" y="190" width="82" height="46"/>
+    <text class="label" x="31" y="220">O</text>
+    <path class="arrow" d="M41 52 L41 88"/>
+    <path class="arrow" d="M41 148 L41 186"/>
+  </g>
+
+  <g transform="translate(276 132)">
+    <rect class="token" x="0" y="0" width="82" height="50"/>
+    <text class="label" x="31" y="33">叫</text>
+    <rect class="cell" x="0" y="92" width="82" height="54"/>
+    <text class="small" x="22" y="124">RNN</text>
+    <rect class="tag" x="0" y="190" width="82" height="46"/>
+    <text class="label" x="31" y="220">O</text>
+    <path class="arrow" d="M41 52 L41 88"/>
+    <path class="arrow" d="M41 148 L41 186"/>
+  </g>
+
+  <g transform="translate(456 132)">
+    <rect class="token" x="0" y="0" width="82" height="50"/>
+    <text class="label" x="31" y="33">李</text>
+    <rect class="cell" x="0" y="92" width="82" height="54"/>
+    <text class="small" x="22" y="124">RNN</text>
+    <rect class="tag" x="-5" y="190" width="92" height="46"/>
+    <text class="label" x="20" y="220">B-N</text>
+    <path class="arrow" d="M41 52 L41 88"/>
+    <path class="arrow" d="M41 148 L41 186"/>
+  </g>
+
+  <g transform="translate(636 132)">
+    <rect class="token" x="0" y="0" width="82" height="50"/>
+    <text class="label" x="31" y="33">宁</text>
+    <rect class="cell" x="0" y="92" width="82" height="54"/>
+    <text class="small" x="22" y="124">RNN</text>
+    <rect class="tag" x="-5" y="190" width="92" height="46"/>
+    <text class="label" x="23" y="220">I-N</text>
+    <path class="arrow" d="M41 52 L41 88"/>
+    <path class="arrow" d="M41 148 L41 186"/>
+  </g>
+
+  <path class="arrow mem" d="M178 251 L272 251"/>
+  <path class="arrow mem" d="M358 251 L452 251"/>
+  <path class="arrow mem" d="M538 251 L632 251"/>
+  <text class="small" x="206" y="238">h₁</text>
+  <text class="small" x="386" y="238">h₂</text>
+  <text class="small" x="566" y="238">h₃</text>
+
+  <rect class="hint" x="736" y="172" width="132" height="106"/>
+  <text class="small" x="755" y="202">隐状态里保存：</text>
+  <text class="small" x="755" y="226">“我叫...”</text>
+  <text class="small" x="755" y="250">所以后面更像</text>
+  <text class="small" x="755" y="272">人名实体</text>
+</svg>
