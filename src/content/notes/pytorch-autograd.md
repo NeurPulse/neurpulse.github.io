@@ -7,6 +7,13 @@ category: 'PyTorch'
 tags: ['梯度']
 ---
 
+## 先修知识
+
+阅读本文前，建议先理解：
+
+- [PyTorch Tensor](/notes/pytorch-tensor/)
+- [反向传播](/notes/deep-learning-backpropagation/)
+
 ## 自动求导
 
 PyTorch 中，所有神经网络的核心是 `autograd `包。autograd包为张量上的所有操作提供了自动求导机制。它是一个在运行时定义 ( define-by-run ）的框架，这意味着反向传播是根据代码如何运行来决定的，并且每次迭代可以是不同的。
@@ -235,4 +242,3 @@ False
 tensor([100.], requires_grad=True)
 tensor([2.])
 ```
-

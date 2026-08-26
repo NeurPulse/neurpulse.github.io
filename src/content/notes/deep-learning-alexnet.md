@@ -2,10 +2,18 @@
 title: '深度学习:AlexNet — 开启深度学习黄金时代的 CNN'
 description: '理解 ImageNet 竞赛的背景、AlexNet 以 ReLU/Dropout/GPU 并行等创新大幅刷新 Top-5 错误率的历史意义，以及其八层网络架构与 PyTorch 实现'
 pubDate: 2026-08-16
-order: 34
+order: 35
 category: '深度学习'
 tags: ['AlexNet', 'ImageNet', 'CNN', 'ReLU', 'Dropout', '深度学习里程碑']
 ---
+
+## 先修知识
+
+阅读本文前，建议先理解：
+
+- [LeNet](/notes/deep-learning-lenet/)
+- [一个完整的卷积神经网络](/notes/deep-learning-complete-cnn/)
+- [Dropout](/notes/deep-learning-dropout/)
 
 ## 1. 背景：ImageNet 竞赛
 

@@ -2,10 +2,18 @@
 title: '深度学习:对逻辑回归进行组合 — 从人工特征到神经网络'
 description: '通过"顾客选购苹果"案例，理解如何从多个逻辑回归的组合中自然引出神经网络，以及人工特征工程被自动特征学习取代的关键转变'
 pubDate: 2026-08-11
-order: 7
+order: 11
 category: '深度学习'
 tags: ['神经网络', '逻辑回归', '特征工程', '隐藏层', '端到端']
 ---
+
+## 先修知识
+
+阅读本文前，建议先理解：
+
+- [逻辑回归](/notes/deep-learning-logistic-regression/)
+- [多变量逻辑回归](/notes/deep-learning-logistic-regression-multivariate/)
+- [激活函数](/notes/deep-learning-activation-functions/)
 
 ## 1. 一个苹果引发的模型升级
 

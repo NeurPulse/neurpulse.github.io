@@ -2,7 +2,7 @@
 title: '深度学习:Token 编码 — 独热编码、词嵌入与 Word2Vec'
 description: '理解为何不能用词典序号编码 Token、独热编码的三大缺陷、词嵌入的低维稠密与语义推理能力，以及 Word2Vec 的 CBOW 和 Skip-gram 两种训练方法'
 pubDate: 2026-08-17
-order: 44
+order: 45
 category: '深度学习'
 tags: ['词嵌入', 'Word2Vec', 'CBOW', 'Skip-gram', '独热编码', 'Token编码']
 ---

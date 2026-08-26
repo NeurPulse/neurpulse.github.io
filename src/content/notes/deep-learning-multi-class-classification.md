@@ -2,7 +2,7 @@
 title: '深度学习:神经网络的多分类 — Softmax 与交叉熵损失'
 description: '理解多分类网络的输出层改造（N 类 N 个神经元）、Softmax 的设计动机与公式推导、多分类交叉熵损失函数，以及二分类的两种实现方式对比'
 pubDate: 2026-08-11
-order: 11
+order: 16
 category: '深度学习'
 tags: ['多分类', 'Softmax', '交叉熵', 'Logits', '输出层']
 ---

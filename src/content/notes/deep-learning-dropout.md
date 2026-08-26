@@ -2,7 +2,7 @@
 title: '深度学习:Dropout — 随机丢弃神经元的正则化技术'
 description: '理解 Dropout 训练阶段的随机丢弃与 1/(1-p) 缩放机制、推理阶段的全神经元启用、防止神经元共适应的原理，以及 PyTorch 中的 nn.Dropout 使用方法'
 pubDate: 2026-08-12
-order: 19
+order: 26
 category: '深度学习'
 tags: ['Dropout', '过拟合', '正则化', '神经元丢弃']
 ---

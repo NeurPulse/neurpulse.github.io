@@ -2,10 +2,18 @@
 title: '深度学习:神经网络与矩阵计算 — 为什么 GPU 是深度学习的关键'
 description: '理解神经网络中权重符号的命名规则、从逐神经元计算到矩阵乘法的转化过程、批量样本并行计算，以及 GPU 为何天然适合矩阵运算'
 pubDate: 2026-08-11
-order: 10
+order: 14
 category: '深度学习'
 tags: ['神经网络', '矩阵计算', 'GPU', '并行计算', '全连接层']
 ---
+
+## 先修知识
+
+阅读本文前，建议先理解：
+
+- [神经网络的基本结构](/notes/deep-learning-neural-network/)
+- [从逻辑回归到神经网络](/notes/deep-learning-neural-network-from-logistic-regression/)
+- [多变量逻辑回归](/notes/deep-learning-logistic-regression-multivariate/)
 
 ## 1. 权重符号的命名规则
 

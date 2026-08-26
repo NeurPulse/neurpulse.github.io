@@ -7,6 +7,14 @@ category: '深度学习'
 tags: ['CNN', '卷积神经网络', 'Flatten', '图像分类', '参数计算']
 ---
 
+## 先修知识
+
+阅读本文前，建议先理解：
+
+- [卷积运算](/notes/deep-learning-convolution-operation/)
+- [池化层](/notes/deep-learning-pooling-layer/)
+- [多分类神经网络](/notes/deep-learning-multi-class-classification/)
+
 ## 1. 从特征图到分类结果
 
 卷积层和池化层的输出，是带有空间位置信息的**特征图**。要完成分类，还需要最后一步：

@@ -2,7 +2,7 @@
 title: '深度学习:梯度下降算法的改进 — BGD、SGD、Mini-batch GD'
 description: '从全量数据到单个样本再到小批量，理解三种梯度下降变体的权衡，以及 Batch Size 的选值原则（2 的幂、GPU 显存上限）'
 pubDate: 2026-08-11
-order: 21
+order: 10
 category: '深度学习'
 tags: ['梯度下降', 'BGD', 'SGD', 'Mini-batch', 'Batch Size']
 ---

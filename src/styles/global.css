@@ -72,6 +72,7 @@ a:hover {
 
 img {
   max-width: 100%;
+  height: auto;
 }
 
 .container {
@@ -596,6 +597,32 @@ body {
 }
 .prose p {
   margin: 1em 0;
+}
+.prose img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 72vh;
+  margin: 1.4em auto;
+  border-radius: 8px;
+  object-fit: contain;
+}
+.prose p:has(> img:only-child) {
+  text-align: center;
+}
+.prose img.img-small {
+  max-width: min(100%, 420px);
+}
+.prose img.img-medium {
+  max-width: min(100%, 620px);
+}
+.prose img.img-large {
+  max-width: 100%;
+}
+.prose img.img-original {
+  max-width: none;
+  max-height: none;
 }
 .prose ul,
 .prose ol {

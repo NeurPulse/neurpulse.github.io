@@ -2,10 +2,18 @@
 title: '深度学习:梯度消失与梯度爆炸 — 为什么深层网络难训练'
 description: '理解链式法则连乘导致的梯度消失/爆炸的根本原因，以及三大应对策略：选择 ReLU 激活函数、Kaiming 参数初始化、消除神经元对称性'
 pubDate: 2026-08-11
-order: 20
+order: 18
 category: '深度学习'
 tags: ['梯度消失', '梯度爆炸', 'ReLU', '参数初始化', 'Kaiming初始化']
 ---
+
+## 先修知识
+
+阅读本文前，建议先理解：
+
+- [反向传播](/notes/deep-learning-backpropagation/)
+- [激活函数](/notes/deep-learning-activation-functions/)
+- [PyTorch 模型参数初始化](/notes/pytorch-model-initialization/)
 
 ## 1. 问题根源：链式法则中的连乘
 

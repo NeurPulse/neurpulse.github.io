@@ -2,7 +2,7 @@
 title: '深度学习：神经网络'
 description: '矩阵计算、激活函数、softmax多分类与反向传播'
 pubDate: 2026-08-07
-order: 8
+order: 13
 category: '深度学习'
 tags: ['神经网络','反向传播','激活函数','Softmax','多分类']
 ---

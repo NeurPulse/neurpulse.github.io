@@ -7,6 +7,14 @@ category: '深度学习'
 tags: ['ResNet', '残差连接', '恒等映射', '捷径连接', '深层网络']
 ---
 
+## 先修知识
+
+阅读本文前，建议先理解：
+
+- [一个完整的卷积神经网络](/notes/deep-learning-complete-cnn/)
+- [梯度消失与梯度爆炸](/notes/deep-learning-vanishing-exploding-gradients/)
+- [Batch Normalization](/notes/deep-learning-batch-normalization/)
+
 ## 1. ResNet 的里程碑
 
 | 项目 | 信息 |
