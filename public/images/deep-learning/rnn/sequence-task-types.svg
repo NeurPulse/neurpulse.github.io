@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="430" viewBox="0 0 980 430" role="img" aria-labelledby="title desc">
+  <title id="title">序列任务的输入输出形式</title>
+  <desc id="desc">对比多对一、等长多对多和不等长多对多三类序列任务。</desc>
+  <defs>
+    <style>
+      .bg { fill: #f8fafc; }
+      .card { fill: #ffffff; stroke: #dbe4ef; stroke-width: 2; rx: 18; }
+      .title { font: 700 24px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #172033; }
+      .label { font: 700 18px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #24324a; }
+      .text { font: 15px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #536178; }
+      .token { fill: #e8f1ff; stroke: #6aa3ff; stroke-width: 2; rx: 10; }
+      .out { fill: #fff0d8; stroke: #f2a93b; stroke-width: 2; rx: 10; }
+      .arrow { stroke: #7b8798; stroke-width: 2.5; fill: none; marker-end: url(#arrow); }
+      .dashed { stroke-dasharray: 7 6; }
+      .small { font: 13px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #536178; }
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#7b8798" />
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="980" height="430" rx="24" />
+  <text class="title" x="40" y="54">序列任务的三种常见输入输出形式</text>
+  <text class="text" x="40" y="82">判断任务类型时，先看：输入是不是序列？输出是不是序列？两边长度是否相同？</text>
+
+  <rect class="card" x="40" y="115" width="280" height="260" />
+  <text class="label" x="68" y="152">多对一</text>
+  <text class="text" x="68" y="178">整个序列 → 一个结果</text>
+  <rect class="token" x="68" y="215" width="46" height="42" />
+  <rect class="token" x="123" y="215" width="46" height="42" />
+  <rect class="token" x="178" y="215" width="46" height="42" />
+  <rect class="token" x="233" y="215" width="46" height="42" />
+  <path class="arrow" d="M174 270 C174 300, 174 300, 174 318" />
+  <rect class="out" x="120" y="320" width="108" height="42" />
+  <text class="small" x="138" y="346">情感分类</text>
+  <text class="small" x="68" y="394">例：一句评论 → 正面 / 负面</text>
+
+  <rect class="card" x="350" y="115" width="280" height="260" />
+  <text class="label" x="378" y="152">等长多对多</text>
+  <text class="text" x="378" y="178">每个输入位置都有对应输出</text>
+  <rect class="token" x="378" y="215" width="42" height="42" />
+  <rect class="token" x="433" y="215" width="42" height="42" />
+  <rect class="token" x="488" y="215" width="42" height="42" />
+  <rect class="token" x="543" y="215" width="42" height="42" />
+  <path class="arrow dashed" d="M399 265 L399 306" />
+  <path class="arrow dashed" d="M454 265 L454 306" />
+  <path class="arrow dashed" d="M509 265 L509 306" />
+  <path class="arrow dashed" d="M564 265 L564 306" />
+  <rect class="out" x="378" y="320" width="42" height="42" />
+  <rect class="out" x="433" y="320" width="42" height="42" />
+  <rect class="out" x="488" y="320" width="42" height="42" />
+  <rect class="out" x="543" y="320" width="42" height="42" />
+  <text class="small" x="389" y="346">O</text>
+  <text class="small" x="444" y="346">O</text>
+  <text class="small" x="493" y="346">B</text>
+  <text class="small" x="548" y="346">I</text>
+  <text class="small" x="378" y="394">例：NER，每个 token 输出一个标签</text>
+
+  <rect class="card" x="660" y="115" width="280" height="260" />
+  <text class="label" x="688" y="152">不等长多对多</text>
+  <text class="text" x="688" y="178">输入序列 → 另一段序列</text>
+  <rect class="token" x="688" y="215" width="42" height="42" />
+  <rect class="token" x="743" y="215" width="42" height="42" />
+  <rect class="token" x="798" y="215" width="42" height="42" />
+  <rect class="token" x="853" y="215" width="42" height="42" />
+  <path class="arrow" d="M792 270 C792 300, 792 300, 792 318" />
+  <rect class="out" x="716" y="320" width="42" height="42" />
+  <rect class="out" x="771" y="320" width="42" height="42" />
+  <rect class="out" x="826" y="320" width="42" height="42" />
+  <text class="small" x="688" y="394">例：翻译 / 摘要，输出长度可变化</text>
+</svg>
