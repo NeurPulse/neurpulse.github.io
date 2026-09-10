@@ -23,6 +23,10 @@ order: 6
 - [缩放点积注意力与 Mask](/notes/transformer-self-attention/)
 - [多头注意力与张量变形](/notes/transformer-multi-head-attention/)
 
+## 代码主线说明
+
+本文代码以本地 `Decoder.ipynb` 为主，保留 `DecoderLayer`、`Decoder` 以及 Pre-LN 的组装方式。唯一影响正确性的结构性调整是：交叉注意力分别处理目标长度 $T$ 和源长度 $S$；另外补入真实批训练所需的源端、目标端 Padding Mask。
+
 ## 1. Decoder 在解决什么问题
 
 在机器翻译中，Encoder 已经把源句子编码成：

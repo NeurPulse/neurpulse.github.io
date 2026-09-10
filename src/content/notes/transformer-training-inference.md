@@ -25,6 +25,10 @@ order: 7
 - [语言模型采样策略](/notes/deep-learning-lm-sampling/)
 - [多分类与交叉熵](/notes/deep-learning-multi-class-classification/)
 
+## 代码主线说明
+
+本文的数据构造、整体 `Transformer` 前向和单步 logits 主要对应本地 `Loss.ipynb`，采样策略与分词部分分别对应 `Sampling.ipynb` 和 `Tokenizer.ipynb`。在 Notebook 基础上补充了 `ignore_index=pad_id`、Padding Mask 与完整自回归外层循环，使示例能够自然扩展到变长的真实批数据。
+
 ## 1. 训练样本如何构造
 
 假设源句为：

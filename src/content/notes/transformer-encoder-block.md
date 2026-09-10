@@ -24,6 +24,10 @@ order: 5
 - [深层网络中的残差连接](/notes/deep-learning-resnet/)
 - [Batch Normalization](/notes/deep-learning-batch-normalization/)
 
+## 代码主线说明
+
+本文按本地 `LayerNorm.ipynb`、`FeedForward.ipynb` 和 `Encoder.ipynb` 的模块拆分讲解，保留 `LayerNorm → Attention → 残差 → LayerNorm → FFN → 残差` 的 Pre-LN 顺序。LayerNorm 的偏移符号和方差计算采用修正后的标准写法，修正原因会在对应小节说明。
+
 ## 1. Encoder Layer 的总体任务
 
 Encoder 接收带有 token 语义和位置信息的表示：

@@ -23,6 +23,10 @@ order: 2
 - [Token 编码与词嵌入](/notes/deep-learning-token-encoding/)
 - [Softmax 多分类](/notes/deep-learning-multi-class-classification/)
 
+## 代码主线说明
+
+本文代码以本地 `Attention.ipynb` 的计算顺序为主线：先计算 $QK^T$，再缩放、Mask、softmax，最后与 $V$ 相乘。为使同一函数还能用于后续交叉注意力，代码补充了 $T\ne S$ 的 shape 约定、Padding Mask 和数值稳定处理；这些属于对 Notebook 教学实现的完善，不改变其核心流程。
+
 ## 1. 最小直觉：一次带权检索
 
 把注意力看成一次“查询—匹配—取值”：

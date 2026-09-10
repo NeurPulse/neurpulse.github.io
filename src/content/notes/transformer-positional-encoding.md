@@ -23,6 +23,10 @@ order: 4
 - [多头注意力与张量变形](/notes/transformer-multi-head-attention/)
 - [Token 编码与词嵌入](/notes/deep-learning-token-encoding/)
 
+## 代码主线说明
+
+本文实现以本地 `PositionEncoding.ipynb` 为主：预先生成正弦/余弦矩阵，用 `register_buffer` 保存，再与 token embedding 相加。代码采用 `Loss.ipynb` 中已经修正的长度切片写法 `self.pe[:, :x.size(1)]`，避免输入短于 `max_seq_len` 时发生 shape 不匹配。
+
 ## 1. 问题背景：注意力本身不知道顺序
 
 考虑两个序列：

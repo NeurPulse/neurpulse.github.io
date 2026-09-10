@@ -22,6 +22,10 @@ order: 3
 - [缩放点积注意力、QKV 与 Mask](/notes/transformer-self-attention/)
 - [Transformer 的整体架构](/notes/transformer-overview/)
 
+## 代码主线说明
+
+本文手写类以本地 `MultiHeadAttention.ipynb` 为主要参考，保留 `Wq/Wk/Wv/Wo → 拆头 → 注意力 → 拼头` 的实现顺序。为了能直接接入 `Decoder.ipynb`，修正版分别记录 Query 长度 $T$ 与 Key/Value 长度 $S$，并把 `is_casual` 统一更名为 `is_causal`。官方 API 只放在后文作为接口对照。
+
 ## 1. 为什么单头还不够
 
 单个注意力头只产生一套相似度与聚合结果。多个头允许模型在不同的投影子空间中建立不同关系，例如：
