@@ -54,9 +54,6 @@ Decoder 要根据：
 
 因果 Mask 让第 $t$ 个 Query 只能读取位置 $0\ldots t$。
 
-![训练阶段的因果掩码注意力](../../../public/images/transformer/course-slides/causal-mask-during-training.png)
-
-> 图片来源：课程课件《transformer算法原理-S》第 15 页。
 
 ### 2.1 构造上三角 Mask
 
@@ -95,11 +92,7 @@ $$
 \operatorname{softmax}\left(\frac{QK^T}{\sqrt{D_h}}+M_{src}\right)V
 $$
 
-下面的图展示了目标端 Query 如何对源端 Key/Value 计算 $T\times S$ 的权重。
-
-![交叉注意力的矩阵表达](../../../public/images/transformer/course-slides/cross-attention-matrix.png)
-
-> 图片来源：课程课件《transformer算法原理-S》第 19 页。
+目标端 Query 会对源端 Key/Value 计算一个 $T\times S$ 的权重矩阵：每一行对应一个目标位置，每一列对应一个源位置。
 
 ## 4. 最关键的 Shape：$T$ 不必等于 $S$
 

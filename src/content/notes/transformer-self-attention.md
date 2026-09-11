@@ -87,11 +87,7 @@ $$
 
 $M$ 是可选的加性 Mask。允许注意的位置加 $0$，禁止注意的位置加一个极大负数或 $-\infty$。
 
-下面的课件图把每一步的矩阵 shape 放在了一张图里，复习时重点沿着 $X\to Q,K,V\to A\to AV$ 阅读。
-
-![缩放点积注意力的矩阵计算过程](../../../public/images/transformer/course-slides/scaled-dot-product-attention-matrix.png)
-
-> 图片来源：课程课件《transformer算法原理-S》第 8 页。
+复习时可沿着 $X\to Q,K,V\to A\to AV$ 检查每一步的矩阵形状；只要最后得到的输出仍是 $L\times d_v$，这条数据流就保持了序列长度。
 
 ## 4. 完整 Shape 检查
 

@@ -71,11 +71,7 @@ gamma、beta: [D]
 输出: [B, S, D]
 ```
 
-课件图直观展示了 LayerNorm 与 BatchNorm 选择统计维度的差异。
-
-![Transformer 中的层归一化](../../../public/images/transformer/course-slides/layer-normalization.png)
-
-> 图片来源：课程课件《transformer算法原理-S》第 11 页。
+LayerNorm 与 BatchNorm 的关键区别在于统计维度：LayerNorm 对单个样本的特征维归一化，不依赖同一批次里的其他样本。
 
 ### 2.1 LayerNorm 与 BatchNorm 的主要区别
 
@@ -132,9 +128,6 @@ shape 变化：
 
 原论文 Base 模型中 $D=512$，$D_{ff}=2048$。
 
-![逐位置前馈神经网络的矩阵计算](../../../public/images/transformer/course-slides/position-wise-feed-forward-network.png)
-
-> 图片来源：课程课件《transformer算法原理-S》第 12 页。
 
 ### 3.1 “逐位置”是什么意思
 

@@ -99,11 +99,7 @@ $$
 PE(pos,2i+1)=\cos(pos\,\omega_i)
 $$
 
-下面的课件图展示了不同维度随位置变化的频率差异。
-
-![正弦余弦位置编码的公式与频率图](../../../public/images/transformer/course-slides/sinusoidal-positional-encoding.png)
-
-> 图片来源：课程课件《transformer算法原理-S》第 5 页。
+不同维度使用不同频率：低维变化更快，高维变化更慢，因此多组正弦与余弦能够共同刻画多个位置尺度。
 
 ## 4. 为什么要有不同频率
 

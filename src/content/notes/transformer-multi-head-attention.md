@@ -110,11 +110,7 @@ heads:   [B, H, T, Dh]
 → Wo [B, T, D]
 ```
 
-下面这张课件图适合检查“拆头—独立注意力—拼接—输出投影”的总体流程。
-
-![多头注意力的拆分与拼接过程](../../../public/images/transformer/course-slides/multi-head-attention.png)
-
-> 图片来源：课程课件《transformer算法原理-S》第 9 页。
+可以用“拆头—独立注意力—拼接—输出投影”这条主线检查多头注意力的总体流程。
 
 ## 4. 为什么拼接后还需要 $W^O$
 

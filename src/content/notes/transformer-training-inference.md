@@ -70,11 +70,7 @@ tgt_label:  I am a dog <eos>
 
 所有位置的矩阵运算可以并行，但每个位置的可见范围仍与自回归推理一致。
 
-下面的课件图把源输入、右移目标输入与每个位置的损失放在同一张流程图中。
-
-![Transformer 机器翻译的训练流程](../../../public/images/transformer/course-slides/transformer-training-flow.png)
-
-> 图片来源：课程课件《transformer算法原理-S》第 14 页。
+训练时可以把源输入、右移后的目标输入和逐位置损失看成三条配合的数据流：源序列提供条件，目标前缀提供已知上下文，标签负责监督下一个 token。
 
 ## 3. Teacher Forcing
 

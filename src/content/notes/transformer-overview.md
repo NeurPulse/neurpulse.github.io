@@ -73,11 +73,7 @@ Transformer 是一种以注意力为核心、用位置编码补充顺序信息�
 
 ## 3. 整体架构
 
-下面是课件中的整体结构。先不要急着理解每根箭头，只需把它看成一张专题地图。
-
-![Transformer 编码器—解码器整体架构](../../../public/images/transformer/course-slides/transformer-overall-architecture.png)
-
-> 图片来源：课程课件《transformer算法原理-S》第 2 页。
+初学时不必一次理解所有数据流，只需先把编码器、解码器和输出层看成三块相互衔接的结构；后续文章会逐块展开。
 
 标准 Transformer 分为两半：
 
