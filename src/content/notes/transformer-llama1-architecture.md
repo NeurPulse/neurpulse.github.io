@@ -30,11 +30,11 @@ Pre-Norm + RMSNorm + RoPE + SwiGLU
 
 ## 2. 从输入到输出的完整路径
 
-课程图把模型分为 Input Block、重复 $N$ 次的 Decoder Block 和 Output Block。
+从数据流看，模型可以分为输入阶段、重复 $N$ 次的 Decoder Block 和输出阶段。
 
-![LLaMA 1 整体架构](../../../public/images/transformer/llama/llama1-architecture-course.jpg)
+![LLaMA 1 整体架构](../../../public/images/transformer/llama/llama1-architecture-original.svg)
 
-> 图片来源：本次课程材料。重点沿中间的残差主干自下而上阅读；图中的 Softmax 主要用于推理选词，训练损失通常直接接收 logits。
+> 本图根据 LLaMA 1 的公开架构信息重新设计。重点沿中间的残差主干阅读；推理阶段会根据 logits 选择下一个 token，训练损失通常直接接收 logits。
 
 完整流程如下：
 

@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="720" viewBox="0 0 1400 720" role="img" aria-labelledby="title desc">
+  <title id="title">LLaMA 家族演进路线</title>
+  <desc id="desc">从 LLaMA 1 到 Llama 4 的时间线，概括架构与能力演进。</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f8fbff"/>
+      <stop offset="1" stop-color="#eef4ff"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#31527a" flood-opacity="0.14"/>
+    </filter>
+    <style>
+      .title{font:700 40px system-ui,'Microsoft YaHei',sans-serif;fill:#172b4d}
+      .subtitle{font:22px system-ui,'Microsoft YaHei',sans-serif;fill:#52677f}
+      .version{font:700 25px system-ui,'Microsoft YaHei',sans-serif;fill:#173f75}
+      .year{font:600 18px system-ui,'Microsoft YaHei',sans-serif;fill:#58708e}
+      .body{font:18px system-ui,'Microsoft YaHei',sans-serif;fill:#31465f}
+      .hint{font:18px system-ui,'Microsoft YaHei',sans-serif;fill:#52677f}
+    </style>
+  </defs>
+  <rect width="1400" height="720" rx="28" fill="url(#bg)"/>
+  <text x="70" y="76" class="title">LLaMA 家族：主干稳定，能力持续扩展</text>
+  <text x="70" y="116" class="subtitle">沿时间线观察四条主线：结构、推理效率、数据与 Tokenizer、模态能力</text>
+
+  <line x1="125" y1="365" x2="1275" y2="365" stroke="#7aa7e8" stroke-width="8" stroke-linecap="round"/>
+  <path d="M1275 365l-24-15v30z" fill="#7aa7e8"/>
+
+  <g filter="url(#shadow)">
+    <rect x="55" y="180" width="230" height="142" rx="18" fill="#fff" stroke="#b9d0f3" stroke-width="2"/>
+    <rect x="300" y="410" width="230" height="160" rx="18" fill="#fff" stroke="#b9d0f3" stroke-width="2"/>
+    <rect x="545" y="180" width="230" height="142" rx="18" fill="#fff" stroke="#b9d0f3" stroke-width="2"/>
+    <rect x="790" y="410" width="230" height="160" rx="18" fill="#fff" stroke="#b9d0f3" stroke-width="2"/>
+    <rect x="1035" y="180" width="250" height="142" rx="18" fill="#fff" stroke="#b9d0f3" stroke-width="2"/>
+  </g>
+
+  <g fill="#fff" stroke="#2f7be5" stroke-width="6">
+    <circle cx="170" cy="365" r="15"/><circle cx="415" cy="365" r="15"/>
+    <circle cx="660" cy="365" r="15"/><circle cx="905" cy="365" r="15"/>
+    <circle cx="1160" cy="365" r="15"/>
+  </g>
+  <g stroke="#7aa7e8" stroke-width="3">
+    <line x1="170" y1="350" x2="170" y2="322"/><line x1="415" y1="380" x2="415" y2="410"/>
+    <line x1="660" y1="350" x2="660" y2="322"/><line x1="905" y1="380" x2="905" y2="410"/>
+    <line x1="1160" y1="350" x2="1160" y2="322"/>
+  </g>
+
+  <text x="80" y="218" class="version">LLaMA 1</text><text x="80" y="249" class="year">2023 · 高效基础模型</text>
+  <text x="80" y="282" class="body">RMSNorm · RoPE</text><text x="80" y="307" class="body">Pre-Norm · SwiGLU</text>
+
+  <text x="325" y="448" class="version">Llama 2</text><text x="325" y="479" class="year">2023 · 对齐与效率</text>
+  <text x="325" y="512" class="body">更长上下文 · Chat</text><text x="325" y="537" class="body">大模型采用 GQA</text>
+
+  <text x="570" y="218" class="version">Llama 3</text><text x="570" y="249" class="year">2024 · 数据与编码</text>
+  <text x="570" y="282" class="body">128K 词表 · 全尺寸 GQA</text><text x="570" y="307" class="body">更大规模训练数据</text>
+
+  <text x="815" y="448" class="version">Llama 3.x</text><text x="815" y="479" class="year">2024 · 能力扩展</text>
+  <text x="815" y="512" class="body">128K 上下文 · 多语言</text><text x="815" y="537" class="body">工具、轻量模型与视觉</text>
+
+  <text x="1060" y="218" class="version">Llama 4</text><text x="1060" y="249" class="year">2025 · 原生多模态</text>
+  <text x="1060" y="282" class="body">MoE · 早期融合</text><text x="1060" y="307" class="body">超长上下文</text>
+
+  <rect x="70" y="625" width="1260" height="48" rx="14" fill="#deebff"/>
+  <text x="700" y="657" text-anchor="middle" class="hint">阅读重点：不要只比较参数量，要同时追踪计算成本、训练数据、上下文和模态变化。</text>
+</svg>

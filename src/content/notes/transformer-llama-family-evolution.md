@@ -27,11 +27,11 @@ LLaMA 最初是 **Large Language Model Meta AI** 的缩写。它不是一种完�
 
 ## 2. 先看学习路线
 
-下面这张课程大纲图给出了本阶段的知识顺序。当前五篇笔记先完成 LLaMA 1 与归一化部分；MQA/GQA、KV Cache、Tokenizer、剪枝、蒸馏和 MoE 会在后续阶段继续展开。
+下面的原创时间线给出了本阶段的知识顺序。当前五篇笔记先完成 LLaMA 1 与归一化部分；MQA/GQA、KV Cache、Tokenizer、剪枝、蒸馏和 MoE 会在后续阶段继续展开。
 
-![LLaMA 系列学习路线](../../../public/images/transformer/llama/llama-family-roadmap.jpg)
+![LLaMA 系列学习路线](../../../public/images/transformer/llama/llama-family-roadmap-original.svg)
 
-> 图片来源：本次课程材料。阅读时关注“每一代主要解决什么问题”，不要把所有技术误认为都在同一代首次提出。
+> 本图根据公开的模型版本信息重新设计。阅读时关注“每一代主要解决什么问题”，不要把所有技术误认为都在同一代首次提出。
 
 ## 3. 家族时间线
 

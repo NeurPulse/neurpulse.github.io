@@ -64,9 +64,9 @@ $$
 
 常见 LLaMA 风格实现只有可学习缩放 $\gamma$，没有偏移 $\beta$。
 
-![课程中的 LayerNorm 与 RMSNorm 公式对比](../../../public/images/transformer/llama/rmsnorm-course-comparison.jpg)
+![LayerNorm 与 RMSNorm 公式对比](../../../public/images/transformer/llama/rmsnorm-comparison-original.svg)
 
-> 图片来源：本次课程材料。图中的核心意思是 RMSNorm 省略中心化；实现时仍应在根号内加入 $\epsilon$，避免零向量除零。
+> 本图根据两种归一化方法的公开公式重新设计。核心是 RMSNorm 省略中心化；实现时仍应在根号内加入 $\epsilon$，避免零向量除零。
 
 ## 4. 最小数值例子
 
