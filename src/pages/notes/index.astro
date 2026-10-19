@@ -8,7 +8,7 @@ const posts = (await getCollection('notes', ({ data }) => !data.draft)).sort(
   compareReadingOrder
 );
 
-// 按分类分组，保持日期排序
+// 按专题分组，保留各专题的学习顺序。
 const byCategory = new Map<string, typeof posts>();
 for (const p of posts) {
   const list = byCategory.get(p.data.category) ?? [];
@@ -24,20 +24,39 @@ const categories = [...byCategory.entries()].sort(([a], [b]) =>
 <BaseLayout title="学习笔记">
   <h1>学习笔记</h1>
   <p class="page-intro">
-    选择一个专题，从第 1 篇开始按顺序阅读。进入文章后，可以通过专题目录和上一篇、下一篇连续学习。
+    共 {posts.length} 篇笔记，分为 {categories.length} 个专题。选择一个专题，从第 1 篇开始按顺序阅读。
   </p>
-  <nav class="category-jumps" aria-label="笔记专题">
+  <nav id="topic-filters" class="category-jumps" aria-label="笔记专题">
+    <a href="#topic-overview" data-topic-filter="topic-overview" hidden>专题概览</a>
     {
       categories.map(([category, list], index) => (
-        <a href={`#category-${index}`}>
+        <a href={`#category-${index}`} data-topic-filter={`category-${index}`}>
           {category}<span>{list.length}</span>
         </a>
       ))
     }
   </nav>
+  <p id="topic-status" class="filter-status" role="status" aria-live="polite" aria-atomic="true" hidden></p>
+  <section id="topic-overview" class="topic-overview" aria-label="专题概览" hidden>
+    {
+      categories.map(([category, list], index) => (
+        <article class="topic-summary">
+          <h2><a href={`#category-${index}`}>{category}</a></h2>
+          <p>{list.length} 篇 · 按学习顺序</p>
+          <p class="topic-first">从「{list[0].data.title}」开始</p>
+          <a href={`#category-${index}`} aria-label={`查看${category}专题的 ${list.length} 篇笔记`}>查看专题 →</a>
+        </article>
+      ))
+    }
+  </section>
   {
     categories.map(([category, list], categoryIndex) => (
-      <section id={`category-${categoryIndex}`} class="note-category">
+      <section
+        id={`category-${categoryIndex}`}
+        class="note-category"
+        data-note-category={category}
+        data-post-count={list.length}
+      >
         <div class="section-head">
           <h2>
             {category}
@@ -54,3 +73,43 @@ const categories = [...byCategory.entries()].sort(([a], [b]) =>
     ))
   }
 </BaseLayout>
+
+<script>
+  const overview = document.getElementById('topic-overview');
+  const sections = [...document.querySelectorAll<HTMLElement>('[data-note-category]')];
+  const filters = [...document.querySelectorAll<HTMLAnchorElement>('[data-topic-filter]')];
+  const status = document.getElementById('topic-status');
+
+  function showTopic(scrollToFilters = false) {
+    if (!overview) return;
+    const selected = sections.find((section) => `#${section.id}` === location.hash);
+    const selectedId = selected?.id ?? overview.id;
+
+    overview.hidden = !!selected;
+    sections.forEach((section) => { section.hidden = section !== selected; });
+    filters.forEach((link) => {
+      link.hidden = false;
+      if (link.dataset.topicFilter === selectedId) {
+        link.setAttribute('aria-current', 'true');
+      } else {
+        link.removeAttribute('aria-current');
+      }
+    });
+    if (status) {
+      status.hidden = false;
+      status.textContent = selected
+        ? `${selected.dataset.noteCategory} · ${selected.dataset.postCount} 篇笔记，按学习顺序排列`
+        : '选择一个专题，查看完整阅读目录。';
+    }
+
+    // 保留专题锚点和前进/后退，同时让筛选入口留在视野内，便于再次切换。
+    if (scrollToFilters) {
+      requestAnimationFrame(() => {
+        document.getElementById('topic-filters')?.scrollIntoView({ block: 'start' });
+      });
+    }
+  }
+
+  showTopic(!!location.hash);
+  window.addEventListener('hashchange', () => showTopic(true));
+</script>

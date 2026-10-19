@@ -34,5 +34,6 @@ const { tag, posts } = Astro.props;
 <BaseLayout title={`标签：${tag}`}>
   <a href="/tags/" class="back-link">← 全部标签</a>
   <h1>标签：{tag}</h1>
+  <p class="page-intro">共 {posts.length} 篇相关内容，按发布时间排列。</p>
   {posts.map(({ post, base }) => <PostCard post={post} base={base} />)}
 </BaseLayout>

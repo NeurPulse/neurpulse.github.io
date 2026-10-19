@@ -1,38 +1,80 @@
 ---
+import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { AUTHOR, RESEARCH_INTERESTS } from '../../consts';
+import { compareCategories } from '../../utils/post-order';
+
+const notes = await getCollection('notes', ({ data }) => !data.draft);
+const categories = [...new Set(notes.map((post) => post.data.category))].sort(compareCategories);
+const topics = RESEARCH_INTERESTS.map((name) => ({
+  name,
+  href: categories.includes(name) ? `/notes/#category-${categories.indexOf(name)}` : null,
+}));
+const education = [
+  {
+    school: '西安邮电大学',
+    detail: '计算机科学与技术 · 学术型硕士（在读）',
+    start: '2026-09',
+    end: null,
+  },
+  {
+    school: '太原工业学院',
+    detail: '计算机科学与技术 · 本科',
+    start: '2022-09',
+    end: '2026-06',
+  },
+];
 ---
 
-<BaseLayout title="关于">
-  <h1>关于我</h1>
-  <div class="about-grid">
-    <p>
-      我是{AUTHOR}，计算机科学与技术专业硕士研究生。
-      欢迎关注我的博客，也欢迎邮件交流。
+<BaseLayout title="关于我" description={`${AUTHOR}的教育背景、研究方向与联系方式。`}>
+  <div class="about-page">
+    <h1>关于我</h1>
+    <p class="page-intro">{AUTHOR}，计算机科学与技术研究生。</p>
+
+    <div class="about-sections">
+      <section class="about-education-section" aria-labelledby="about-education-title">
+        <h2 id="about-education-title">教育背景</h2>
+        <ul class="about-education">
+          {education.map((entry) => (
+            <li>
+              <h3>{entry.school}</h3>
+              <p class="about-period">
+                <time datetime={entry.start}>{entry.start.replace('-', '.')}</time>
+                {' – '}
+                {entry.end ? <time datetime={entry.end}>{entry.end.replace('-', '.')}</time> : '至今'}
+              </p>
+              <p class="about-degree">{entry.detail}</p>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section aria-labelledby="about-topics-title">
+        <h2 id="about-topics-title">研究方向</h2>
+        <ul class="about-topics">
+          {topics.map((topic) => (
+            <li>{topic.href ? <a href={topic.href}>{topic.name}</a> : <span>{topic.name}</span>}</li>
+          ))}
+        </ul>
+      </section>
+
+      <section aria-labelledby="about-contact-title">
+        <h2 id="about-contact-title">联系方式</h2>
+        <dl class="about-contacts">
+          <div>
+            <dt>邮箱</dt>
+            <dd><a href="mailto:2512388681@qq.com">2512388681@qq.com</a></dd>
+          </div>
+          <div>
+            <dt>GitHub</dt>
+            <dd><a href="https://github.com/NeurPulse">@NeurPulse</a></dd>
+          </div>
+        </dl>
+      </section>
+    </div>
+
+    <p class="about-skills">
+      <strong>技能与工具：</strong>Python（PyTorch / NumPy / Pandas）、C++；Git、Linux、LaTeX；<span>英语：CET-4。</span>
     </p>
-
-    <h2>研究方向</h2>
-    <ul>
-      {RESEARCH_INTERESTS.map((item) => <li>{item}</li>)}
-    </ul>
-
-    <h2>教育背景</h2>
-    <ul>
-      <li>2026.09 – 至今：西安邮电大学，计算机科学与技术，学硕（在读研一）</li>
-      <li>2022.09 – 2026.06：太原工业学院，计算机科学与技术专业，本科</li>
-    </ul>
-
-    <h2>技能</h2>
-    <ul>
-      <li>编程：Python（PyTorch / NumPy / Pandas）、C++</li>
-      <li>工具：Git、Linux、LaTeX</li>
-      <li>英语：CET-4</li>
-    </ul>
-
-    <h2>联系方式</h2>
-    <ul>
-      <li>邮箱：2512388681@qq.com</li>
-      <li>GitHub：<a href="https://github.com/NeurPulse">@NeurPulse</a></li>
-    </ul>
   </div>
 </BaseLayout>

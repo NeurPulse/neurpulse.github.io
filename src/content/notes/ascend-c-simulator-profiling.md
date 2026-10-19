@@ -211,6 +211,7 @@ target_compile_definitions(demo PRIVATE ASCENDC_DUMP=0)
 
 ## 内容与图片来源
 
-- 课程 Notebook：[04.04_simulation_analysis.ipynb](../04.04_simulation_analysis.ipynb)
-- 课程示例源自：[04.03/add_custom.asc](../src/04.03/add_custom.asc)
+- 课程仓库：[CANN LearningHub](https://gitcode.com/cann/cann-learning-hub/tree/master)
+- 参考 Notebook：`04.04_simulation_analysis.ipynb`
+- 课程示例源自：`src/04.03/add_custom.asc`
 

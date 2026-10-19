@@ -5,16 +5,17 @@ import { projects } from '../../data/projects';
 
 <BaseLayout title="项目">
   <h1>项目</h1>
-  <p style="color: var(--text-muted);">
-    课程项目与课题相关的代码实践，源码均托管在 GitHub。
+  <p class="page-intro">
+    课程项目与课题相关的代码实践，关注时间序列预测与数值计算。
   </p>
   <div class="project-grid">
     {
       projects.map((p) => (
-        <div class="project-card">
-          <h3>
-            {p.github ? <a href={p.github}>{p.title}</a> : p.title}
-          </h3>
+        <article class="project-card">
+          <div class="project-heading">
+            <h2>{p.title}</h2>
+            {p.year && <span class="project-year">{p.year}</span>}
+          </div>
           <p>{p.description}</p>
           <div class="project-meta">
             <div class="tech-list">
@@ -22,9 +23,15 @@ import { projects } from '../../data/projects';
                 <span class="tech">{t}</span>
               ))}
             </div>
-            {p.year && <span class="project-year">{p.year}</span>}
           </div>
-        </div>
+          <div class="project-source">
+            {p.github ? (
+              <a href={p.github} aria-label={`查看 ${p.title} 的 GitHub 源码`}>GitHub 源码 ↗</a>
+            ) : (
+              <span>暂未提供源码链接</span>
+            )}
+          </div>
+        </article>
       ))
     }
   </div>

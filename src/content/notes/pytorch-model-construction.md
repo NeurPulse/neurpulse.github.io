@@ -1,6 +1,6 @@
 ---
-title: 'Pytorch:模型构建'
-description: ''
+title: 'PyTorch：模型构建'
+description: '从 nn.Module 出发，理解模型、参数与自定义层的组织方式，并完成前向计算。'
 pubDate: 2026-08-08
 order: 5
 category: 'PyTorch'

@@ -1,67 +1,143 @@
 ---
-import { getCollection } from 'astro:content';
+import { getCollection, type CollectionEntry } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import PostCard from '../components/PostCard.astro';
 import { AUTHOR, RESEARCH_INTERESTS } from '../consts';
+import { compareCategories, compareReadingOrder } from '../utils/post-order';
+import { formatDate } from '../utils/date';
 
-const notes = (await getCollection('notes', ({ data }) => !data.draft)).sort(
-  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
-);
-const research = (
-  await getCollection('research', ({ data }) => !data.draft)
-).sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+type HomePost = {
+  post: CollectionEntry<'notes'> | CollectionEntry<'research'>;
+  base: '/notes' | '/research';
+};
 
-// 精选文章（frontmatter 里 featured: true）
-const featured = [
+const notes = await getCollection('notes', ({ data }) => !data.draft);
+const research = await getCollection('research', ({ data }) => !data.draft && data.kind === 'record');
+
+// 与笔记总览共用专题排序，首页入口直接打开对应的筛选结果。
+const categories = [...new Set(notes.map((post) => post.data.category))].sort(compareCategories);
+const topicHref = (category: string) => `/notes/#category-${categories.indexOf(category)}`;
+const topics = RESEARCH_INTERESTS.filter((name) => categories.includes(name)).map((name) => ({
+  name,
+  href: topicHref(name),
+  count: notes.filter((post) => post.data.category === name).length,
+}));
+
+const lastUpdated = ({ post }: HomePost) => new Date(Math.max(
+  post.data.pubDate.valueOf(), post.data.updatedDate?.valueOf() ?? 0
+));
+function compareLatest(a: HomePost, b: HomePost) {
+  return lastUpdated(b).valueOf() - lastUpdated(a).valueOf()
+    || compareCategories(a.post.data.category, b.post.data.category)
+    || compareReadingOrder(b.post, a.post)
+    || a.post.id.localeCompare(b.post.id, 'en');
+}
+
+const allPosts: HomePost[] = [
   ...notes.map((post) => ({ post, base: '/notes' as const })),
   ...research.map((post) => ({ post, base: '/research' as const })),
-].filter((x) => x.post.data.featured);
+].sort(compareLatest);
+const featured = allPosts.filter(({ post }) => post.data.featured);
+
+// 每个专题只展示最近一篇，避免同一批系列文章占满首页。
+const byTopic = new Map<string, HomePost[]>();
+for (const entry of allPosts) {
+  const key = `${entry.base}:${entry.post.data.category}`;
+  const group = byTopic.get(key) ?? [];
+  group.push(entry);
+  byTopic.set(key, group);
+}
+const recent = [...byTopic.values()].slice(0, 5).map((group) => {
+  const latest = group[0];
+  const date = lastUpdated(latest);
+  const sameDayCount = group.filter((entry) =>
+    lastUpdated(entry).toISOString().slice(0, 10) === date.toISOString().slice(0, 10)
+  ).length;
+  return { ...latest, date, sameDayCount };
+});
 ---
 
 <BaseLayout>
-  <section class="hero">
-    <h1>你好，我是{AUTHOR}</h1>
-    <p>
-      计算机科学与技术专业研究生。这里记录我在研究生三年时光里的学习笔记、
-      论文阅读。愿在读研究生的时光里，有所收获，有所成长。
-    </p>
-    <p>
-      望每次学习都有所得，而不是笔记的搬运工。学到了什么，远远大于学了什么。
-    </p>
-    <p>
-      哀吾生之须臾，羡长江之无穷。 ——苏轼《赤壁赋》
-    </p>
-    <ul class="interests">
-      {RESEARCH_INTERESTS.map((item) => <li>{item}</li>)}
-    </ul>
-  </section>
+  <div class="home">
+    <section class="home-hero" aria-labelledby="home-title">
+      <h1 id="home-title">你好，我是{AUTHOR}</h1>
+      <p>计算机科学与技术研究生，记录从数学建模到深度学习的学习笔记与实践。</p>
+    </section>
 
-  {
-    featured.length > 0 && (
-      <section>
-        <div class="section-head">
-          <h2>精选文章</h2>
-        </div>
-        {featured.map(({ post, base }) => (
-          <PostCard post={post} base={base} />
+    {
+      topics.length > 0 && (
+        <section class="home-section" aria-labelledby="home-topics-title">
+          <div class="home-section-head">
+            <h2 id="home-topics-title">按专题阅读</h2>
+            <a href="/notes/">全部专题 →</a>
+          </div>
+          <nav aria-label="研究方向与专题入口">
+            <ul class="home-topic-links">
+              {topics.map((topic) => (
+                <li>
+                  <a href={topic.href}>
+                    <span>{topic.name}</span>
+                    <span class="home-topic-count">{topic.count} 篇</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </section>
+      )
+    }
+
+    {
+      featured.length > 0 && (
+        <section class="home-section" aria-labelledby="home-featured-title">
+          <div class="home-section-head">
+            <h2 id="home-featured-title">精选文章</h2>
+          </div>
+          <div class="home-featured-list">
+            {featured.map(({ post, base }) => (
+              <article class="home-featured-card">
+                <h3><a href={`${base}/${post.id}/`}>{post.data.title}</a></h3>
+                <div class="home-article-meta">
+                  <a href={base === '/notes' ? topicHref(post.data.category) : '/research/'}>
+                    {post.data.category}
+                  </a>
+                  <time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate)}</time>
+                </div>
+                {post.data.description && <p>{post.data.description}</p>}
+                <a class="home-read-link" href={`${base}/${post.id}/`} aria-label={`阅读精选文章：${post.data.title}`}>阅读全文 →</a>
+              </article>
+            ))}
+          </div>
+        </section>
+      )
+    }
+
+    <section class="home-section" aria-labelledby="home-recent-title">
+      <div class="home-section-head">
+        <h2 id="home-recent-title">最近更新</h2>
+        <a href="/notes/">全部笔记 →</a>
+      </div>
+      <p class="home-section-intro">按专题追踪新的笔记与研究记录。</p>
+      <ul class="home-update-list">
+        {recent.map(({ post, base, date, sameDayCount }) => (
+          <li>
+            <article class="home-update">
+              <div class="home-article-meta">
+                <a href={base === '/notes' ? topicHref(post.data.category) : '/research/'}>
+                  {post.data.category}
+                </a>
+                <time datetime={date.toISOString()}>{formatDate(date)}</time>
+                {sameDayCount > 1 && <span>同日更新 {sameDayCount} 篇</span>}
+              </div>
+              <h3><a href={`${base}/${post.id}/`}>{post.data.title}</a></h3>
+              {post.data.description && <p>{post.data.description}</p>}
+            </article>
+          </li>
         ))}
-      </section>
-    )
-  }
-
-  <section>
-    <div class="section-head">
-      <h2>最新笔记</h2>
-      <a href="/notes/">全部笔记 →</a>
-    </div>
-    {notes.slice(0, 5).map((p) => <PostCard post={p} base="/notes" />)}
-  </section>
-
-  <section>
-    <div class="section-head">
-      <h2>研究记录</h2>
-      <a href="/research/">全部记录 →</a>
-    </div>
-    {research.slice(0, 3).map((p) => <PostCard post={p} base="/research" />)}
-  </section>
+      </ul>
+      <nav class="home-more-links" aria-label="更多阅读">
+        <a href="/research/">研究记录 →</a>
+        <a href="/search/">搜索文章 →</a>
+      </nav>
+    </section>
+  </div>
 </BaseLayout>

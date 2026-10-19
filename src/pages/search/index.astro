@@ -2,35 +2,72 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="搜索">
-  <link href="/pagefind/pagefind-ui.css" rel="stylesheet" slot="head" />
+<BaseLayout title="搜索" description="搜索学习笔记、研究记录与论文模板，按专题和内容类型查找文章。">
   <h1>搜索</h1>
-  <div id="search"></div>
+  <p class="page-intro">搜索标题与正文，按专题或类型筛选。</p>
+  <div id="search-app">
+    <form id="search-form" class="search-form" role="search" action="/search/">
+      <div class="search-label-row">
+        <label for="search-query">关键词</label>
+        <button id="search-clear" class="search-text-button" type="button" hidden>清除关键词</button>
+      </div>
+      <div class="search-input-row">
+        <input id="search-query" name="q" type="search" placeholder="输入关键词…" maxlength="120" autocomplete="off" spellcheck="false" autocapitalize="none" enterkeyhint="search" aria-controls="search-results" />
+        <button class="search-submit" type="submit">搜索</button>
+      </div>
+      <div class="search-filters" role="group" aria-label="筛选范围">
+        <label for="search-topic">专题
+          <select id="search-topic" name="topic" disabled><option value="">全部专题</option></select>
+        </label>
+        <label for="search-type">类型
+          <select id="search-type" name="type" disabled><option value="">全部类型</option></select>
+        </label>
+      </div>
+    </form>
 
-  <script src="/pagefind/pagefind-ui.js" is:inline></script>
-  <script is:inline>
-    window.addEventListener('DOMContentLoaded', function () {
-      if (typeof PagefindUI === 'undefined') {
-        document.getElementById('search').innerHTML =
-          '<p style="color: var(--text-muted)">本地 dev 模式下搜索不可用（搜索索引在构建时生成）。请先运行 <code>npm run build</code>，再用 <code>npm run preview</code> 预览。线上网站不受影响。</p>';
-        return;
-      }
-      new PagefindUI({
-        element: '#search',
-        showSubResults: true,
-        showImages: false,
-        translations: {
-          placeholder: '搜索笔记、研究记录…',
-          clear_search: '清除',
-          load_more: '加载更多结果',
-          search_label: '站内搜索',
-          filters_label: '筛选',
-          zero_results: '没有找到「[SEARCH_TERM]」的相关内容',
-          many_results: '找到 [COUNT] 条「[SEARCH_TERM]」的结果',
-          one_result: '找到 1 条「[SEARCH_TERM]」的结果',
-          searching: '正在搜索「[SEARCH_TERM]」…',
-        },
-      });
-    });
-  </script>
+    <section id="search-output" class="search-output" aria-label="搜索结果" aria-busy="true">
+      <div class="search-status-row">
+        <p id="search-status" role="status" aria-live="polite" aria-atomic="true">正在准备搜索…</p>
+        <button id="search-reset" class="search-text-button" type="button" hidden>清除筛选</button>
+      </div>
+      <div id="search-start" class="search-state" hidden>
+        <p>输入关键词，或先选择一个专题。也可以试试：</p>
+        <div class="search-examples" aria-label="搜索示例">
+          {['线性回归', 'PyTorch', 'Transformer'].map((term) => (
+            <button class="search-text-button" type="button" data-search-example={term}>{term}</button>
+          ))}
+        </div>
+      </div>
+      <ol id="search-results" class="search-results"></ol>
+      <div id="search-empty" class="search-state" hidden>
+        <h2>没有匹配的内容</h2>
+        <p id="search-empty-message"></p>
+        <p>试试更短的关键词，检查拼写，或使用常见概念名称。</p>
+        <div class="search-state-actions">
+          <button id="search-recover" class="search-text-button" type="button">更换关键词</button>
+          <a href="/notes/">按专题浏览笔记 →</a>
+        </div>
+      </div>
+      <div id="search-error" class="search-state" hidden>
+        <h2>搜索暂时不可用</h2>
+        <p>请稍后重试，也可以先按专题浏览笔记。</p>
+        <div class="search-state-actions">
+          <button id="search-retry" class="search-text-button" type="button">重新加载搜索</button>
+          <a href="/notes/">浏览全部专题 →</a>
+        </div>
+      </div>
+      <div id="search-pagination" class="search-pagination" hidden>
+        <p id="search-progress"></p>
+        <button id="search-more" type="button" hidden>加载更多结果</button>
+      </div>
+    </section>
+  </div>
+  <noscript>
+    <style>#search-app { display: none; }</style>
+    <p>搜索需要启用 JavaScript。也可以直接<a href="/notes/">按专题浏览学习笔记</a>，或查看<a href="/research/">研究记录与论文模板</a>。</p>
+  </noscript>
 </BaseLayout>
+
+<script>
+  import '../../scripts/search';
+</script>

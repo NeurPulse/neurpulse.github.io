@@ -8,16 +8,17 @@ interface Props {
   prev: NavPost | null;
   next: NavPost | null;
   base: '/notes' | '/research';
+  heading?: string;
 }
 
-const { prev, next, base } = Astro.props;
+const { prev, next, base, heading = '继续学习本专题' } = Astro.props;
 ---
 
 {
   (prev || next) && (
     <div class="post-nav-wrap">
-      <div class="post-nav-heading">继续学习本专题</div>
-      <nav class="post-nav" aria-label="专题上一篇和下一篇">
+      <div class="post-nav-heading">{heading}</div>
+      <nav class="post-nav" aria-label={`${heading}：上一篇和下一篇`}>
         {prev ? (
           <a href={`${base}/${prev.id}/`}>
             <span class="nav-label">← 上一篇</span>

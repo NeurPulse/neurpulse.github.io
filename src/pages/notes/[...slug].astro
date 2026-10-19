@@ -45,6 +45,7 @@ export async function getStaticPaths() {
 const { post, series, prev, next } = Astro.props;
 const { Content, headings } = await render(post);
 const currentIndex = series.findIndex((item) => item.id === post.id);
+const hasToc = headings.filter((heading) => heading.depth >= 2 && heading.depth <= 4).length > 1;
 ---
 
 <BaseLayout title={post.data.title} description={post.data.description} wide>
@@ -67,15 +68,15 @@ const currentIndex = series.findIndex((item) => item.id === post.id);
           <span>{post.data.category}</span>
           <span>第 {currentIndex + 1} / {series.length} 篇</span>
         </div>
-        <h1>{post.data.title}</h1>
+        <h1 data-pagefind-body data-pagefind-meta="title" data-pagefind-filter="类型:学习笔记">{post.data.title}</h1>
         <div class="post-meta">
-          <time>{formatDate(post.data.pubDate)}</time>
+          <time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate)}</time>
           {
             post.data.updatedDate && (
               <span>更新于 {formatDate(post.data.updatedDate)}</span>
             )
           }
-          <span class="post-category">{post.data.category}</span>
+          <span class="post-category" data-pagefind-filter="专题">{post.data.category}</span>
         </div>
         {
           post.data.tags.length > 0 && (
@@ -90,20 +91,25 @@ const currentIndex = series.findIndex((item) => item.id === post.id);
         }
       </div>
       {
-        series.length > 1 && (
-          <details class="series-mobile">
-            <summary>
-              查看“{post.data.category}”专题目录（{currentIndex + 1}/{series.length}）
-            </summary>
-            <SeriesNavigation
-              posts={series}
-              currentId={post.id}
-              category={post.data.category}
-            />
-          </details>
+        (series.length > 1 || hasToc) && (
+          <div class="post-reading-nav">
+            {series.length > 1 && (
+              <details class="series-mobile">
+                <summary>
+                  查看“{post.data.category}”专题目录（{currentIndex + 1}/{series.length}）
+                </summary>
+                <SeriesNavigation
+                  posts={series}
+                  currentId={post.id}
+                  category={post.data.category}
+                />
+              </details>
+            )}
+            <TableOfContents headings={headings} mobile />
+          </div>
         )
       }
-      <article class="prose">
+      <article class="prose" data-pagefind-body>
         <Content />
       </article>
       <PostNav prev={prev} next={next} base="/notes" />

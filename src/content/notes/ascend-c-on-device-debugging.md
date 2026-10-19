@@ -167,6 +167,7 @@ target_compile_definitions(demo PRIVATE ASCENDC_DUMP=0)
 
 ## 内容来源
 
-- 课程 Notebook：[04.02_NPU_On-Board_Debugging.ipynb](../04.02_NPU_On-Board_Debugging.ipynb)
-- 示例源码：[add_custom.asc](../src/04.02/add_custom.asc)
+- 课程仓库：[CANN LearningHub](https://gitcode.com/cann/cann-learning-hub/tree/master)
+- 参考 Notebook：`04.02_NPU_On-Board_Debugging.ipynb`
+- 示例源码：课程内的 `src/04.02/add_custom.asc`
 

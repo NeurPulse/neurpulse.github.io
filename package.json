@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build && pagefind --site dist",
+    "build": "astro build && pagefind --site dist --exclude-selectors .katex-mathml",
     "preview": "astro preview",
     "new": "node scripts/new-post.mjs",
     "fix-images": "node scripts/fix-images.mjs"

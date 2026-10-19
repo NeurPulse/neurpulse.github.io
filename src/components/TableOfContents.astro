@@ -7,50 +7,102 @@ interface Heading {
 
 interface Props {
   headings: Heading[];
+  mobile?: boolean;
 }
 
-const { headings } = Astro.props;
+const { headings, mobile = false } = Astro.props;
 // 收录 h2/h3/h4 三级标题
 const toc = headings.filter((h) => h.depth >= 2 && h.depth <= 4);
+const Container = mobile ? 'details' : 'div';
 ---
 
 {
   toc.length > 1 && (
-    <nav class="toc" aria-label="文章目录">
-      <div class="toc-title">目录</div>
-      <ul>
-        {toc.map((h) => (
-          <li class={`depth-${h.depth}`}>
-            <a href={`#${h.slug}`} data-toc-link={h.slug}>
-              {h.text}
-            </a>
-          </li>
-        ))}
-      </ul>
-    </nav>
+    <Container class:list={[{ 'toc-mobile': mobile }]} data-mobile-toc={mobile || undefined} data-pagefind-ignore>
+      {mobile && <summary>本文目录 <span class="toc-count">{toc.length} 个小节</span></summary>}
+      <nav class="toc" aria-label="本文目录">
+        {!mobile && <div class="toc-title">本文目录</div>}
+        <ul>
+          {toc.map((h) => (
+            <li class={`depth-${h.depth}`}>
+              <a href={`#${h.slug}`} data-toc-link={h.slug}>
+                {h.text}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </Container>
   )
 }
 
 <script>
-  // 滚动时高亮当前小节
+  // 桌面与手机目录共用当前小节状态，每个正文标题只测量一次。
   const tocLinks = document.querySelectorAll<HTMLAnchorElement>('[data-toc-link]');
   if (tocLinks.length > 0) {
-    const headingEls = [...tocLinks]
-      .map((l) => document.getElementById(l.dataset.tocLink!))
-      .filter((el): el is HTMLElement => el !== null);
+    const headingEls = [...new Set([...tocLinks].map((link) => link.dataset.tocLink!))]
+      .map((id) => document.getElementById(id))
+      .filter((heading): heading is HTMLElement => heading !== null);
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            tocLinks.forEach((l) =>
-              l.classList.toggle('active', l.dataset.tocLink === entry.target.id)
-            );
-          }
+    let currentId: string | undefined;
+    function setCurrent(id: string) {
+      if (currentId === id) return;
+      currentId = id;
+      tocLinks.forEach((link) => {
+        const current = link.dataset.tocLink === id;
+        link.classList.toggle('active', current);
+        if (current) link.setAttribute('aria-current', 'location');
+        else link.removeAttribute('aria-current');
+      });
+    }
+
+    function updateCurrent() {
+      const offset = (document.querySelector('.site-header')?.getBoundingClientRect().height ?? 0) + 24;
+      let current = headingEls[0];
+      for (const heading of headingEls) {
+        if (heading.getBoundingClientRect().top > offset) break;
+        current = heading;
+      }
+      if (current) setCurrent(current.id);
+    }
+
+    let scheduled = false;
+    function scheduleUpdate() {
+      if (scheduled) return;
+      scheduled = true;
+      requestAnimationFrame(() => {
+        scheduled = false;
+        updateCurrent();
+      });
+    }
+    window.addEventListener('scroll', scheduleUpdate, { passive: true });
+    window.addEventListener('resize', scheduleUpdate);
+    window.addEventListener('hashchange', scheduleUpdate);
+    const header = document.querySelector('.site-header');
+    if (header) new ResizeObserver(scheduleUpdate).observe(header);
+    scheduleUpdate();
+
+    tocLinks.forEach((link) => {
+      link.addEventListener('click', (event) => {
+        const details = link.closest<HTMLDetailsElement>('[data-mobile-toc]');
+        if (!details || event.defaultPrevented || event.button !== 0
+          || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        const heading = document.getElementById(link.dataset.tocLink!);
+        if (!heading) return;
+
+        // 先收起目录再定位，避免折叠后的高度变化把标题推到导航后面。
+        event.preventDefault();
+        details.open = false;
+        if (location.hash !== link.hash) history.pushState(null, '', link.hash);
+        heading.scrollIntoView({ block: 'start' });
+        const hadTabindex = heading.hasAttribute('tabindex');
+        if (!hadTabindex) {
+          heading.tabIndex = -1;
+          heading.addEventListener('blur', () => heading.removeAttribute('tabindex'), { once: true });
         }
-      },
-      { rootMargin: '-80px 0px -70% 0px' }
-    );
-    headingEls.forEach((el) => observer.observe(el));
+        heading.focus({ preventScroll: true });
+        setCurrent(heading.id);
+      });
+    });
   }
 </script>

@@ -181,6 +181,7 @@ target_compile_definitions(demo PRIVATE ASCENDC_DUMP=0)
 
 ## 内容与图片来源
 
-- 课程 Notebook：[04.03_profiling_tool_usage.ipynb](../04.03_profiling_tool_usage.ipynb)
-- 示例源码：[add_custom.asc](../src/04.03/add_custom.asc)
+- 课程仓库：[CANN LearningHub](https://gitcode.com/cann/cann-learning-hub/tree/master)
+- 参考 Notebook：`04.03_profiling_tool_usage.ipynb`
+- 示例源码：课程内的 `src/04.03/add_custom.asc`
 

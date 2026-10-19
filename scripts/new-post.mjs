@@ -64,7 +64,7 @@ const content = `---
 title: ${yaml(title)}
 description: ''
 pubDate: ${today()}
-${order ? `order: ${order}\n` : ''}category: ${yaml(category)}
+${dir === 'research' ? 'kind: record\n' : ''}${order ? `order: ${order}\n` : ''}category: ${yaml(category)}
 tags: [${tags.map(yaml).join(', ')}]
 ${featured ? 'featured: true\n' : ''}---
 

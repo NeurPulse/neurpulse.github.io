@@ -20,7 +20,9 @@ const notes = defineCollection({
 
 const research = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/research' }),
-  schema: postSchema,
+  schema: postSchema.extend({
+    kind: z.enum(['record', 'template']).default('record'),
+  }),
 });
 
 export const collections = { notes, research };

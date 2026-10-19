@@ -6,12 +6,32 @@ import PostCard from '../../components/PostCard.astro';
 const posts = (
   await getCollection('research', ({ data }) => !data.draft)
 ).sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+const records = posts.filter((post) => post.data.kind === 'record');
+const templates = posts.filter((post) => post.data.kind === 'template');
 ---
 
 <BaseLayout title="研究记录">
   <h1>研究记录</h1>
-  <p style="color: var(--text-muted);">
+  <p class="page-intro">
     论文精读、实验记录与课题进展。
   </p>
-  {posts.map((p) => <PostCard post={p} base="/research" />)}
+  <section class="research-list" aria-labelledby="research-records-title">
+    <div class="section-head">
+      <h2 id="research-records-title">已发布记录 <span class="count">{records.length} 篇</span></h2>
+    </div>
+    {records.length > 0 ? (
+      records.map((post) => <PostCard post={post} base="/research" />)
+    ) : (
+      <p class="research-empty">暂未发布研究记录。这里将收录完成整理的论文精读、实验过程与课题进展。</p>
+    )}
+  </section>
+  {templates.length > 0 && (
+    <section class="research-list research-templates" id="templates" aria-labelledby="research-templates-title">
+      <div class="section-head">
+        <h2 id="research-templates-title">论文模板 <span class="count">{templates.length} 份</span></h2>
+      </div>
+      <p class="research-section-intro">写作参考，帮助组织论文信息、核心方法、实验结果与个人启发。</p>
+      {templates.map((post) => <PostCard post={post} base="/research" />)}
+    </section>
+  )}
 </BaseLayout>

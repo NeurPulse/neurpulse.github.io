@@ -9,40 +9,47 @@ export async function getStaticPaths() {
   const posts = (
     await getCollection('research', ({ data }) => !data.draft)
   ).sort((a, b) => a.data.pubDate.valueOf() - b.data.pubDate.valueOf());
-  return posts.map((post, i) => ({
-    params: { slug: post.id },
-    props: {
-      post,
-      prev:
-        i > 0
-          ? { id: posts[i - 1].id, title: posts[i - 1].data.title }
-          : null,
-      next:
-        i < posts.length - 1
-          ? { id: posts[i + 1].id, title: posts[i + 1].data.title }
-          : null,
-    },
-  }));
+  return posts.map((post) => {
+    const siblings = posts.filter((entry) => entry.data.kind === post.data.kind);
+    const i = siblings.findIndex((entry) => entry.id === post.id);
+    return {
+      params: { slug: post.id },
+      props: {
+        post,
+        prev:
+          i > 0
+            ? { id: siblings[i - 1].id, title: siblings[i - 1].data.title }
+            : null,
+        next:
+          i < siblings.length - 1
+            ? { id: siblings[i + 1].id, title: siblings[i + 1].data.title }
+            : null,
+      },
+    };
+  });
 }
 
 const { post, prev, next } = Astro.props;
 const { Content, headings } = await render(post);
+const isTemplate = post.data.kind === 'template';
+const contentType = isTemplate ? '论文模板' : '研究记录';
 ---
 
 <BaseLayout title={post.data.title} description={post.data.description} wide>
-  <div class="post-wrapper">
-    <div>
-      <a href="/research/" class="back-link">← 返回研究记录</a>
+  <div class="post-wrapper single-series">
+    <div class="post-main">
+      <a href={isTemplate ? '/research/#templates' : '/research/'} class="back-link">← {isTemplate ? '返回论文模板' : '返回研究记录'}</a>
       <div class="post-header">
-        <h1>{post.data.title}</h1>
+        <h1 data-pagefind-body data-pagefind-meta="title" data-pagefind-filter={`类型:${contentType}`}>{post.data.title}</h1>
         <div class="post-meta">
-          <time>{formatDate(post.data.pubDate)}</time>
+          <span>{contentType}</span>
+          <time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate)}</time>
           {
             post.data.updatedDate && (
               <span>更新于 {formatDate(post.data.updatedDate)}</span>
             )
           }
-          <span class="post-category">{post.data.category}</span>
+          <span class="post-category" data-pagefind-filter="专题">{post.data.category}</span>
         </div>
         {
           post.data.tags.length > 0 && (
@@ -56,11 +63,14 @@ const { Content, headings } = await render(post);
           )
         }
       </div>
-      <article class="prose">
+      <TableOfContents headings={headings} mobile />
+      <article class="prose" data-pagefind-body>
         <Content />
       </article>
-      <PostNav prev={prev} next={next} base="/research" />
+      <PostNav prev={prev} next={next} base="/research" heading={isTemplate ? '更多论文模板' : '继续阅读研究记录'} />
     </div>
-    <TableOfContents headings={headings} />
+    <aside class="toc-sidebar">
+      <TableOfContents headings={headings} />
+    </aside>
   </div>
 </BaseLayout>

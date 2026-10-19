@@ -16,7 +16,8 @@ const tags = [...counts.entries()].sort((a, b) => b[1] - a[1]);
 
 <BaseLayout title="标签">
   <h1>标签</h1>
-  <div class="tags" style="margin-top: 16px;">
+  <p class="page-intro">共 {tags.length} 个标签，按文章数量排列。选择标签，查看相关笔记与研究内容。</p>
+  <div class="tags">
     {
       tags.map(([tag, count]) => (
         <a class="tag" href={`/tags/${tag}/`}>
