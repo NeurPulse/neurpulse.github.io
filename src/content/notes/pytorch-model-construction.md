@@ -2,6 +2,7 @@
 title: 'PyTorch：模型构建'
 description: '从 nn.Module 出发，理解模型、参数与自定义层的组织方式，并完成前向计算。'
 pubDate: 2026-08-08
+updatedDate: 2026-10-19
 order: 5
 category: 'PyTorch'
 tags: ['神经网络的构造方法']
@@ -10,459 +11,308 @@ featured: true
 
 ## 模型构建
 
-> PyTorch中神经网络构造一般是基于`nn.Module`类的模型来完成的，它让模型构造更加灵活。
-
-
+PyTorch 通常通过继承 `nn.Module` 来组织神经网络：在 `__init__` 中注册子模块和参数，在 `forward` 中定义数据如何流动。下面的示例按顺序执行，使用浮点张量；模型与输入需要位于同一设备、使用兼容的数据类型。
 
 ### 神经网络构造
 
-`Module` 类是 `torch.nn` 模块里提供的一个模型构造类，是所有神经网络模块的基类，我们可以继承它来定义我们想要的模型。
-
-例子：继承 Module 类构造多层感知机。
-
-定义的 MLP 类重载了 `Module` 类的 `__init__` 函数和 `forward` 函数。它们分别用于创建模型参数和定义前向计算（正向传播）。
-
-下面的 MLP 类定义了一个具有两个隐藏层的多层感知机。
+下面的 MLP 有**一个隐藏层和一个输出层**，共两个全连接层。输入是已经展平的 `[batch_size, 784]` 张量，输出是 10 个类别的 logits。
 
 ```python
 import torch
 from torch import nn
+import torch.nn.functional as F
+
 
 class MLP(nn.Module):
-  # 声明带有模型参数的层，这里声明了两个全连接层
-  def __init__(self, **kwargs):
-    # 调用MLP父类Block的构造函数来进行必要的初始化。这样在构造实例时还可以指定其他函数
-    super(MLP, self).__init__(**kwargs)
-    self.hidden = nn.Linear(784, 256)
-    self.act = nn.ReLU()
-    self.output = nn.Linear(256,10)
-    
-   # 定义模型的前向计算，即如何根据输入x计算返回所需要的模型输出
-  def forward(self, x):
-    o = self.act(self.hidden(x))
-    return self.output(o)   
-```
+    def __init__(self):
+        super().__init__()
+        self.hidden = nn.Linear(784, 256)
+        self.act = nn.ReLU()
+        self.output = nn.Linear(256, 10)
 
- MLP 类中⽆须定义反向传播函数。$\to$  系统将通过⾃动求梯度⽽自动⽣成反向传播所需的 `backward` 函数。
-
-
-
-例子：实例化 `MLP` 类得到模型变量 `net` 
-
-代码初始化 `net` 并传入输⼊数据 `X` 做一次前向计算。
-
-其中， `net(X)` 会调用 `MLP` 继承⾃自 `Module` 类的 `__call__` 函数，这个函数将调⽤用 `MLP` 类定义的`forward` 函数来完成前向计算。
-
-所以在构造模型时需要明确定义模型的forward过程
-
-```python
-X = torch.rand(2,784) # 设置一个随机的输入张量
-net = MLP() # 实例化模型
-print(net) # 打印模型
-net(X) # 前向计算
-```
-
-```python
-MLP(
-  (hidden): Linear(in_features=784, out_features=256, bias=True)
-  (act): ReLU()
-  (output): Linear(in_features=256, out_features=10, bias=True)
-)
-tensor([[ 0.0149, -0.2641, -0.0040,  0.0945, -0.1277, -0.0092,  0.0343,  0.0627,
-         -0.1742,  0.1866],
-        [ 0.0738, -0.1409,  0.0790,  0.0597, -0.1572,  0.0479, -0.0519,  0.0211,
-         -0.1435,  0.1958]], grad_fn=<AddmmBackward>)
-```
-
-注：
-
-> 这里并没有将 `Module` 类命名为 `Layer` (层)或者 `Model` (模型)之类的名字，这是因为此类是一个可供⾃由组建的部件。它的子类既可以是⼀个层(如PyTorch提供的 Linear 类)，⼜可以是一个模型(如这里定义的 MLP 类)，或者是模型的⼀个部分。
-
-
-
-### 神经网络中的层：
-
-深度学习的一个魅力在于神经网络中各式各样的层，例如全连接层、卷积层、池化层与循环层等等。虽然PyTorch提供了⼤量常用的层，但有时候我们依然希望⾃定义层。我们可以使用 `Module` 来自定义层，从而可以被反复调用。
-
-#### **不含模型参数的层**：
-
-如何定义一个不含模型参数的自定义层？
-
-可以使用构造的 `MyLayer` 类通过继承 `Module` 类自定义一个**将输入减掉均值后输出**的层，并将层的计算定义在了 forward 函数里。这个层里不含模型参数。
-
-```python
-import torch
-from torch import nn
-
-class MyLayer(nn.Module):
-    def __init__(self, **kwargs):
-        super(MyLayer, self).__init__(**kwargs)
     def forward(self, x):
-        return x - x.mean()  
+        return self.output(self.act(self.hidden(x)))
+
+
+torch.manual_seed(42)
+X = torch.rand(2, 784)
+net = MLP()
+assert net(X).shape == (2, 10)
 ```
 
+`net(X)` 通过 `nn.Module` 的调用机制执行 `forward`，并处理注册的 hooks 等逻辑，所以通常应调用模型本身，而不是直接调用 `net.forward(X)`。
+
+当运算涉及需要梯度的张量且梯度记录开启时，autograd 会记录计算图，再由 `loss.backward()` 沿图计算梯度。这里不需要为整个 MLP 手写反向传播函数；这不等于系统会给自定义类生成一个 `backward` 方法。
+
+### 神经网络中的层
+
+`nn.Module` 既可以表示一层，也可以表示完整模型或模型的一部分。除了使用内置的全连接层、卷积层和池化层，也可以组合张量运算定义自己的层。
+
+#### 不含模型参数的层
+
+这个层减去**整个输入张量的均值**，不包含可学习参数。对于二维输入，它不会分别对每个样本做中心化；若需要按样本处理，应明确指定 `dim` 和 `keepdim`。
+
 ```python
+class MyLayer(nn.Module):
+    def forward(self, x):
+        return x - x.mean()
+
+
 layer = MyLayer()
-layer(torch.tensor([1, 2, 3, 4, 5], dtype=torch.float))
+result = layer(torch.tensor([1., 2., 3., 4., 5.]))
+torch.testing.assert_close(result, torch.tensor([-2., -1., 0., 1., 2.]))
 ```
 
-```python
-tensor([-2., -1.,  0.,  1.,  2.])
-```
+不含参数并不意味着不能求导：只要输入需要梯度，中心化运算仍可以参与计算图。
 
+#### 含模型参数的层
 
-
-#### **含模型参数的层**：
-
-> 自定义含模型参数的自定义层。其中的模型参数可以通过训练学出。
-
-`Parameter` 类其实是 `Tensor` 的子类，如果一个 `Tensor` 是 `Parameter` ，那么它会⾃动被添加到模型的参数列表里。所以在⾃定义含模型参数的层时，我们应该将参数定义成 `Parameter` ，除了直接定义成 `Parameter` 类外，还可以使⽤ `ParameterList` 和 `ParameterDict` 分别定义参数的列表和字典。
+`nn.Parameter` 是 Tensor 的子类。将它赋给 `nn.Module` 的属性后，它会被注册为模型参数；单纯创建一个 `Parameter` 对象并不会让所有模型自动收集它。普通 Python 列表中的参数也不会自动注册，应使用 `nn.ParameterList` 或 `nn.ParameterDict`。
 
 ```python
 class MyListDense(nn.Module):
     def __init__(self):
-        super(MyListDense, self).__init__()
-        self.params = nn.ParameterList([nn.Parameter(torch.randn(4, 4)) for i in range(3)])
+        super().__init__()
+        self.params = nn.ParameterList(
+            [nn.Parameter(torch.randn(4, 4)) for _ in range(3)]
+        )
         self.params.append(nn.Parameter(torch.randn(4, 1)))
 
     def forward(self, x):
-        for i in range(len(self.params)):
-            x = torch.mm(x, self.params[i])
+        for weight in self.params:
+            x = x @ weight
         return x
+
+
 net = MyListDense()
-print(net)
+assert len(list(net.parameters())) == 4
+assert net(torch.randn(2, 4)).shape == (2, 1)
 ```
+
+`ParameterDict` 则适合按名字选择参数。下面每次只选择一个矩阵，不是依次执行字典中的所有矩阵；输入最后一维必须为 4。
 
 ```python
 class MyDictDense(nn.Module):
     def __init__(self):
-        super(MyDictDense, self).__init__()
+        super().__init__()
         self.params = nn.ParameterDict({
-                'linear1': nn.Parameter(torch.randn(4, 4)),
-                'linear2': nn.Parameter(torch.randn(4, 1))
+            "linear1": nn.Parameter(torch.randn(4, 4)),
+            "linear2": nn.Parameter(torch.randn(4, 1)),
         })
-        self.params.update({'linear3': nn.Parameter(torch.randn(4, 2))}) # 新增
+        self.params["linear3"] = nn.Parameter(torch.randn(4, 2))
 
-    def forward(self, x, choice='linear1'):
-        return torch.mm(x, self.params[choice])
+    def forward(self, x, choice="linear1"):
+        return x @ self.params[choice]
+
 
 net = MyDictDense()
-print(net)
+assert net(torch.randn(2, 4), "linear3").shape == (2, 2)
 ```
 
+#### 二维卷积层
 
+PyTorch 的二维卷积执行的是**互相关**，不翻转卷积核。下面先实现单输入通道、单输出通道、步幅为 1、无填充的教学版本：
 
-
-
-#### 	**二维卷积层**
-
-二维卷积层将输入和卷积核做互相关运算，并加上一个标量偏差来得到输出。
-
-卷积层的模型参数包括了卷积核和标量偏差。在训练模型的时候，通常我们先对卷积核随机初始化，然后不断迭代卷积核和偏差。
+$$
+Y_{i,j}=\sum_{a=0}^{h-1}\sum_{b=0}^{w-1}X_{i+a,j+b}K_{a,b}.
+$$
 
 ```python
-import torch
-from torch import nn
-
-# 卷积运算（二维互相关）
-def corr2d(X, K): 
+def corr2d(X, K):
+    if X.ndim != 2 or K.ndim != 2:
+        raise ValueError("X 和 K 必须是二维张量")
+    if X.dtype != K.dtype or X.device != K.device:
+        raise ValueError("X 和 K 必须使用相同的 dtype 和 device")
+    if not X.is_floating_point():
+        raise TypeError("教学实现要求浮点张量")
     h, w = K.shape
-    X, K = X.float(), K.float()
-    Y = torch.zeros((X.shape[0] - h + 1, X.shape[1] - w + 1))
-    for i in range(Y.shape[0]):
-        for j in range(Y.shape[1]):
-            Y[i, j] = (X[i: i + h, j: j + w] * K).sum()
-    return Y
+    if h == 0 or w == 0 or h > X.shape[0] or w > X.shape[1]:
+        raise ValueError("卷积核必须非空，且不能大于输入")
+    rows = []
+    for i in range(X.shape[0] - h + 1):
+        row = [
+            (X[i:i + h, j:j + w] * K).sum()
+            for j in range(X.shape[1] - w + 1)
+        ]
+        rows.append(torch.stack(row))
+    return torch.stack(rows)
 
-# 二维卷积层
+
 class Conv2D(nn.Module):
     def __init__(self, kernel_size):
-        super(Conv2D, self).__init__()
+        super().__init__()
         self.weight = nn.Parameter(torch.randn(kernel_size))
-        self.bias = nn.Parameter(torch.randn(1))
+        self.bias = nn.Parameter(torch.zeros(1))
 
     def forward(self, x):
         return corr2d(x, self.weight) + self.bias
 ```
 
-卷积窗口形状为$ p \times q$ 的卷积层称为 $p \times q$ 卷积层。同样，$p \times q$卷积或 $p \times q $卷积核说明卷积核的高和宽分别为$ p 和 q$，一般情况下，$p = q$。
+使用 `torch.stack` 保留计算图，也让输出跟随输入的设备和数据类型。这里不会悄悄把 float64 转成 float32，或在 GPU 输入旁创建 CPU 输出。循环实现便于理解，实际训练应使用经过优化的 `nn.Conv2d`。
 
-填充(padding)是指在输⼊高和宽的两侧填充元素(通常是0元素)。
+卷积核形状为 $p\times q$，表示核的高为 $p$、宽为 $q$，二者不必相等。对于每侧对称填充，输出高度为：
 
-例子:
+$$
+H_{out}=\left\lfloor\frac{H_{in}+2p_h-d_h(k_h-1)-1}{s_h}+1\right\rfloor.
+$$
 
-创建一个⾼和宽为3的二维卷积层，然后设输⼊高和宽两侧的填充数分别为1。给定一个高和宽为8的输入，我们发现输出的高和宽也是8。
+输出宽度同理，将下标 $h$ 换为 $w$。这里 $p$ 是每侧填充数，$s$ 是步幅，$d$ 是膨胀系数，$k$ 是卷积核大小。
+
+下面的辅助函数只处理**单样本、单输入通道、单输出通道**的示例：
 
 ```python
-import torch
-from torch import nn
-
-# 定义一个函数来计算卷积层。它对输入和输出做相应的升维和降维
 def comp_conv2d(conv2d, X):
-    # (1, 1)代表批量大小和通道数
-    X = X.view((1, 1) + X.shape)
-    Y = conv2d(X)
-    return Y.view(Y.shape[2:]) # 排除不关心的前两维:批量和通道
+    Y = conv2d(X.unsqueeze(0).unsqueeze(0))
+    return Y.squeeze(0).squeeze(0)
 
-
-# 注意这里是两侧分别填充1⾏或列，所以在两侧一共填充2⾏或列
-conv2d = nn.Conv2d(in_channels=1, out_channels=1, kernel_size=3,padding=1)
 
 X = torch.rand(8, 8)
-comp_conv2d(conv2d, X).shape
-```
+conv2d = nn.Conv2d(1, 1, kernel_size=3, padding=1)
+assert comp_conv2d(conv2d, X).shape == (8, 8)
 
-```python
-torch.Size([8, 8])
-```
+conv2d = nn.Conv2d(1, 1, kernel_size=(5, 3), padding=(2, 1))
+assert comp_conv2d(conv2d, X).shape == (8, 8)
 
-当卷积核的高和宽不同时，我们也可以通过设置高和宽上不同的填充数使输出和输入具有相同的高和宽。
-
-```python
-# 使用高为5、宽为3的卷积核。在⾼和宽两侧的填充数分别为2和1
-conv2d = nn.Conv2d(in_channels=1, out_channels=1, kernel_size=(5, 3), padding=(2, 1))
-comp_conv2d(conv2d, X).shape
-```
-
-```
-torch.Size([8, 8])
-```
-
-在二维互相关运算中，卷积窗口从输入数组的最左上方开始，按从左往右、从上往下 的顺序，依次在输⼊数组上滑动。我们将每次滑动的行数和列数称为步幅(stride)。
-
-```python
 conv2d = nn.Conv2d(1, 1, kernel_size=(3, 5), padding=(0, 1), stride=(3, 4))
-comp_conv2d(conv2d, X).shape
+assert comp_conv2d(conv2d, X).shape == (2, 2)
 ```
 
-```python
-torch.Size([2, 2])
-```
-
-填充可以增加输出的高和宽。这常用来使输出与输入具有相同的高和宽。
-
-步幅可以减小输出的高和宽，例如输出的高和宽仅为输入的高和宽的 ( 为大于1的整数)。
-
-
+前两个例子在步幅为 1、膨胀系数为 1 时，通过适当填充保持尺寸。步幅增大通常会减小输出尺寸，但应代入公式计算，不能一概写成输入尺寸除以步幅。
 
 #### 池化层
 
-池化层每次对输入数据的一个固定形状窗口(⼜称池化窗口)中的元素计算输出。不同于卷积层里计算输⼊和核的互相关性，池化层直接计算池化窗口内元素的属性（均值、最大值等）。常见的池化包括最大池化或平均池化。在二维最⼤池化中，池化窗口从输入数组的最左上方开始，按从左往右、从上往下的顺序，依次在输⼊数组上滑动。当池化窗口滑动到某⼀位置时，窗口中的输入子数组的最大值即输出数组中相应位置的元素。
+池化对窗口内的值求最大值或均值。下面的教学实现仍限定为二维浮点输入、步幅为 1、无填充；它不包含 `nn.MaxPool2d` 的所有参数。
 
 ```python
-import torch
-from torch import nn
-
-def pool2d(X, pool_size, mode='max'):
+def pool2d(X, pool_size, mode="max"):
+    if X.ndim != 2 or not X.is_floating_point():
+        raise ValueError("X 必须是二维浮点张量")
+    if mode not in ("max", "avg"):
+        raise ValueError("mode 必须为 max 或 avg")
     p_h, p_w = pool_size
-    Y = torch.zeros((X.shape[0] - p_h + 1, X.shape[1] - p_w + 1))
-    for i in range(Y.shape[0]):
-        for j in range(Y.shape[1]):
-            if mode == 'max':
-                Y[i, j] = X[i: i + p_h, j: j + p_w].max()
-            elif mode == 'avg':
-                Y[i, j] = X[i: i + p_h, j: j + p_w].mean()
-    return Y
+    if p_h <= 0 or p_w <= 0 or p_h > X.shape[0] or p_w > X.shape[1]:
+        raise ValueError("池化窗口必须为正，且不能大于输入")
+    rows = []
+    for i in range(X.shape[0] - p_h + 1):
+        row = []
+        for j in range(X.shape[1] - p_w + 1):
+            window = X[i:i + p_h, j:j + p_w]
+            row.append(window.max() if mode == "max" else window.mean())
+        rows.append(torch.stack(row))
+    return torch.stack(rows)
+
+
+X = torch.arange(9, dtype=torch.float32).reshape(3, 3)
+torch.testing.assert_close(pool2d(X, (2, 2)), torch.tensor([[4., 5.], [7., 8.]]))
+torch.testing.assert_close(pool2d(X, (2, 2), "avg"), torch.tensor([[2., 3.], [5., 6.]]))
 ```
-
-```python
-X = torch.tensor([[0, 1, 2], [3, 4, 5], [6, 7, 8]], dtype=torch.float)
-pool2d(X, (2, 2))
-```
-
-```python
-tensor([[4., 5.],
-	[7., 8.]])
-```
-
-```python
-pool2d(X, (2, 2), 'avg')
-```
-
-```python
-tensor([[2., 3.],
-	[5., 6.]])
-```
-
-
 
 ### 完整模型 LeNet
 
 ![LeNet](../../../public/images/pytorch/LeNet.png)
 
-这是一个简单的前馈神经网络 (feed-forward network）（LeNet）。它接受一个输入，然后将它送入下一层，一层接一层的传递，最后给出输出。
-
-一个神经网络的典型训练过程如下：
-
-1. 定义包含一些可学习参数(或者叫权重）的神经网络
-2. 在输入数据集上迭代
-3. 通过网络处理输入
-4. 计算 loss (输出和正确答案的距离）
-5. 将梯度反向传播给网络的参数
-6. 更新网络的权重，一般使用一个简单的规则：`weight = weight - learning_rate * gradient`
+下面是常见的 LeNet 风格教学网络，使用 ReLU 和最大池化，并非原论文网络所有细节的逐项复现。输入约定为 `[N, 1, 32, 32]`，两次卷积和池化后得到 `[N, 16, 5, 5]`。
 
 ```python
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-
-
 class Net(nn.Module):
-
     def __init__(self):
-        super(Net, self).__init__()
-        # 输入图像channel：1；输出channel：6；5x5卷积核
+        super().__init__()
         self.conv1 = nn.Conv2d(1, 6, 5)
         self.conv2 = nn.Conv2d(6, 16, 5)
-        # an affine operation: y = Wx + b
         self.fc1 = nn.Linear(16 * 5 * 5, 120)
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 10)
 
     def forward(self, x):
-        # 2x2 Max pooling
-        x = F.max_pool2d(F.relu(self.conv1(x)), (2, 2))
-        # 如果是方阵,则可以只使用一个数字进行定义
+        x = F.max_pool2d(F.relu(self.conv1(x)), 2)
         x = F.max_pool2d(F.relu(self.conv2(x)), 2)
-        x = x.view(-1, self.num_flat_features(x))
+        x = torch.flatten(x, 1)  # 保留 batch 维度
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
-
-    def num_flat_features(self, x):
-        size = x.size()[1:]  # 除去批处理维度的其他所有维度
-        num_features = 1
-        for s in size:
-            num_features *= s
-        return num_features
+        return self.fc3(x)
 
 
 net = Net()
-print(net)
-```
-
-```python
-Net(
-  (conv1): Conv2d(1, 6, kernel_size=(5, 5), stride=(1, 1))
-  (conv2): Conv2d(6, 16, kernel_size=(5, 5), stride=(1, 1))
-  (fc1): Linear(in_features=400, out_features=120, bias=True)
-  (fc2): Linear(in_features=120, out_features=84, bias=True)
-  (fc3): Linear(in_features=84, out_features=10, bias=True)
-)
-```
-
-只需要定义 `forward` 函数，`backward`函数会在使用`autograd`时自动定义，`backward`函数用来计算导数。可以在 `forward` 函数中使用任何针对张量的操作和计算。模型的可学习参数可以通过`net.parameters()`返回
-
-```python
 params = list(net.parameters())
-print(len(params))
-print(params[0].size())  # conv1的权重
+assert len(params) == 10  # 5 个带参数的层，各有 weight 和 bias
+assert params[0].shape == (6, 1, 5, 5)
+assert net(torch.randn(2, 1, 32, 32)).shape == (2, 10)
 ```
+
+若使用 28×28 的 MNIST 图像，需要先调整为 32×32，或重新计算全连接层输入维度。输出是 logits，接 `F.cross_entropy` 时不应先手动做 softmax。
+
+一次最小训练步骤包括清零梯度、前向计算、计算损失、反向传播和更新参数：
 
 ```python
-10
-torch.Size([6, 1, 5, 5])
+inputs = torch.randn(2, 1, 32, 32)
+labels = torch.tensor([1, 7], dtype=torch.long)
+optimizer = torch.optim.SGD(net.parameters(), lr=0.01)
+
+net.train()
+optimizer.zero_grad()
+logits = net(inputs)
+loss = F.cross_entropy(logits, labels)
+loss.backward()
+optimizer.step()
 ```
 
+对非标量 `out` 调用 `out.backward(gradient)` 计算的是给定上游梯度的向量—雅可比积，不能把传入随机张量直接当成常规监督学习的训练损失。
 
+`torch.nn` 并非所有模块都只支持带 batch 的输入。例如，`nn.Conv2d` 支持 `[C,H,W]` 或 `[N,C,H,W]`。不过，**本文这个 Net 的展平方式按带 batch 的输入编写**，单张图像应先用 `unsqueeze(0)` 添加 batch 维度。
 
-尝试一个随机的 32x32 的输入。注意:这个网络 (LeNet）的期待输入是 32x32 的张量。如果使用 MNIST 数据集来训练这个网络，要把图片大小重新调整到 32x32。
+- `torch.Tensor`：多维数组；浮点或复数张量可在满足条件时参与自动求导，并非每个 Tensor 都有 `grad_fn`。
+- `nn.Module`：组织子模块、参数和前向计算，可通过 `state_dict()` 保存参数与持久缓冲区。
+- `nn.Parameter`：赋给 Module 属性时会自动注册的参数张量。
+- `autograd.Function`：扩展自定义求导规则的接口；组合内置可微运算时通常无需使用。
 
-```python
-input = torch.randn(1, 1, 32, 32)
-out = net(input)
-print(out)
-```
-
-清零所有参数的梯度缓存，然后进行随机梯度的反向传播：
-
-```
-net.zero_grad()
-out.backward(torch.randn(1, 10))
-```
-
-注意：`torch.nn`只支持小批量处理 (mini-batches）。整个 `torch.nn` 包只支持小批量样本的输入，不支持单个样本的输入。比如，`nn.Conv2d` 接受一个4维的张量，即`nSamples x nChannels x Height x Width `如果是一个单独的样本，只需要使用`input.unsqueeze(0)` 来添加一个“假的”批大小维度。
-
-- `torch.Tensor` - 一个多维数组，支持诸如`backward()`等的自动求导操作，同时也保存了张量的梯度。
-- `nn.Module `- 神经网络模块。是一种方便封装参数的方式，具有将参数移动到GPU、导出、加载等功能。
-- `nn.Parameter `- 张量的一种，当它作为一个属性分配给一个`Module`时，它会被自动注册为一个参数。
-- `autograd.Function` - 实现了自动求导前向和反向传播的定义，每个`Tensor`至少创建一个`Function`节点，该节点连接到创建`Tensor`的函数并对其历史进行编码。
-
-#### **AlexNet**
+#### AlexNet
 
 ![AlexNet](../../../public/images/pytorch/AlexNet.png)
 
-```
+下面是面向灰度图、10 分类任务的 AlexNet 风格变体。代码采用 `[N,1,224,224]` 输入，卷积部分输出 `[N,256,5,5]`，因此第一个全连接层接收 `256×5×5` 个特征。Fashion-MNIST 原始图像只有 28×28，不能直接传入；需要先缩放到本文约定的大小。
+
+```python
 class AlexNet(nn.Module):
     def __init__(self):
-        super(AlexNet, self).__init__()
+        super().__init__()
         self.conv = nn.Sequential(
-            nn.Conv2d(1, 96, 11, 4), # in_channels, out_channels, kernel_size, stride, padding
+            nn.Conv2d(1, 96, 11, stride=4),
             nn.ReLU(),
-            nn.MaxPool2d(3, 2), # kernel_size, stride
-            # 减小卷积窗口，使用填充为2来使得输入与输出的高和宽一致，且增大输出通道数
-            nn.Conv2d(96, 256, 5, 1, 2),
+            nn.MaxPool2d(3, stride=2),
+            nn.Conv2d(96, 256, 5, padding=2),
             nn.ReLU(),
-            nn.MaxPool2d(3, 2),
-            # 连续3个卷积层，且使用更小的卷积窗口。除了最后的卷积层外，进一步增大了输出通道数。
-            # 前两个卷积层后不使用池化层来减小输入的高和宽
-            nn.Conv2d(256, 384, 3, 1, 1),
+            nn.MaxPool2d(3, stride=2),
+            nn.Conv2d(256, 384, 3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(384, 384, 3, 1, 1),
+            nn.Conv2d(384, 384, 3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(384, 256, 3, 1, 1),
+            nn.Conv2d(384, 256, 3, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(3, 2)
+            nn.MaxPool2d(3, stride=2),
         )
-         # 这里全连接层的输出个数比LeNet中的大数倍。使用丢弃层来缓解过拟合
         self.fc = nn.Sequential(
-            nn.Linear(256*5*5, 4096),
+            nn.Linear(256 * 5 * 5, 4096),
             nn.ReLU(),
             nn.Dropout(0.5),
             nn.Linear(4096, 4096),
             nn.ReLU(),
             nn.Dropout(0.5),
-            # 输出层。由于这里使用Fashion-MNIST，所以用类别数为10，而非论文中的1000
             nn.Linear(4096, 10),
         )
 
     def forward(self, img):
-        feature = self.conv(img)
-        output = self.fc(feature.view(img.shape[0], -1))
-        return output
+        return self.fc(torch.flatten(self.conv(img), 1))
+
+
+net = AlexNet().eval()
+with torch.no_grad():
+    assert net(torch.randn(1, 1, 224, 224)).shape == (1, 10)
 ```
 
-```python
-net = AlexNet()
-print(net)
-```
+`eval()` 切换 Dropout 等层的行为，`torch.no_grad()` 关闭梯度记录，二者作用不同。随机初始化的网络只能验证计算流程和形状，输出还不具备分类能力。
 
-```python
-AlexNet(
-  (conv): Sequential(
-    (0): Conv2d(1, 96, kernel_size=(11, 11), stride=(4, 4))
-    (1): ReLU()
-    (2): MaxPool2d(kernel_size=3, stride=2, padding=0, dilation=1, ceil_mode=False)
-    (3): Conv2d(96, 256, kernel_size=(5, 5), stride=(1, 1), padding=(2, 2))
-    (4): ReLU()
-    (5): MaxPool2d(kernel_size=3, stride=2, padding=0, dilation=1, ceil_mode=False)
-    (6): Conv2d(256, 384, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-    (7): ReLU()
-    (8): Conv2d(384, 384, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-    (9): ReLU()
-    (10): Conv2d(384, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-    (11): ReLU()
-    (12): MaxPool2d(kernel_size=3, stride=2, padding=0, dilation=1, ceil_mode=False)
-  )
-  (fc): Sequential(
-    (0): Linear(in_features=6400, out_features=4096, bias=True)
-    (1): ReLU()
-    (2): Dropout(p=0.5)
-    (3): Linear(in_features=4096, out_features=4096, bias=True)
-    (4): ReLU()
-    (5): Dropout(p=0.5)
-    (6): Linear(in_features=4096, out_features=10, bias=True)
-  )
-)
-```
+## 参考与推荐阅读
+
+- [PyTorch：nn.Module](https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html)
+- [PyTorch：Conv2d 的输入与输出形状](https://docs.pytorch.org/docs/stable/generated/torch.nn.Conv2d.html)
+- [PyTorch：Autograd mechanics](https://docs.pytorch.org/docs/stable/notes/autograd.html)
