@@ -1,7 +1,8 @@
 ---
 title: '模型初始化'
-description: ''
+description: '理解 Xavier、Kaiming 与 gain 的公式，按模块初始化参数，并避免重复遍历和破坏梯度记录。'
 pubDate: 2026-08-08
+updatedDate: 2026-10-19
 order: 6
 category: 'PyTorch'
 tags: ['模型初始化']
@@ -9,170 +10,119 @@ tags: ['模型初始化']
 
 ## 模型初始化
 
-> 在深度学习模型的训练中，权重的初始值极为重要。一个好的初始值，会使模型收敛速度提高，使模型准确率更精确。一般情况下，我们不使用全0初始值训练网络。为了利于训练和减少收敛时间，我们需要对模型进行合理的初始化。PyTorch也在`torch.nn.init`中为我们提供了常用的初始化方法。
-
-
+初始化影响信号和梯度在网络中的传播。合适的初始化有助于训练，但不保证模型一定更准确或更快收敛。PyTorch 的 Linear、Conv 等层本身已有默认初始化，只有需要不同策略时才覆盖。
 
 ### torch.nn.init内容
 
-1. `torch.nn.init.uniform_`(tensor, a=0.0, b=1.0) 
+| API | 用途 |
+|---|---|
+| `uniform_` / `normal_` | 均匀 / 正态分布 |
+| `constant_` / `ones_` / `zeros_` | 指定常量 / 全 1 / 全 0 |
+| `eye_` | 二维单位矩阵 |
+| `dirac_` | 卷积中的恒等映射形式，需满足通道与分组约束 |
+| `xavier_uniform_` / `xavier_normal_` | 同时考虑 fan_in 与 fan_out |
+| `kaiming_uniform_` / `kaiming_normal_` | 根据非线性与 fan 模式缩放 |
+| `orthogonal_` / `sparse_` | 正交 / 稀疏初始化 |
+| `calculate_gain` | 计算适合指定非线性的增益 |
 
-2. `torch.nn.init.normal_`(tensor, mean=0.0, std=1.0) 
+带下划线的方法原地修改参数，并在不记录梯度的上下文中执行，直接传入 Parameter 即可，无需 `.data`。`calculate_gain` 返回数值，不修改参数。
 
-3. `torch.nn.init.constant_`(tensor, val)
+常见的 gain 为：
 
-4. `torch.nn.init.ones_`(tensor) 
+| 非线性 | gain |
+|---|---|
+| Linear / Conv / Sigmoid | $1$ |
+| Tanh | $5/3$ |
+| ReLU | $\sqrt{2}$ |
+| LeakyReLU，负斜率 $a$ | $\sqrt{2/(1+a^2)}$ |
 
-5. `torch.nn.init.zeros_`(tensor) 
+LeakyReLU 的分母是整个 $1+a^2$，不能写成缺少括号的其他表达式。
 
-6. `torch.nn.init.eye_`(tensor) 
+### Xavier 与 Kaiming 的尺度
 
-7. `torch.nn.init.dirac_`(tensor, groups=1) 
+Xavier 正态初始化的标准差为：
 
-8. `torch.nn.init.xavier_uniform_`(tensor, gain=1.0) 
+$$
+\mathrm{std}=g\sqrt{\frac{2}{fan_{in}+fan_{out}}}.
+$$
 
-9. `torch.nn.init.xavier_normal_`(tensor, gain=1.0) 
+Xavier 均匀初始化使用 $[-b,b]$，其中：
 
-10. `torch.nn.init.kaiming_uniform_`(tensor, a=0, mode='fan__in', nonlinearity='leaky_relu') 
+$$
+b=g\sqrt{\frac{6}{fan_{in}+fan_{out}}}.
+$$
 
-11. `torch.nn.init.kaiming_normal_`(tensor, a=0, mode='fan_in', nonlinearity='leaky_relu') 
+Kaiming 正态初始化使用：
 
-12. `torch.nn.init.orthogonal_`(tensor, gain=1) 
+$$
+\mathrm{std}=\frac{g}{\sqrt{fan_{mode}}}.
+$$
 
-13. `torch.nn.init.sparse_`(tensor, sparsity, std=0.01) 
+`mode="fan_in"` 侧重保持前向传播尺度，`mode="fan_out"` 侧重反向传播尺度。正确的参数名是 `fan_in`，不是 `fan__in`。配合 ReLU 时可显式指定 `nonlinearity="relu"`；LeakyReLU 则还要传入匹配的负斜率 `a`。
 
-14. `torch.nn.init.calculate_gain`(nonlinearity, param=None) 
-
-|  nonlinearity   |         gain         |
-| :-------------: | :------------------: |
-| Linear/Identity |          1           |
-|  Conv{1,2,3}D   |          1           |
-|     Sigmod      |          1           |
-|      Tanh       |         5/3          |
-|      ReLU       |       sqrt(2)        |
-|   Leaky Relu    | sqrt(2/1+neg_slop^2) |
-
-注：除了`calculate_gain`，所有函数的后缀都带有下划线，意味着这些函数将会直接原地更改输入张量的值。
-
-
+对 `nn.Linear`，权重布局为 `[out_features,in_features]`，前向通常计算 `x @ weight.T`。如果自己保存的是用于 `x @ weight` 的 `[in,out]` 矩阵，计算 fan 时要考虑转置，不能直接照搬层权重的约定。
 
 ### torch.nn.init使用
 
-使用`torch.nn.init`进行初始化，使用`isinstance()`来进行判断模块属于什么类型。
-
 ```python
 import torch
-import torch.nn as nn
+from torch import nn
 
-conv = nn.Conv2d(1,3,3)
-linear = nn.Linear(10,1)
-
-isinstance(conv,nn.Conv2d) # 判断conv是否是nn.Conv2d类型
-isinstance(linear,nn.Conv2d) # 判断linear是否是nn.Conv2d类型
+torch.manual_seed(42)
+conv = nn.Conv2d(1, 3, 3)
+linear = nn.Linear(10, 1)
+nn.init.kaiming_normal_(conv.weight, mode="fan_in", nonlinearity="relu")
+nn.init.zeros_(conv.bias)
+nn.init.normal_(linear.weight, mean=0.0, std=0.01)
+nn.init.zeros_(linear.bias)
+assert conv.weight.requires_grad
 ```
 
-对于不同的类型层，可以设置不同的权值初始化的方法。
-
-```python
-# 查看随机初始化的conv参数
-conv.weight.data
-# 查看linear的参数
-linear.weight.data
-```
-
-```python
-tensor([[[[ 0.1174,  0.1071,  0.2977],
-          [-0.2634, -0.0583, -0.2465],
-          [ 0.1726, -0.0452, -0.2354]]],
-        [[[ 0.1382,  0.1853, -0.1515],
-          [ 0.0561,  0.2798, -0.2488],
-          [-0.1288,  0.0031,  0.2826]]],
-        [[[ 0.2655,  0.2566, -0.1276],
-          [ 0.1905, -0.1308,  0.2933],
-          [ 0.0557, -0.1880,  0.0669]]]])
-
-tensor([[-0.0089,  0.1186,  0.1213, -0.2569,  0.1381,  0.3125,  0.1118, -0.0063, -0.2330,  0.1956]])
-```
-
-```python
-# 对conv进行kaiming初始化
-torch.nn.init.kaiming_normal_(conv.weight.data)
-conv.weight.data
-# 对linear进行常数初始化
-torch.nn.init.constant_(linear.weight.data,0.3)
-linear.weight.data
-```
-
-```python
-tensor([[[[ 0.3249, -0.0500,  0.6703],
-          [-0.3561,  0.0946,  0.4380],
-          [-0.9426,  0.9116,  0.4374]]],
-        [[[ 0.6727,  0.9885,  0.1635],
-          [ 0.7218, -1.2841, -0.2970],
-          [-0.9128, -0.1134, -0.3846]]],
-        [[[ 0.2018,  0.4668, -0.0937],
-          [-0.2701, -0.3073,  0.6686],
-          [-0.3269, -0.0094,  0.3246]]]])
-tensor([[0.3000, 0.3000, 0.3000, 0.3000, 0.3000, 0.3000, 0.3000, 0.3000, 0.3000,0.3000]])
-```
+`normal_(tensor, 0.1)` 的第二个位置参数是 **mean**，不是标准差。建议使用关键字 `mean=` 和 `std=`，避免把想要的“小方差初始化”写成“均值为 0.1、标准差仍为 1”。查看权重可用 `weight.detach()`。
 
 ### 初始化函数的封装
 
-将各种初始化方法定义为一个`initialize_weights()`的函数并在模型初始后进行使用。
+`model.apply(fn)` 会递归访问每个子模块并调用 `fn`。因此下面的回调只处理**当前模块**，不要在回调内部再次遍历 `model.modules()`，否则可能重复初始化同一层。
 
 ```python
-def initialize_weights(model):
-	for m in model.modules():
-		# 判断是否属于Conv2d
-		if isinstance(m, nn.Conv2d):
-			torch.nn.init.zeros_(m.weight.data)
-			# 判断是否有偏置
-			if m.bias is not None:
-				torch.nn.init.constant_(m.bias.data,0.3)
-		elif isinstance(m, nn.Linear):
-			torch.nn.init.normal_(m.weight.data, 0.1)
-			if m.bias is not None:
-				torch.nn.init.zeros_(m.bias.data)
-		elif isinstance(m, nn.BatchNorm2d):
-			m.weight.data.fill_(1) 		 
-			m.bias.data.zeros_()	
+def initialize_weights(module):
+    if isinstance(module, nn.Conv2d):
+        nn.init.kaiming_normal_(module.weight, mode="fan_in", nonlinearity="relu")
+        if module.bias is not None:
+            nn.init.zeros_(module.bias)
+    elif isinstance(module, nn.Linear):
+        nn.init.xavier_uniform_(module.weight)
+        if module.bias is not None:
+            nn.init.zeros_(module.bias)
+    elif isinstance(module, nn.BatchNorm2d):
+        if module.weight is not None:  # affine=False 时没有这两个参数
+            nn.init.ones_(module.weight)
+        if module.bias is not None:
+            nn.init.zeros_(module.bias)
+
+
+model = nn.Sequential(
+    nn.Conv2d(1, 4, 3, padding=1),
+    nn.BatchNorm2d(4),
+    nn.ReLU(),
+    nn.AdaptiveAvgPool2d(1),
+    nn.Flatten(),
+    nn.Linear(4, 2),
+)
+model.apply(initialize_weights)
+assert model(torch.randn(2, 1, 8, 8)).shape == (2, 2)
+assert torch.count_nonzero(model[0].weight) > 0
+torch.testing.assert_close(model[1].weight, torch.ones(4))
 ```
 
-遍历当前模型的每一层，然后判断各层属于什么类型，然后根据不同类型层，设定不同的权值初始化方法。
+这个示例中卷积接 ReLU，输出层产生未激活的 logits，因此分别选用 Kaiming 与 Xavier。它是一种明确的教学策略，不是所有模型都必须采用的默认规则。
 
-```python
-# 模型的定义
-class MLP(nn.Module):
-  # 声明带有模型参数的层，这里声明了两个全连接层
-  def __init__(self, **kwargs):
-    # 调用MLP父类Block的构造函数来进行必要的初始化。这样在构造实例时还可以指定其他函数
-    super(MLP, self).__init__(**kwargs)
-    self.hidden = nn.Conv2d(1,1,3)
-    self.act = nn.ReLU()
-    self.output = nn.Linear(10,1)
-    
-   # 定义模型的前向计算，即如何根据输入x计算返回所需要的模型输出
-  def forward(self, x):
-    o = self.act(self.hidden(x))
-    return self.output(o)
+### 哪些参数可以初始化为零
 
-mlp = MLP()
-print(mlp.hidden.weight.data)
-print("-------初始化-------")
+把同层隐藏单元的权重全部设为相同常数，常会使它们无法打破对称性；在某些网络中还会使梯度传播受阻。把权重统一设为 0.01 或 0.1 也不能普遍解决对称性问题。
 
-mlp.apply(initialize_weights)
-# 或者initialize_weights(mlp)
-print(mlp.hidden.weight.data)
-```
+不过，**偏置初始化为零通常是合理的**，BatchNorm 的仿射缩放常设为 1、偏置设为 0。不能笼统地说“任何参数初始化为零都会导致梯度消失”。训练中也不要每个 epoch 重复初始化，否则会覆盖已经学到的参数。
 
-```python
-tensor([[[[ 0.3069, -0.1865,  0.0182],
-          [ 0.2475,  0.3330,  0.1352],
-          [-0.0247, -0.0786,  0.1278]]]])
-"-------初始化-------"
-tensor([[[[0., 0., 0.],
-          [0., 0., 0.],
-          [0., 0., 0.]]]])
-```
+## 参考
 
-**注意：**在初始化时，最好不要将模型的参数初始化为0，因为这样会导致梯度消失，从而影响模型的训练效果。因此，在初始化时，可以使用其他初始化方法或者将模型初始化为一个很小的值，如0.01，0.1等。
+- [PyTorch：torch.nn.init](https://docs.pytorch.org/docs/stable/nn.init.html)

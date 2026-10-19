@@ -1,7 +1,8 @@
 ---
 title: '张量'
-description: ''
+description: '理解张量的形状、创建方式、索引、视图、复制和广播规则。'
 pubDate: 2026-08-07
+updatedDate: 2026-10-19
 order: 2
 category: 'PyTorch'
 tags: ['pytorch']
@@ -9,249 +10,151 @@ tags: ['pytorch']
 
 ## 张量
 
-- 张量的简介
-- PyTorch如何创建张量
-- PyTorch中张量的操作
-- PyTorch中张量的广播机制
+PyTorch 的 Tensor 是具有 shape、dtype 和 device 的多维数值容器，不支持把字符串作为张量元素。这里的“维数”指轴的数量，不等同于矩阵秩，也不能仅凭轴数确定数据的语义。
 
 ### 简介
 
-> 几何代数中定义的张量是基于向量和矩阵的推广。如我们可以将标量视为零阶张量，矢量可以视为一阶张量，矩阵就是二阶张量。
+| 数据 | 常见 shape | 说明 |
+|---|---|---|
+| 标量 | `[]` | 0 维，例如单个损失值 |
+| 特征向量 | `[D]` | 1 维 |
+| 一批特征 | `[N,D]` | 2 维 |
+| 单张彩色图片 | `[C,H,W]` | PyTorch 卷积常用通道在前的布局 |
+| 一批图片 | `[N,C,H,W]` | 4 维 |
+| 一批视频 | `[N,C,T,H,W]` | 一种常见的 5 维约定 |
 
-| 张量维度 | 代表含义                                         |
-| -------- | ------------------------------------------------ |
-| 0维张量  | 代表的是标量（数字）                             |
-| 1维张量  | 代表的是向量                                     |
-| 2维张量  | 代表的是矩阵                                     |
-| 3维张量  | 时间序列数据 股价 文本数据 单张彩色图片(**RGB**) |
-
-张量的核心是一个数据容器，多数情况下，它包含数字，有时候它也包含字符串，但这种情况比较少。因此可以把它想象成一个数字的水桶。
-
-一些存储在各种类型张量的公用数据集类型：
-
-- **3维 = 时间序列**
-- **4维 = 图像**
-- **5维 = 视频**
-
-例：一个图像可用三个字段表示：
-
-```python
-(width, height, channel) = 3D
-```
-
-在机器学习工作中，我们经常要处理不止一张图片或一篇文档——我们要处理一个集合。我们可能有10,000张郁金香的图片，这意味着，我们将用到4D张量：
-
-```python
-(batch_size, width, height, channel) = 4D
-```
-
-在PyTorch中， `torch.Tensor` 是存储和变换数据的主要工具。`Tensor` 提供GPU计算和自动求梯度等更多功能
+时间序列也可能使用 `[N,T,D]`，图像库则常使用 `[H,W,C]`。这些是布局约定，不是“3 维一定是时间序列、4 维一定是图像”的规则。
 
 ### 创建张量
 
-#### 随机初始化矩阵
-
-通过`torch.rand()`的方法，构造一个随机初始化的矩阵：
-
 ```python
+import numpy as np
 import torch
-x = torch.rand(4, 3) 
-print(x)
+
+torch.manual_seed(42)
+x = torch.rand(4, 3)                 # [0,1) 均匀采样
+normal = torch.randn(4, 3)           # 标准正态采样
+zeros = torch.zeros(4, 3, dtype=torch.long)
+data = torch.tensor([5.5, 3.0])
+ones = data.new_ones((4, 3))         # 默认继承 data 的 dtype、device
+double_ones = data.new_ones((4, 3), dtype=torch.float64)
+assert x.shape == (4, 3) and zeros.dtype == torch.long
+assert double_ones.dtype == torch.float64
 ```
 
-```python
-tensor([[0.7569, 0.4281, 0.4722],
-        [0.9513, 0.5168, 0.1659],
-        [0.4493, 0.2846, 0.4363],
-        [0.5043, 0.9637, 0.1469]])
-```
+`torch.Size` 是 tuple 的子类，可以索引各轴长度。`new_ones` 等方法也可以通过显式参数覆盖继承的 dtype 或 device。
 
 #### 全0矩阵的构建
 
-通过`torch.zeros()`构造一个矩阵全为 0，并且通过`dtype`设置数据类型为 long。
-
-我们还可以通过`torch.zero_()`和`torch.zeros_like()`将现有矩阵转换为全0矩阵.
-
 ```python
-import torch
-x = torch.zeros(4, 3, dtype=torch.long)
-print(x)
+source = torch.ones(2, 3)
+new_zeros = torch.zeros_like(source)  # 新建，不修改 source
+assert source.sum().item() == 6
+source.zero_()                       # Tensor 方法：原地清零
+assert source.sum().item() == 0
 ```
 
-```python
-tensor([[0, 0, 0],
-        [0, 0, 0],
-        [0, 0, 0],
-        [0, 0, 0]])
-```
+正确写法是 `source.zero_()`，不是 `torch.zero_()`。带下划线的方法通常会原地修改张量，使用自动求导时还需遵守计算图的修改约束。
 
-#### 张量的构建
+#### 常见的构造Tensor的方法
 
-通过`torch.tensor()`直接使用数据，构造一个张量：
+| 函数 | 功能 |
+|---|---|
+| `torch.tensor(data)` | 根据数据创建张量，复制数据 |
+| `torch.empty(shape)` | 分配未初始化的存储，读取前必须写入 |
+| `torch.ones/zeros(shape)` | 全 1 / 全 0 |
+| `torch.eye(n)` | 单位矩阵 |
+| `torch.arange(start,end,step)` | 不包含右端点的等差序列 |
+| `torch.linspace(start,end,steps)` | 包含两端点，共 `steps` 个点 |
+| `torch.rand/randn(shape)` | 均匀 / 标准正态随机数 |
+| `torch.randperm(n)` | `0` 到 `n-1` 的随机排列 |
 
-```python
-import torch
-x = torch.tensor([5.5, 3]) 
-print(x)
-```
-
-```
-tensor([5.5000, 3.0000])
-```
-
-#### 基于现有tensor，创建一个 tensor
-
-```python
-x = x.new_ones(4, 3, dtype=torch.double) 
-# 创建一个新的全1矩阵tensor，返回的tensor默认具有相同的torch.dtype和torch.device
-# 也可以像之前的写法 x = torch.ones(4, 3, dtype=torch.double)
-print(x)
-x = torch.randn_like(x, dtype=torch.float)
-# 重置数据类型
-print(x)
-# 结果会有一样的size
-# 获取它的维度信息
-print(x.size())
-print(x.shape)
-```
-
-```python
-tensor([[1., 1., 1.],
-        [1., 1., 1.],
-        [1., 1., 1.],
-        [1., 1., 1.]], dtype=torch.float64)
-tensor([[ 2.7311, -0.0720,  0.2497],
-        [-2.3141,  0.0666, -0.5934],
-        [ 1.5253,  1.0336,  1.3859],
-        [ 1.3806, -0.6965, -1.2255]])
-torch.Size([4, 3])
-torch.Size([4, 3])
-```
-
-返回的torch.Size其实是一个tuple，⽀持所有tuple的操作。我们可以使用索引操作取得张量的长、宽等数据维度。
-
-#### 常见的构造Tensor的方法：
-
-|        函数         |                       功能                        |
-| :-----------------: | :-----------------------------------------------: |
-|    Tensor(sizes)    |                   基础构造函数                    |
-|    tensor(data)     |                  类似于np.array                   |
-|     ones(sizes)     |                        全1                        |
-|    zeros(sizes)     |                        全0                        |
-|     eye(sizes)      |                 对角为1，其余为0                  |
-|  arange(s,e,step)   |                从s到e，步长为step                 |
-| linspace(s,e,steps) |              从s到e，均匀分成step份               |
-|  rand/randn(sizes)  | rand是[0,1)均匀分布；randn是服从N(0，1)的正态分布 |
-|  normal(mean,std)   |         正态分布(均值为mean，标准差是std)         |
-|     randperm(m)     |                     随机排列                      |
+优先使用语义明确的工厂函数，避免用 `torch.Tensor(...)` 同时表达“传入数据”和“分配指定形状”。
 
 ### 张量的操作
 
 #### 加法操作
 
 ```python
-import torch
-# 方式1
-y = torch.rand(4, 3) 
-print(x + y)
-
-# 方式2
-print(torch.add(x, y))
-
-# 方式3 in-place，原值修改
-y.add_(x) 
-print(y)
+x = torch.arange(6, dtype=torch.float32).reshape(2, 3)
+y = torch.ones_like(x)
+torch.testing.assert_close(x + y, torch.add(x, y))
+y.add_(x)                           # 修改 y，而不是创建独立的新结果
+assert y[0, 0].item() == 1
 ```
 
-```python
-tensor([[ 2.8977,  0.6581,  0.5856],
-        [-1.3604,  0.1656, -0.0823],
-        [ 2.1387,  1.7959,  1.5275],
-        [ 2.2427, -0.3100, -0.4826]])
-tensor([[ 2.8977,  0.6581,  0.5856],
-        [-1.3604,  0.1656, -0.0823],
-        [ 2.1387,  1.7959,  1.5275],
-        [ 2.2427, -0.3100, -0.4826]])
-tensor([[ 2.8977,  0.6581,  0.5856],
-        [-1.3604,  0.1656, -0.0823],
-        [ 2.1387,  1.7959,  1.5275],
-        [ 2.2427, -0.3100, -0.4826]])
-```
+`*` 通常是逐元素乘法，二维矩阵乘法使用 `@` 或 `torch.mm`，二者不能混淆。
 
 #### 索引操作
 
-注：**索引出来的结果与原数据共享内存，修改一个，另一个会跟着修改。如果不想修改，可以考虑使用copy()等方法**
+基本索引通常返回共享存储的视图；张量索引、布尔索引等高级索引读取通常返回副本。不能把“所有索引结果都共享内存”当成规则。
 
 ```python
-import torch
-x = torch.rand(4,3)
-# 取第二列
-print(x[:, 1]) 
+x = torch.arange(6, dtype=torch.float32).reshape(2, 3)
+row = x[0, :]                       # 基本索引：视图
+row.add_(10)
+assert x[0, 0].item() == 10
+
+selected = x[torch.tensor([0])]     # 高级索引读取：副本
+selected.zero_()
+assert x[0, 0].item() == 10
+
+independent = x[0, :].clone()
+independent.zero_()
+assert x[0, 0].item() == 10
 ```
 
-```python
-tensor([-0.0720,  0.0666,  1.0336, -0.6965])
-```
-
-```python
-y = x[0,:]
-y += 1
-print(y)
-print(x[0, :]) # 源tensor也被改了了
-```
-
-```python
-tensor([3.7311, 0.9280, 1.2497])
-tensor([3.7311, 0.9280, 1.2497])
-```
+通过高级索引进行赋值，例如 `x[mask] = 0`，仍然会修改 `x`；这与“读取时返回副本”并不矛盾。复制 Tensor 应使用 `clone()`，而不是 NumPy 风格的 `.copy()`。
 
 #### 维度变换
 
-张量的维度变换常见的方法有`torch.view()`和`torch.reshape()`
+`x.view(...)` 返回另一个共享存储的 Tensor，不会直接改写 `x` 的 shape，也不是“同一个 Python 对象”。它要求尺寸与步幅兼容。
 
 ```python
-x = torch.randn(4, 4)
-y = x.view(16)
-z = x.view(-1, 8) # -1是指这一维的维数由其他维度决定
-print(x.size(), y.size(), z.size())
+x = torch.arange(12, dtype=torch.float32).reshape(3, 4)
+flat = x.view(12)
+flat[0] = -1
+assert x.shape == (3, 4) and x[0, 0].item() == -1
+
+transposed = x.transpose(0, 1)
+reshaped = transposed.reshape(12)    # 本例需要复制，不能直接 view(12)
+independent = transposed.reshape(12).clone()
+assert reshaped.shape == (12,)
 ```
+
+`reshape` 是正常、受支持的接口：能返回视图时返回视图，否则可能复制。不要依赖它一定共享存储或一定复制。需要独立存储时显式使用 `clone()`；需要终止梯度联系并复制时使用 `detach().clone()`。仅 `detach()` 仍共享存储。
+
+`clone()` 通常保留梯度联系；它也可能保留非连续布局，因此不能笼统地保证任意 `x.clone().view(...)` 都成功。交换轴用 `transpose`（两个轴）或 `permute`（轴顺序），并不是单纯 reshape。
+
+### 广播机制
+
+广播从**尾部维度对齐**：对应长度必须相同，或其中一个为 1；缺失的前导维度视为 1。
 
 ```python
-torch.Size([4, 4]) torch.Size([16]) torch.Size([2, 8])
+matrix = torch.arange(6, dtype=torch.float32).reshape(2, 3)
+offset = torch.tensor([10., 20., 30.])
+assert (matrix + offset).shape == (2, 3)
+
+column = torch.ones(3, 1)
+row = torch.arange(3, dtype=torch.float32)
+assert (column + row).shape == (3, 3)
 ```
 
-注：`torch.view()` 返回的新`tensor`与源`tensor`共享内存(其实是同一个`tensor`)，更改其中的一个，另外一个也会跟着改变。(顾名思义，view()仅仅是改变了对这个张量的观察角度)
+最后一个例子也说明了回归损失中的常见陷阱：预测为 `[N,1]`、标签为 `[N]` 时，二者可能广播成 `[N,N]`。应先核对 shape，再计算损失。
+
+### 与 NumPy 交换数据
 
 ```python
-x += 1
-print(x)
-print(y) # 也加了了1
+array = np.array([1., 2., 3.], dtype=np.float32)
+shared = torch.from_numpy(array)   # 支持的 CPU dtype 下共享存储
+copied = torch.tensor(array)       # 复制
+array[0] = 9
+assert shared[0].item() == 9 and copied[0].item() == 1
 ```
 
-```python
-tensor([[ 1.3019,  0.3762,  1.2397,  1.3998],
-        [ 0.6891,  1.3651,  1.1891, -0.6744],
-        [ 0.3490,  1.8377,  1.6456,  0.8403],
-        [-0.8259,  2.5454,  1.2474,  0.7884]])
-tensor([ 1.3019,  0.3762,  1.2397,  1.3998,  0.6891,  1.3651,  1.1891, -0.6744,
-         0.3490,  1.8377,  1.6456,  0.8403, -0.8259,  2.5454,  1.2474,  0.7884])
-```
+常见的导出方式是 `tensor.detach().cpu().numpy()`。得到的数组可能仍共享 CPU 张量的存储；需要独立数组时再 `.copy()`。单元素张量可用 `.item()` 取 Python 数值，这一步不可微，读取 GPU 数值还可能触发同步。
 
-torch.view()会改变原始张量，但是很多情况下，我们希望原始张量和变换后的张量互相不影响。
+## 参考
 
-在很多情况下，我们希望原始张量和变换后的张量互相不影响。为为了使创建的张量和原始张量不共享内存，我们需要使用第二种方法`torch.reshape()`， 同样可以改变张量的形状，但是此函数并不能保证返回的是其拷贝值，所以官方不推荐使用。推荐的方法是我们先用 `clone()` 创造一个张量副本然后再使用 `torch.view()`进行函数维度变换 。
-
-注：使用 `clone()` 还有一个好处是会被记录在计算图中，即梯度回传到副本时也会传到源 Tensor 。 3. 取值操作 如果我们有一个元素 `tensor` ，我们可以使用 `.item()` 来获得这个 `value`，而不获得其他性质：
-
-```python
-import torch
-x = torch.randn(1) 
-print(type(x)) 
-print(type(x.item()))
-```
-
-```python
-<class 'torch.Tensor'>
-<class 'float'>
-```
-
+- [PyTorch：Tensor Views](https://docs.pytorch.org/docs/stable/tensor_view.html)
+- [PyTorch：Broadcasting semantics](https://docs.pytorch.org/docs/stable/notes/broadcasting.html)

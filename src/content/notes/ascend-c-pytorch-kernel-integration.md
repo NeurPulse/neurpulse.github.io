@@ -2,6 +2,7 @@
 title: 'Ascend C Kernel 接入 PyTorch：pybind11 与 torch.library'
 description: '对比两条 PyTorch Kernel 直调路径，梳理 C++ 封装、NPU Stream、动态库构建和 Python 调用。'
 pubDate: 2026-08-27
+updatedDate: 2026-10-19
 category: 'PyTorch'
 tags: ['Ascend C', 'PyTorch', 'pybind11', 'torch.library']
 order: 8
@@ -10,6 +11,8 @@ order: 8
 ## 学习目标
 
 这篇笔记说明如何把已经可运行的 Ascend C Kernel 接入 PyTorch。学完后应能区分 pybind11 模块函数和 torch.library 注册算子，并理解两条路径共同经过的 C++ 封装、NPU Stream 与 Device 指针。
+
+以下是需要 CANN/NPU 环境的接口与调用片段，不是 CPU 上可直接运行的独立程序。为与[Add 算子实现解析](/notes/ascend-c-add-operator-walkthrough/)一致，本文统一使用固定 `[8,2048]`、**float32、ND 格式、8 核**的示例；其他课程工程可能使用 float16 或不同 Tiling ABI，不能只复制封装层就混用。示例仅用于无梯度推理，不宣称已经支持训练或 `torch.compile`。
 
 ## 先修与环境
 
@@ -20,7 +23,7 @@ order: 8
 
 ## 公共 Kernel 层
 
-两种调用方式可以复用同一个 `.asc` Kernel，并提供稳定的 C ABI 入口：
+两种调用方式可以复用同一个 `.asc` Kernel。下面的封装放在已经定义 `AddCustomTilingData` 和 `add_custom` 的 `.asc` 文件中，与 Add 文章的结构体参数保持一致：
 
 ```cpp
 extern "C" void add_custom_impl(
@@ -31,12 +34,12 @@ extern "C" void add_custom_impl(
     uint8_t* z,
     uint32_t totalLength)
 {
-    add_custom<<<numBlocks, 0, aclStream>>>(
-        x, y, z, totalLength);
+    AddCustomTilingData tiling{totalLength, 8};
+    add_custom<<<numBlocks, nullptr, aclStream>>>(x, y, z, tiling);
 }
 ```
 
-`extern "C"` 避免 C++ 名字改编，让封装动态库更稳定地链接这个入口。
+`extern "C"` 避免 C++ 名字改编，但不会自动解决所有 ABI 问题。两端仍需共享一致的函数声明、参数宽度和 Kernel/Tiling 定义；直接把 `totalLength` 传给期待结构体的 Kernel 是错误的。该入口约定只由完成下述检查的封装调用。
 
 ## pybind11 路径
 
@@ -53,18 +56,45 @@ Python import ascendc_ops
 ### C++ 封装函数
 
 ```cpp
+#include <ATen/ATen.h>
+#include <torch/library.h>
+#include "torch_npu/csrc/core/npu/NPUGuard.h"
+#include "torch_npu/csrc/core/npu/NPUStream.h"
+#include "torch_npu/csrc/framework/FormatHelper.h"
+
+extern "C" void add_custom_impl(uint32_t, void*, uint8_t*, uint8_t*, uint8_t*, uint32_t);
+
 at::Tensor ascendc_add(const at::Tensor& x,
                        const at::Tensor& y)
 {
-    auto stream = c10_npu::getCurrentNPUStream().stream(false);
-    at::Tensor z = at::empty_like(x);
-    uint32_t totalLength = x.numel();
+    TORCH_CHECK(x.device().type() == c10::DeviceType::PrivateUse1,
+                "NPU tensor required");
+    TORCH_CHECK(x.device() == y.device(), "device mismatch");
+    TORCH_CHECK(x.scalar_type() == at::kFloat && y.scalar_type() == at::kFloat,
+                "float32 required");
+    TORCH_CHECK(x.dim() == 2 && x.size(0) == 8 && x.size(1) == 2048,
+                "fixed shape [8, 2048] required");
+    TORCH_CHECK(x.sizes() == y.sizes(), "shape mismatch");
+    TORCH_CHECK(x.is_contiguous() && y.is_contiguous(),
+                "contiguous tensors required");
+    TORCH_CHECK(!x.requires_grad() && !y.requires_grad(),
+                "inference-only example: backward is not registered");
+
+    c10_npu::NPUGuard guard(x.device());
+    TORCH_CHECK(at_npu::native::FormatHelper::GetFormat(x) == ACL_FORMAT_ND &&
+                at_npu::native::FormatHelper::GetFormat(y) == ACL_FORMAT_ND,
+                "ND storage format required");
+    auto stream = c10_npu::getCurrentNPUStream(x.get_device()).stream();
+    at::Tensor z = at::empty(x.sizes(), x.options());
+    TORCH_CHECK(at_npu::native::FormatHelper::GetFormat(z) == ACL_FORMAT_ND,
+                "ND output required");
+    const uint32_t totalLength = static_cast<uint32_t>(x.numel());
 
     add_custom_impl(
         8, stream,
-        reinterpret_cast<uint8_t*>(x.mutable_data_ptr()),
-        reinterpret_cast<uint8_t*>(y.mutable_data_ptr()),
-        reinterpret_cast<uint8_t*>(z.mutable_data_ptr()),
+        reinterpret_cast<uint8_t*>(x.data_ptr<float>()),
+        reinterpret_cast<uint8_t*>(y.data_ptr<float>()),
+        reinterpret_cast<uint8_t*>(z.data_ptr<float>()),
         totalLength);
     return z;
 }
@@ -73,6 +103,8 @@ at::Tensor ascendc_add(const at::Tensor& x,
 随后绑定为 Python 模块函数：
 
 ```cpp
+#include <torch/extension.h>
+
 PYBIND11_MODULE(ascendc_ops, m)
 {
     m.def("ascendc_add", &ascendc_add);
@@ -82,9 +114,13 @@ PYBIND11_MODULE(ascendc_ops, m)
 Python 使用：
 
 ```python
+import torch
+import torch_npu
 import ascendc_ops
 
-z = ascendc_ops.ascendc_add(x.npu(), y.npu())
+x = torch.rand((8, 2048), dtype=torch.float32, device="npu:0")
+y = torch.rand_like(x)
+z = ascendc_ops.ascendc_add(x, y)
 ```
 
 该方式直观，适合快速验证封装和实验性接口。
@@ -123,11 +159,17 @@ TORCH_LIBRARY_IMPL(ascendc_ops, PrivateUse1, m)
 Python 使用：
 
 ```python
-torch.ops.load_library("libascendc_ops.so")
-z = torch.ops.ascendc_ops.ascendc_add(x.npu(), y.npu())
+import torch
+import torch_npu
+
+# 改为实际构建产物的绝对路径，不依赖当前工作目录。
+torch.ops.load_library("/absolute/path/to/libascendc_ops.so")
+x = torch.rand((8, 2048), dtype=torch.float32, device="npu:0")
+y = torch.rand_like(x)
+z = torch.ops.ascendc_ops.ascendc_add(x, y)
 ```
 
-这种方式把自定义算子纳入 PyTorch 算子系统，更适合框架集成。
+这种方式把自定义算子纳入 PyTorch 算子系统，更适合框架集成。注册 `PrivateUse1` 实现**不会自动提供 backward**；训练需另行注册自动求导规则，编译与导出等场景还需适当的 Fake/Meta 实现及验证。两条路径在独立构建/测试中选择其一，不要重复加载多个定义相同 schema 的注册库。
 
 ## 两种方式对比
 
@@ -161,36 +203,42 @@ Python 扩展模块或 libascendc_ops.so
 - RPATH 设为 `$ORIGIN`，使同目录动态库可被找到；
 - CMake 的 `Python3_EXECUTABLE` 与测试解释器保持一致。
 
+pybind11 构建还需匹配可导入扩展的模块名、Python 扩展后缀和 Torch 的 C++ ABI；单纯生成一个普通 `lib*.so` 并不保证可用 `import` 导入。本文不提供脱离具体版本即可通用的完整 CMake 文件。
+
 ## 参数检查不可省略
 
-课程的基础 Add 示例假设 shape 为 `[8,2048]`、dtype 为 `float16`、连续存储且长度可被 8 核均分。更可靠的封装层应检查：
+上面的检查位于取指针与启动 Kernel **之前**。它同时约束两个输入的设备、dtype、shape、连续性、存储格式以及当前不支持梯度的边界，而不是把检查留在未调用的独立代码块里。
 
-```cpp
-TORCH_CHECK(x.device() == y.device(), "device mismatch");
-TORCH_CHECK(x.scalar_type() == at::kHalf, "float16 required");
-TORCH_CHECK(x.sizes() == y.sizes(), "shape mismatch");
-TORCH_CHECK(x.is_contiguous() && y.is_contiguous(),
-            "contiguous tensors required");
-```
+NPU 的逻辑连续性不必然说明物理存储为 ND，因此还核对实际格式。`FormatHelper` 属于 torch_npu 内部 C++ 接口，头文件位置和可用性可能随版本变化；这里的写法依据文末源码，构建时必须核对已安装版本。不能为了让示例编译通过而直接删去格式检查。
 
-还应验证输入位于 NPU、输出 shape/dtype 正确，并保证 Kernel 的 Tiling 能覆盖真实 `numel()`。
+这里读取 x/y 指针但不修改输入；输出写入新分配的 z。固定输入检查也保证 `numel()` 可以安全转换为 `uint32_t` 并被当前切分完整覆盖。若要放开 shape 或 dtype，必须同时修改 Kernel、Tiling 和边界测试。
 
 ## Stream 与异步语义
 
-封装层必须使用 PyTorch 当前 NPU Stream，而不是私自创建无关 Stream。这样 Kernel 才能与前后 PyTorch 算子保持正确顺序。Kernel 启动通常是异步的，不应在每次调用中强制全局同步；测试读取 CPU 结果时会自然形成必要同步。
+封装层使用**输入所在设备**的当前 NPU Stream；Device Guard 防止当前设备与输入设备不同而选错上下文。这里调用 `.stream()`，不应在不了解版本语义时照抄绕过任务队列的 `.stream(false)`。
+
+同一 Stream 内按顺序执行，Kernel 启动通常异步，不必每次强制全局同步。若调用方使用多个 Stream，仍需按 PyTorch/torch_npu 的规则处理依赖与存储生命周期；使用“当前 Stream”本身不会替调用方建立所有跨 Stream 依赖。测试中的 `.cpu()` 会等待所需结果，但异步设备错误也可能在同步处才暴露。
 
 ## 精度测试
 
 ```python
-x = torch.rand((8, 2048), dtype=torch.float16)
-y = torch.rand((8, 2048), dtype=torch.float16)
+import torch
+import torch_npu
+import ascendc_ops
 
-actual = custom_add(x.npu(), y.npu()).cpu()
-expected = torch.add(x, y)
-self.assertRtolEqual(actual, expected)
+custom_add = ascendc_ops.ascendc_add  # 或已加载的 torch.ops.ascendc_ops.ascendc_add
+cpu_x = torch.arange(8 * 2048, dtype=torch.float32).reshape(8, 2048) / 1000
+cpu_y = torch.flip(cpu_x, dims=[1]) * -0.25
+x = cpu_x.to("npu:0")
+y = cpu_y.to("npu:0")
+actual = custom_add(x, y).cpu()
+expected = cpu_x + cpu_y
+assert actual.shape == expected.shape and actual.dtype == expected.dtype
+assert torch.isfinite(actual).all()
+torch.testing.assert_close(actual, expected, rtol=1e-6, atol=1e-6)
 ```
 
-测试至少应覆盖正常输入、错误 dtype、错误 shape、非连续 Tensor、不同 Device 和边界长度。
+测试至少应覆盖正常输入、错误 dtype、错误 shape、非连续 Tensor、CPU 输入、不同 Device、内部格式与 `requires_grad=True` 输入。当前固定样例应拒绝不支持的输入，而不是让测试勉强通过。上述容差仅用于本 FP32 Add 示例，不是所有自定义算子的统一精度标准。
 
 ## 常见误区
 
@@ -233,4 +281,8 @@ pybind11 把 Ascend C Kernel 包成普通 Python 扩展函数，torch.library �
 ## 参考来源
 
 - [CANN Learning Hub：PyTorch 框架下 Kernel 直调](https://gitcode.com/cann/cann-learning-hub/blob/master/tutorials/ascendc_operator_development_light/02_AscendC_basic/02.06_kernel_pytorch_call.ipynb)
+- [PyTorch：自定义 C++ 算子的注册、自动求导与 Fake 实现](https://docs.pytorch.org/tutorials/advanced/cpp_custom_ops.html)
+- [torch_npu：NPUStream 接口](https://github.com/Ascend/pytorch/blob/master/torch_npu/csrc/core/npu/NPUStream.h)
+- [torch_npu：NPUGuard](https://github.com/Ascend/pytorch/blob/master/torch_npu/csrc/core/npu/NPUGuard.h)
+- [torch_npu：FormatHelper](https://github.com/Ascend/pytorch/blob/master/torch_npu/csrc/framework/FormatHelper.h)
 

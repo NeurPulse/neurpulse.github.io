@@ -1,7 +1,8 @@
 ---
 title: '自动求导'
-description: ''
+description: '理解计算图、叶子张量、梯度累积与向量—雅可比积，正确使用 detach 和 no_grad。'
 pubDate: 2026-08-07
+updatedDate: 2026-10-19
 order: 3
 category: 'PyTorch'
 tags: ['梯度']
@@ -9,236 +10,111 @@ tags: ['梯度']
 
 ## 先修知识
 
-阅读本文前，建议先理解：
-
 - [PyTorch Tensor](/notes/pytorch-tensor/)
 - [反向传播](/notes/deep-learning-backpropagation/)
 
 ## 自动求导
 
-PyTorch 中，所有神经网络的核心是 `autograd `包。autograd包为张量上的所有操作提供了自动求导机制。它是一个在运行时定义 ( define-by-run ）的框架，这意味着反向传播是根据代码如何运行来决定的，并且每次迭代可以是不同的。
-
-* autograd的求导机制
-* 梯度的反向传播
+autograd 根据实际执行的、可微的张量运算构建动态计算图。本文以实数浮点张量为例；整数张量不能直接设置 `requires_grad=True`，也并非所有操作都有可用的梯度。
 
 ### Autograd简介
 
-`torch.Tensor `是这个包的核心类。
-
-如果设置它的属性` .requires_grad` 为 `True`，那么它将会追踪对于该张量的所有操作。当完成计算后可以通过调用` .backward()`，来自动计算所有的梯度。这个张量的所有梯度将会自动累加到`.grad`属性。
-
-> 注：在 y.backward() 时，如果 y 是标量，则不需要为 backward() 传入任何参数；否则，需要传入一个与 y 同形的Tensor。
-
-当不想让一个张量被跟踪历史，可以调用`.detach()`方法将其与计算历史分离，并阻止它未来的计算记录被跟踪。为了防止跟踪历史记录(和使用内存），可以将代码块包装在 `with torch.no_grad(): `中。在评估模型时特别有用，因为模型可能具有 `requires_grad = True` 的可训练的参数，但是我们不需要在此过程中对他们进行梯度计算。
-
-还有一个类对于`autograd`的实现非常重要：`Function`。`Tensor `和` Function` 互相连接生成了一个无环图 (acyclic graph)，它**编码了完整的计算历史**。每个张量都有一个`.grad_fn`属性，该属性引用了创建 `Tensor `自身的`Function`(除非这个张量是用户手动创建的，即这个张量的`grad_fn`是 `None` )。
-
-下面给出的例子中，张量由用户手动创建，因此grad_fn返回结果是None。
-
 ```python
-from __future__ import print_function
 import torch
-x = torch.randn(3,3,requires_grad=True)
-print(x.grad_fn)
-```
 
-```
-None
-```
-
-如果需要**计算导数**，可以在 `Tensor` 上调用 `.backward()`。
-
-如果` Tensor` 是一个标量(即它包含一个元素的数据），则不需要为 `backward() `指定任何参数，但是如果它有更多的元素，则需要指定一个`gradient`参数，该参数是形状匹配的张量。
-
-**创建一个张量并设置`requires_grad=True`用来追踪其计算历史**
-
-```python
 x = torch.ones(2, 2, requires_grad=True)
-print(x)
-```
-
-```
-tensor([[1., 1.],
-        [1., 1.]], requires_grad=True)
-```
-
-对这个张量做一次运算：
-
-```python
-y = x**2
-print(y)
-```
-
-```
-tensor([[1., 1.],
-        [1., 1.]], grad_fn=<PowBackward0>)
-```
-
-`y`是计算的结果，所以它有`grad_fn`属性。
-
-```
-print(y.grad_fn)
-```
-
-```
-<PowBackward0 object at 0x000001CB45988C70>
-```
-
-对 y 进行更多操作
-
-```python
-z = y * y * 3
+y = x.square()
+z = 3 * y.square()
 out = z.mean()
-
-print(z, out)
+assert x.is_leaf and x.grad_fn is None
+assert not y.is_leaf and y.grad_fn is not None
 ```
 
-```
-tensor([[3., 3.],
-        [3., 3.]], grad_fn=<MulBackward0>) tensor(3., grad_fn=<MeanBackward0>)
-```
+`requires_grad=True` 表示需要对该张量求导。在普通梯度模式下，涉及它的可微运算会被记录。叶子张量通常由用户直接创建；`grad_fn=None` 也可能出现在无需求导、已 detach 或在 no_grad 中得到的结果上，不能仅据此判断张量是否由用户手动创建。
 
-`.requires_grad_(...) `原地改变了现有张量的`requires_grad`标志。如果没有指定的话，默认输入的这个标志是` False`。
-
-```python
-a = torch.randn(2, 2) # 缺失情况下默认 requires_grad = False
-a = ((a * 3) / (a - 1))
-print(a.requires_grad)
-a.requires_grad_(True)
-print(a.requires_grad)
-b = (a * a).sum()
-print(b.grad_fn)
-```
-
-```
-False
-True
-<SumBackward0 object at 0x000001CB4A19FB50>
-```
+默认情况下，`.backward()` 把梯度累积到需要梯度的叶子张量的 `.grad`。非叶子结果如 `y` 不默认保存 `.grad`；确实需要观察时，可在反向传播前调用 `y.retain_grad()`。
 
 ### 梯度
 
-反向传播
+上述计算可以写为：
 
-因为` out` 是一个标量，因此`out.backward()`和` out.backward(torch.tensor(1.))` 等价。
+$$
+L=\frac{3}{N}\sum_{i=1}^{N}x_i^4,
+\qquad \frac{\partial L}{\partial x_i}=\frac{12}{N}x_i^3.
+$$
+
+这里 $N=4$，所有 $x_i=1$，所以每个梯度为 3。
 
 ```python
 out.backward()
+torch.testing.assert_close(x.grad, torch.full_like(x, 3.0))
+
+# 新建一次前向计算，梯度会继续累积。
+x.sum().backward()
+torch.testing.assert_close(x.grad, torch.full_like(x, 4.0))
+
+x.grad = None
+x.sum().backward()
+torch.testing.assert_close(x.grad, torch.ones_like(x))
 ```
 
-输出导数` d(out)/dx`
+训练时通常使用 `optimizer.zero_grad()`，在新的前向与反向传播之前清理梯度。计算图保存的中间量通常在一次反向传播后释放；不要把“梯度可累积”误解成“可无限次对同一张旧计算图调用 backward”。
 
-```
-print(x.grad)
-```
+### 向量输出与雅可比矩阵
 
-```
-tensor([[3., 3.],
-        [3., 3.]])
-```
+对于 $y=f(x)\in\mathbb{R}^{m}$、$x\in\mathbb{R}^{n}$，雅可比矩阵为 $J_{ij}=\partial y_i/\partial x_j$。若传入上游梯度列向量 $v\in\mathbb{R}^{m}$，反向传播得到：
 
-数学上，若有向量函数$\vec{y}=f(\vec{x})$，那么$\vec{y}\text{关于}\vec{x}$的梯度就是一个雅可比矩阵：
+$$
+\nabla_x(v^T y)=J^T v.
+$$
 
-$J= \begin{pmatrix} \frac{\partial y_1}{\partial x_1} & \dots & \frac{\partial y_1}{\partial x_n} \\ \vdots & \ddots & \vdots \\ \frac{\partial y_m}{\partial x_1} & \dots & \frac{\partial y_m}{\partial x_n} \end{pmatrix}$
-
-而`torch.autograd`这个包就是用来计算一些雅可比矩阵的乘积的。例如，如果 v 是一个标量函数 $l = g(\vec{y})$的梯度：
-
-$v=\left(\frac{\partial l}{\partial y_1}\ \dots\ \frac{\partial l}{\partial y_m}\right)$
-
-由链式式法则，我们可以得到：
-
-$vJ=\left(\frac{\partial l}{\partial y_1}\ \dots\ \frac{\partial l}{\partial y_m}\right) \begin{pmatrix} \frac{\partial y_1}{\partial x_1} & \dots & \frac{\partial y_1}{\partial x_n} \\ \vdots & \ddots & \vdots \\ \frac{\partial y_m}{\partial x_1} & \dots & \frac{\partial y_m}{\partial x_n} \end{pmatrix} =\left(\frac{\partial l}{\partial x_1}\ \dots\ \frac{\partial l}{\partial x_n}\right)$
-
-> 注：grad在反向传播过程中是累加的(accumulated)，这意味着每一次运行反向传播，梯度都会累加之前的梯度，所以一般在反向传播之前需把梯度清零。
+这叫向量—雅可比积的反向模式计算；用行向量记号则写为 $v^T J$。它不是直接返回完整的雅可比矩阵，也不应与前向模式的 $Jv$ 混淆。
 
 ```python
-# 再来反向传播⼀一次，注意grad是累加的
-out2 = x.sum()
-out2.backward()
-print(x.grad)
-
-out3 = x.sum()
-x.grad.data.zero_()
-out3.backward()
-print(x.grad)
-```
-
-```
-tensor([[4., 4.],
-        [4., 4.]])
-tensor([[1., 1.],
-        [1., 1.]])
-```
-
-看一个雅可比向量积的例子
-
-```
-x = torch.randn(3, requires_grad=True)
-print(x)
-
-y = x * 2
-i = 0
-while y.data.norm() < 1000:
-    y = y * 2
-    i = i + 1
-print(y)
-print(i)
-```
-
-```
-tensor([-0.9332,  1.9616,  0.1739], requires_grad=True)
-tensor([-477.7843, 1004.3264,   89.0424], grad_fn=<MulBackward0>)
-8
-```
-
-在这种情况下，`y `不再是标量。`torch.autograd` 不能直接计算完整的雅可比矩阵，但是如果我们只想要雅可比向量积，只需将这个向量作为参数传给 `backward：`
-
-```python
-v = torch.tensor([0.1, 1.0, 0.0001], dtype=torch.float)
+x = torch.tensor([1., 2., 3.], requires_grad=True)
+y = x.square()
+v = torch.tensor([0.1, 1.0, 0.001])
 y.backward(v)
+torch.testing.assert_close(x.grad, 2 * x.detach() * v)
 
-print(x.grad)
+J = torch.autograd.functional.jacobian(lambda t: t.square(), x)
+torch.testing.assert_close(J, torch.diag(2 * x.detach()))
 ```
 
-```
-tensor([5.1200e+01, 5.1200e+02, 5.1200e-02])
-```
+标量实数输出通常无需传入 `gradient`；多元素输出需要与输出形状匹配的上游梯度。PyTorch **可以**通过 Jacobian 接口计算完整雅可比，只是对大模型这样做通常非常昂贵。
 
-可以通过将代码块包装在` with torch.no_grad():` 中，来阻止 autograd 跟踪设置了`.requires_grad=True`的张量的历史记录。
+### 使用 no_grad 与 detach
 
 ```python
-print(x.requires_grad)
-print((x ** 2).requires_grad)
-
+x = torch.tensor([2.], requires_grad=True)
 with torch.no_grad():
-    print((x ** 2).requires_grad)
+    prediction = x.square()
+assert not prediction.requires_grad
+
+detached = x.detach()               # 不再连接原计算图，但共享存储
+snapshot = x.detach().clone()       # 同时复制存储
+with torch.no_grad():
+    x.add_(1)
+assert detached.item() == 3 and snapshot.item() == 2
 ```
 
-```
-True
-True
-False
-```
+`no_grad` 关闭上下文中大部分运算的梯度记录，并不等于 `model.eval()`；后者切换 Dropout、BatchNorm 等层的行为。`detach()` 切断计算图联系，也不等于数据副本。
 
-如果我们**想要修改 tensor 的数值，但是又不希望被 autograd 记录**(即不会影响反向传播)， 那么我们可以对 tensor.data 进行操作。
+不要通过 `.data` 绕过 autograd 修改数值。这可能绕过必要的正确性检查，导致反向传播使用被篡改的数据。即使用 `no_grad()`，也不应随意修改已经参与前向、且反向传播还需要的值。
+
+下面仅演示在完成反向传播之后手动更新参数；实际训练一般使用优化器：
 
 ```python
-x = torch.ones(1,requires_grad=True)
-
-print(x.data) # 还是一个tensor
-print(x.data.requires_grad) # 但是已经是独立于计算图之外
-
-y = 2 * x
-x.data *= 100 # 只改变了值，不会记录在计算图，所以不会影响梯度传播
-
-y.backward()
-print(x) # 更改data的值也会影响tensor的值 
-print(x.grad)
+parameter = torch.tensor([2.], requires_grad=True)
+loss = parameter.square().sum()
+loss.backward()
+with torch.no_grad():
+    parameter -= 0.1 * parameter.grad
+parameter.grad = None
+torch.testing.assert_close(parameter.detach(), torch.tensor([1.6]))
 ```
 
-```
-tensor([1.])
-False
-tensor([100.], requires_grad=True)
-tensor([2.])
-```
+## 参考
+
+- [PyTorch：Autograd mechanics](https://docs.pytorch.org/docs/stable/notes/autograd.html)
+- [PyTorch：torch.autograd.functional.jacobian](https://docs.pytorch.org/docs/stable/generated/torch.autograd.functional.jacobian.html)
