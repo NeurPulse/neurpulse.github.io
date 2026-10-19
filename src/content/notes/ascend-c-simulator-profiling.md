@@ -2,7 +2,7 @@
 title: "Ascend C 仿真调优：从 Trace 定位到源码行"
 description: "掌握 msProf simulator 的编译采集流程，并借助 Trace 时间线和源码周期定位性能热点。"
 pubDate: 2026-08-27
-category: "未分类"
+category: "CANN / Ascend C"
 tags: ["Ascend C", "msProf simulator", "Trace", "MindStudio Insight", "性能优化"]
 order: 16
 ---

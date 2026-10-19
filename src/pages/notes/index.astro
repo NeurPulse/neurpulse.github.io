@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PostCard from '../../components/PostCard.astro';
 import { compareCategories, compareReadingOrder } from '../../utils/post-order';
+import { TOPIC_GUIDES, getTopicId } from '../../data/topics';
 
 const posts = (await getCollection('notes', ({ data }) => !data.draft)).sort(
   compareReadingOrder
@@ -29,8 +30,8 @@ const categories = [...byCategory.entries()].sort(([a], [b]) =>
   <nav id="topic-filters" class="category-jumps" aria-label="笔记专题">
     <a href="#topic-overview" data-topic-filter="topic-overview" hidden>专题概览</a>
     {
-      categories.map(([category, list], index) => (
-        <a href={`#category-${index}`} data-topic-filter={`category-${index}`}>
+      categories.map(([category, list]) => (
+        <a href={`#${getTopicId(category)}`} data-topic-filter={getTopicId(category)}>
           {category}<span>{list.length}</span>
         </a>
       ))
@@ -39,30 +40,52 @@ const categories = [...byCategory.entries()].sort(([a], [b]) =>
   <p id="topic-status" class="filter-status" role="status" aria-live="polite" aria-atomic="true" hidden></p>
   <section id="topic-overview" class="topic-overview" aria-label="专题概览" hidden>
     {
-      categories.map(([category, list], index) => (
+      categories.map(([category, list]) => (
         <article class="topic-summary">
-          <h2><a href={`#category-${index}`}>{category}</a></h2>
+          <h2><a href={`#${getTopicId(category)}`}>{category}</a></h2>
           <p>{list.length} 篇 · 按学习顺序</p>
+          {TOPIC_GUIDES[category] && <p class="topic-summary-description">{TOPIC_GUIDES[category].summary}</p>}
           <p class="topic-first">从「{list[0].data.title}」开始</p>
-          <a href={`#category-${index}`} aria-label={`查看${category}专题的 ${list.length} 篇笔记`}>查看专题 →</a>
+          <a href={`#${getTopicId(category)}`} aria-label={`查看${category}专题的导读与 ${list.length} 篇笔记`}>导读与目录 →</a>
         </article>
       ))
     }
   </section>
   {
-    categories.map(([category, list], categoryIndex) => (
+    categories.map(([category, list]) => (
       <section
-        id={`category-${categoryIndex}`}
+        id={getTopicId(category)}
         class="note-category"
         data-note-category={category}
         data-post-count={list.length}
       >
+        {TOPIC_GUIDES[category]?.aliases?.map((alias) => (
+          <span id={alias} data-topic-alias={getTopicId(category)} hidden></span>
+        ))}
         <div class="section-head">
           <h2>
             {category}
             <span class="count">{list.length} 篇 · 按学习顺序</span>
           </h2>
         </div>
+        {TOPIC_GUIDES[category] && (
+          <div class="topic-guide">
+            <p class="topic-guide-summary">{TOPIC_GUIDES[category].summary}</p>
+            <dl class="topic-guide-facts">
+              <div><dt>适合谁</dt><dd>{TOPIC_GUIDES[category].audience}</dd></div>
+              <div><dt>前置知识</dt><dd>{TOPIC_GUIDES[category].prerequisites}</dd></div>
+              <div><dt>学习目标</dt><dd>{TOPIC_GUIDES[category].outcome}</dd></div>
+            </dl>
+            <nav class="topic-reading-path" aria-label={`${category}的建议阅读路线`}>
+              <p>建议路线</p>
+              <ol>
+                {TOPIC_GUIDES[category].steps.map((step) => (
+                  <li><a href={`/notes/${step.postId}/`}>{step.label}</a></li>
+                ))}
+              </ol>
+            </nav>
+          </div>
+        )}
         {list.map((p, index) => (
           <div class="ordered-post">
             <span class="order-number">{String(index + 1).padStart(2, '0')}</span>
@@ -82,7 +105,8 @@ const categories = [...byCategory.entries()].sort(([a], [b]) =>
 
   function showTopic(scrollToFilters = false) {
     if (!overview) return;
-    const selected = sections.find((section) => `#${section.id}` === location.hash);
+    const alias = document.getElementById(location.hash.slice(1))?.dataset.topicAlias;
+    const selected = sections.find((section) => `#${section.id}` === (alias ? `#${alias}` : location.hash));
     const selectedId = selected?.id ?? overview.id;
 
     overview.hidden = !!selected;

@@ -2,7 +2,7 @@
 title: "Ascend C 上板调试：DumpTensor 与 printf"
 description: "掌握在 NPU Kernel 中观察张量、标量和多核切分参数的方法，并建立低干扰的调试流程。"
 pubDate: 2026-08-27
-category: "未分类"
+category: "CANN / Ascend C"
 tags: ["Ascend C", "NPU", "调试", "DumpTensor", "printf"]
 order: 14
 ---

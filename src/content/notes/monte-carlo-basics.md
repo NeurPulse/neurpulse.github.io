@@ -3,6 +3,7 @@ title: '蒙特卡洛模拟入门：从随机采样到期权定价'
 description: '蒙特卡洛方法的核心思想、收敛速度分析，并用 Python 实现欧式看涨期权定价。'
 pubDate: 2026-08-05
 order: 1
+featured: true
 category: '蒙特卡洛模拟'
 tags: ['蒙特卡洛', '期权定价', 'Python']
 ---

@@ -2,7 +2,7 @@
 title: "Ascend C 上板性能分析：用 msProf 定位瓶颈"
 description: "从性能采集、指标解读到对照实验，建立 Ascend C 算子的真机调优闭环。"
 pubDate: 2026-08-27
-category: "未分类"
+category: "CANN / Ascend C"
 tags: ["Ascend C", "msProf", "Profiling", "性能优化", "AI Core"]
 order: 15
 ---

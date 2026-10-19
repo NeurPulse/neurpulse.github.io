@@ -5,6 +5,7 @@ pubDate: 2026-08-27
 category: 'CANN / Ascend C'
 tags: ['Ascend C', 'Add', 'Kernel', 'Double Buffer']
 order: 6
+featured: true
 ---
 
 ## 学习目标

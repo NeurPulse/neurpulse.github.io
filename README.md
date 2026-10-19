@@ -187,6 +187,7 @@ import numpy as np
 | 想改什么 | 改哪个文件 |
 |---|---|
 | 网站名、作者名、首页研究方向 | `src/consts.ts` |
+| 专题导读（适读人群、前置知识、学习目标、阅读路线） | `src/data/topics.ts` |
 | 关于我页面（教育背景、邮箱、GitHub、技能） | `src/pages/about/index.astro` |
 | 项目展示列表 | `src/data/projects.ts` |
 

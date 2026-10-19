@@ -44,7 +44,9 @@ function readUrl() {
   const params = new URLSearchParams(location.search);
   query.value = (params.get('q') ?? '').slice(0, 120);
   for (const [select, key] of [[topic, 'topic'], [type, 'type']] as const) {
-    const value = params.get(key) ?? '';
+    const rawValue = params.get(key) ?? '';
+    // 原“未分类”的三篇 Ascend C 笔记已合并，保留旧筛选链接的含义。
+    const value = key === 'topic' && rawValue === '未分类' ? 'CANN / Ascend C' : rawValue;
     select.value = [...select.options].some((option) => option.value === value) ? value : '';
   }
 }

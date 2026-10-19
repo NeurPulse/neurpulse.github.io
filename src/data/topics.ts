@@ -1,0 +1,116 @@
+interface ReadingStep {
+  label: string;
+  postId: string;
+}
+
+interface TopicGuide {
+  id: string;
+  aliases?: string[];
+  summary: string;
+  audience: string;
+  prerequisites: string;
+  outcome: string;
+  steps: ReadingStep[];
+}
+
+// 固定专题锚点，新增或合并分类时不会改变已有分享链接。
+export const TOPIC_GUIDES: Record<string, TopicGuide> = {
+  '深度学习': {
+    id: 'category-0',
+    summary: '从回归与梯度下降出发，逐步学习卷积网络、自然语言处理和序列模型。',
+    audience: '希望系统学习神经网络的入门读者。',
+    prerequisites: 'Python 基础、矩阵运算与导数；代码部分会用到 PyTorch。',
+    outcome: '理解模型训练的基本环节，并能沿着 CNN、RNN 与 LSTM 的脉络继续实践。',
+    steps: [
+      { label: '回归与训练基础', postId: 'deep-learning-linear-regression' },
+      { label: '卷积网络', postId: 'deep-learning-complete-cnn' },
+      { label: '序列模型', postId: 'deep-learning-rnn' },
+    ],
+  },
+  PyTorch: {
+    id: 'category-1',
+    summary: '从张量和自动求导开始，整理数据读入、模型构建、初始化与损失函数。',
+    audience: '准备把神经网络原理写成代码的读者。',
+    prerequisites: 'Python 基础，了解数组与神经网络的基本概念。',
+    outcome: '掌握数据、模型与损失函数的组织方式，进而了解自定义算子接入。',
+    steps: [
+      { label: '张量与求导', postId: 'pytorch-tensor' },
+      { label: '模型构建', postId: 'pytorch-model-construction' },
+      { label: '算子接入', postId: 'ascend-c-pytorch-kernel-integration' },
+    ],
+  },
+  '数学建模': {
+    id: 'category-2',
+    summary: '围绕数据处理、统计分析、时间序列、机器学习与优化方法积累建模工具。',
+    audience: '参与数学建模课程、竞赛或数据分析实践的读者。',
+    prerequisites: 'Python 基础、高等数学与概率统计；了解 NumPy 和 Pandas 更方便。',
+    outcome: '建立从整理数据到选择模型的思路，并按问题查找对应方法与代码。',
+    steps: [
+      { label: '数据预处理', postId: 'mathematical-modeling-data-preprocessing' },
+      { label: '统计与回归', postId: 'mathematical-modeling-statistics' },
+      { label: '机器学习方法', postId: 'mathematical-modeling-ml-sklearn-knn' },
+    ],
+  },
+  '分数布朗运动': {
+    id: 'category-3',
+    summary: '从协方差结构和 Hurst 指数理解分数布朗运动，认识两类模拟思路。',
+    audience: '对随机过程与粗糙波动率建模感兴趣的读者。',
+    prerequisites: '概率论、协方差与线性代数；模拟部分使用 NumPy。',
+    outcome: '理解 Hurst 指数与增量相关性，并比较 Cholesky 分解和 FFT 模拟的思路。',
+    steps: [{ label: '定义、性质与模拟', postId: 'fractional-brownian-motion' }],
+  },
+  '蒙特卡洛模拟': {
+    id: 'category-4',
+    summary: '以随机采样估计期望，并通过一个期权定价例子连接公式与 Python 实现。',
+    audience: '想了解随机模拟如何解决数值问题的读者。',
+    prerequisites: '概率与期望、正态分布，以及 Python / NumPy 基础。',
+    outcome: '理解采样误差与置信区间，读懂欧式期权定价的最小模拟代码。',
+    steps: [{ label: '随机采样到定价实现', postId: 'monte-carlo-basics' }],
+  },
+  'CANN / Ascend C': {
+    id: 'category-6',
+    aliases: ['category-5'],
+    summary: '沿着硬件与算子基础、Kernel 实现、Tiling、融合、调试和性能分析逐步实践。',
+    audience: '准备学习昇腾 NPU 自定义算子开发的读者。',
+    prerequisites: 'C++ 与张量基础；运行代码需要对应的 CANN 开发环境。',
+    outcome: '理解 Host / Device 分工、数据搬运与计算流水，并建立验证和调优的基本流程。',
+    steps: [
+      { label: '开发基础', postId: 'ascend-c-operator-development-basics' },
+      { label: 'Add 算子实践', postId: 'ascend-c-add-operator-walkthrough' },
+      { label: '调试与性能分析', postId: 'ascend-c-on-device-debugging' },
+    ],
+  },
+  LLaMA: {
+    id: 'category-7',
+    summary: '从家族演进与整体架构切入，继续推导和实现 RMSNorm、Pre-Norm 与 RoPE。',
+    audience: '了解 Transformer 后，希望继续学习 LLaMA 关键结构的读者。',
+    prerequisites: '注意力机制、位置编码和 PyTorch 张量运算。',
+    outcome: '把归一化、残差路径和旋转位置编码的原理与实现联系起来。',
+    steps: [
+      { label: '整体架构', postId: 'transformer-llama1-architecture' },
+      { label: 'RMSNorm 实现', postId: 'transformer-rmsnorm-pytorch' },
+      { label: 'RoPE 推导与实现', postId: 'llama-rope-relative-position' },
+    ],
+  },
+  Transformer: {
+    id: 'category-8',
+    summary: '沿着注意力、位置编码、Encoder / Decoder 和训练推理，逐步组装 Transformer。',
+    audience: '希望理解 Transformer 原理并追踪代码中张量形状的读者。',
+    prerequisites: '矩阵乘法、Softmax、神经网络训练和 PyTorch 基础。',
+    outcome: '理解 QKV、Mask 与模块组合，读懂训练和自回归推理的区别。',
+    steps: [
+      { label: '整体架构', postId: 'transformer-overview' },
+      { label: '注意力机制', postId: 'transformer-self-attention' },
+      { label: '代码组装', postId: 'transformer-pytorch-implementation' },
+    ],
+  },
+};
+
+export function getTopicId(category: string): string {
+  return TOPIC_GUIDES[category]?.id
+    ?? `topic-${Array.from(category, (character) => character.codePointAt(0)!.toString(16)).join('-')}`;
+}
+
+export function getTopicHref(category: string): string {
+  return `/notes/#${getTopicId(category)}`;
+}

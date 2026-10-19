@@ -5,6 +5,7 @@ pubDate: 2026-08-26
 category: 'Transformer'
 tags: ['Self-Attention', 'Scaled Dot-Product Attention', 'QKV', 'Mask']
 order: 2
+featured: true
 ---
 
 ## 学习目标

@@ -3,12 +3,13 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { AUTHOR, RESEARCH_INTERESTS } from '../../consts';
 import { compareCategories } from '../../utils/post-order';
+import { getTopicHref } from '../../data/topics';
 
 const notes = await getCollection('notes', ({ data }) => !data.draft);
 const categories = [...new Set(notes.map((post) => post.data.category))].sort(compareCategories);
 const topics = RESEARCH_INTERESTS.map((name) => ({
   name,
-  href: categories.includes(name) ? `/notes/#category-${categories.indexOf(name)}` : null,
+  href: categories.includes(name) ? getTopicHref(name) : null,
 }));
 const education = [
   {
