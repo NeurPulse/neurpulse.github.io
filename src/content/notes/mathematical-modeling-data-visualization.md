@@ -2,6 +2,7 @@
 title: '数学建模：数据可视化'
 description: 'Matplotlib与Plotnine绘图：柱状图、折线图、堆叠图'
 pubDate: 2026-08-07
+updatedDate: 2026-10-19
 order: 2
 category: '数学建模'
 tags: ['数据可视化','Matplotlib','Plotnine']
@@ -22,7 +23,7 @@ tags: ['数据可视化','Matplotlib','Plotnine']
 import numpy as np 
 import pandas as pd 
 import matplotlib.pyplot as plt 
-%matplotlib inline 
+# 在 Notebook 中可另执行 %matplotlib inline；普通 Python 脚本不需要。
 plt.rcParams['font.sans-serif']=['SimHei','Songti SC','STFangsong']
 plt.rcParams['axes.unicode_minus'] = False  # 用来正常显示负号
 import seaborn as sns

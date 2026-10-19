@@ -2,6 +2,7 @@
 title: 'Transformer（七）：训练、损失与自回归推理'
 description: '以机器翻译为例，串联目标右移、Teacher Forcing、Mask、交叉熵、并行训练与逐 token 推理。'
 pubDate: 2026-08-26
+updatedDate: 2026-10-19
 category: 'Transformer'
 tags: ['Transformer Training', 'Teacher Forcing', 'Cross Entropy', 'Autoregressive Generation']
 order: 7
@@ -128,6 +129,8 @@ import torch.nn.functional as F
 def language_model_loss(logits, labels, pad_id):
     # logits: [B, T, V]
     # labels: [B, T]
+    if not labels.ne(pad_id).any():
+        raise ValueError("至少需要一个非填充标签")
     return F.cross_entropy(
         logits.reshape(-1, logits.size(-1)),
         labels.reshape(-1),
@@ -222,29 +225,9 @@ warmup 阶段线性上升，之后按 $step^{-1/2}$ 下降。
 
 ## 10. 最小贪心解码流程
 
-```python
-@torch.no_grad()
-def greedy_decode(model, src_ids, bos_id, eos_id, max_new_tokens):
-    memory, src_is_pad = model.encode(src_ids)
-    generated = torch.full(
-        (src_ids.size(0), 1),
-        bos_id,
-        dtype=torch.long,
-        device=src_ids.device,
-    )
+本节使用下一篇组装的 `Transformer` 接口，即 `model(src_ids, generated)` 返回最后位置 logits。完整 `greedy_decode` 函数见[手写组装与代码调试](/notes/transformer-pytorch-implementation/#8-推理分支还需要外层循环)，避免额外假设模型存在未定义的 `encode/decode` 方法。
 
-    for _ in range(max_new_tokens):
-        logits = model.decode(generated, memory, src_is_pad)
-        next_id = logits[:, -1].argmax(dim=-1, keepdim=True)
-        generated = torch.cat([generated, next_id], dim=1)
-
-        if torch.all(next_id.squeeze(-1) == eos_id):
-            break
-
-    return generated
-```
-
-批量生成时，每个样本到达 `<eos>` 的时间可能不同。更完整的实现要维护 `finished` 标记，避免已经结束的样本继续产生有效 token。
+批量解码必须逐样本维护 `finished`，到达 `<eos>` 后冻结该样本，并按位置表限制生成步数。`torch.no_grad()` 关闭梯度记录，`model.eval()` 才会关闭训练态 dropout，二者都需要。
 
 ## 11. KV Cache 在做什么
 

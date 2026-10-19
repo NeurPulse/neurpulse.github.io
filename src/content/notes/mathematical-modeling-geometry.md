@@ -2,6 +2,7 @@
 title: '数学建模：几何模型'
 description: '向量表示法、旋转矩阵与NumPy线性代数'
 pubDate: 2026-08-07
+updatedDate: 2026-10-19
 order: 4
 category: '数学建模'
 tags: ['几何模型','向量','NumPy','线性代数']
@@ -57,7 +58,7 @@ print("旋转后的坐标为:", rotated_point)
 
 z轴不变
 $$
-$R_{z}(\alpha)=\begin{bmatrix} cos\alpha & -sin\alpha & 0 \\ sin\alpha & cos\alpha & 0 \\ 0 & 0 & 1\end{bmatrix}
+R_{z}(\alpha)=\begin{bmatrix} cos\alpha & -sin\alpha & 0 \\ sin\alpha & cos\alpha & 0 \\ 0 & 0 & 1\end{bmatrix}
 $$
 y轴不变
 $$

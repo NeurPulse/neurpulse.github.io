@@ -2,6 +2,7 @@
 title: '数学建模：聚类算法'
 description: 'K-Means、DBSCAN等无监督聚类方法'
 pubDate: 2026-08-07
+updatedDate: 2026-10-19
 order: 13
 category: '数学建模'
 tags: ['聚类','K-Means','DBSCAN','无监督学习']
@@ -15,9 +16,9 @@ tags: ['聚类','K-Means','DBSCAN','无监督学习']
 
 > 它和 KNN 有很多共同之处，同样需要计算距离，同样会进行近邻寻找，但它的过程没有标签指导，所以具体流程也就有所不同。
 
-通俗一点来说，聚类如果希望我们把数据分成 k 堆，那么首先会随机抽 k 个幸运儿作为样本的中心点，然后对于数据中每个样本，找到它最近的那个中心点作为 “大哥”，然后加入他的帮派；每个小弟都找到自己大哥以后帮派内会 “比武” 选出新的 “大哥”，这个 “比武” 就是比帮派内谁与这个帮派的中心点最近；然后所有的小弟集中起来，再去给他们重新选择自己想加入的堂口的机会，于是诞生了一批二五仔换到其他的帮派里面去…… 当这个数据集里面不再存在二五仔的时候聚类就结束了，每个堂口的老大也确定了
+通俗一点来说，聚类如果希望我们把数据分成 k 堆，那么首先会随机抽 k 个幸运儿作为样本的中心点，然后对于数据中每个样本，找到它最近的那个中心点作为 “大哥”，然后加入他的帮派；每个小弟都找到自己大哥以后帮派内会 “比武” 选出新的 “大哥”，K-means 的新中心是簇内各点的算术平均，不必对应某个原始样本；选择最接近中心的实际样本属于另一类代表点思路；然后所有的小弟集中起来，再去给他们重新选择自己想加入的堂口的机会，于是诞生了一批二五仔换到其他的帮派里面去…… 当这个数据集里面不再存在二五仔的时候聚类就结束了，每个堂口的老大也确定了
 
-k-means 算法是根据给定的 n 个数据对象的数据集，构建 k 个划分聚类的方法，每个划分聚类即为一个簇。该方法将数据划分为 n 个簇，每个簇至少有一个数据对象，每个数据对象必须属于而且只能属于一个簇。同时要满足同一簇中的数据对象相似度高，不同簇中的数据对象相似度较小。聚类相似度是利用各簇中对象的均值来进行计算的。
+k-means 算法是根据给定的 n 个数据对象的数据集，构建 k 个划分聚类的方法，每个划分聚类即为一个簇。该方法将数据划分为 k 个簇，每个簇至少有一个数据对象，每个数据对象必须属于而且只能属于一个簇。同时要满足同一簇中的数据对象相似度高，不同簇中的数据对象相似度较小。聚类相似度是利用各簇中对象的均值来进行计算的。
 
 K-Means 的执行流程
 
@@ -44,45 +45,31 @@ $$
 判断最优的 k 值会采取肘部图策略。肘部法则的计算原理是损失函数，损失函数是每个变量点到其类别中心的位置距离平方和。在选择类别数量上，肘部法则会把不同值的成本函数值画出来。肘部就是指这个图的拐点，下降从快到慢的点。
 
 ```python
-def init_cent(dataset,K):
+import numpy as np
 
-    idx=np.random.choice(np.arange(len(dataset)),size=K,replace=False)
+def init_cent(dataset, K):
+    idx = np.random.choice(len(dataset), size=K, replace=False)
+    return dataset[idx].astype(float, copy=True)
 
-    return dataset[idx]
-
-def Kmeans(dataset,K,init_cent):
-
-    centroids=init_cent(dataset,K)
-
-    cluster=np.zeros(len(dataset))
-
-    changed=True
-
-    while changed:
-
-        changed=False
-
-        loss=0
-
-        for i,data in enumerate(dataset):
-
-            dis=np.sum((centroids-data)**2,axis=-1)
-
-            k=np.argmin(dis)
-
-            if cluster[i]!=k:
-
-                cluster[i]=k
-
-                changed=True
-
-            loss+=np.sum((data-centroids[k])**2)
-
+def Kmeans(dataset, K, init_cent=init_cent, max_iter=300):
+    dataset = np.asarray(dataset, dtype=float)
+    if dataset.ndim != 2 or not np.isfinite(dataset).all() or not 1 <= K <= len(dataset):
+        raise ValueError("要求二维有限数据且 1 <= K <= 样本数")
+    centroids = init_cent(dataset, K)
+    previous = np.full(len(dataset), -1, dtype=int)
+    for _ in range(max_iter):
+        distances = ((dataset[:, None, :] - centroids[None, :, :]) ** 2).sum(-1)
+        cluster = distances.argmin(axis=1)
+        if np.array_equal(cluster, previous):
+            break
+        previous = cluster.copy()
         for i in range(K):
-
-            centroids[i]=np.mean(dataset[cluster==i],axis=0)
-
-    return centroids,cluster
+            members = dataset[cluster == i]
+            if len(members):
+                centroids[i] = members.mean(axis=0)
+            # 简化约定：空簇保留旧中心，避免对空数组求均值产生 NaN。
+    cluster = ((dataset[:, None, :] - centroids[None, :, :]) ** 2).sum(-1).argmin(1)
+    return centroids, cluster
 ```
 
 ```python
@@ -128,11 +115,11 @@ DBSCAN 算法是密度聚类算法，所谓密度聚类算法就是说这个算�
 
 定义核心对象之间的几何关系：
 
-- 密度直达：如果 B 样本位于 A 样本的 ε- 邻域内，则称 AB 密度直达。
-- 若 A 样本和 B 样本密度直达，B 样本和 C 样本密度直达，A 和 C 之间不是密度直达，则称 A 样本和 C 样本密度可达。
-- 若 B 样本和 A、C 样本均密度可达，则称 A 和 C 密度相连。
+- 从 A 密度直达 B：A 必须是核心点，且 B 位于 A 的 ε-邻域内；B 不必是核心点，因此这一关系一般不对称。
+- 从 A 密度可达 C：存在一条从 A 到 C 的链，链上每一步均从核心点密度直达下一点。
+- A 与 C 密度相连：存在某个点 B，使 A 和 C 都从 B 密度可达。
 
-本质上这个算法就是统计数据中的核心对象并将其归类，但这个算法有一个特点就是非核心对象会被判定为离群点，所以安排一个离群类 - 1 给它。
+本质上这个算法就是统计数据中的核心对象并将其归类，但这个算法有一个特点就是非核心点还可能是某个簇的边界点；只有不能从任意核心点到达的点才标为噪声 `-1`。scikit-learn 的 `min_samples` 计数包含点自身。
 
 DBSCAN 虽然能比较好地分类出离群点，但是算法稳定性很不好，参数稍微改变一点会对性能产生很大影响。
 
@@ -187,7 +174,7 @@ for k, col in zip(unique_labels, colors):
 
     class_member_mask = (labels == k)  
 
-    xy = X[class_member_mask & (labels != -1)]  
+    xy = X[class_member_mask]  # 噪声点也需要画出
 
     plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=tuple(col),  
 
@@ -276,5 +263,6 @@ plt.scatter(X[:, 0], X[:, 1], c=labels)
 plt.show()
 ```
 
+### 参考资料
 
-
+- [scikit-learn：聚类](https://scikit-learn.org/stable/modules/clustering.html)：K-means 目标、DBSCAN 核心点、边界点和噪声点。

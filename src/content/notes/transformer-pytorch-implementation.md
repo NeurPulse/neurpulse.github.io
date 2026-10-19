@@ -2,6 +2,7 @@
 title: 'Transformer（八）：基于 Notebook 的手写组装与代码调试'
 description: '以课程 Notebook 的 ModelArgs、MultiHeadAttention、Encoder、Decoder 与 Transformer 类为主线，完成代码整合、错误修正和最小测试。'
 pubDate: 2026-08-26
+updatedDate: 2026-10-19
 category: 'Transformer'
 tags: ['PyTorch', 'Notebook', 'Implementation', 'Debugging']
 order: 8
@@ -82,6 +83,8 @@ class ModelArgs:
     pad_id: int = 0
 
     def __post_init__(self):
+        if min(self.n_heads, self.dim, self.hidden_dim, self.max_seq_len, self.n_layer, self.vocab_size) <= 0:
+            raise ValueError("各计数和维度必须为正")
         if self.dim % self.n_heads != 0:
             raise ValueError("dim 必须能被 n_heads 整除")
 ```
@@ -206,7 +209,7 @@ out = h + self.feed_forward(self.ffn_norm(h))
 
 ## 6. 以 `Loss.ipynb` 为主线的整体模型
 
-下面保留 Notebook 的 `ModuleDict`、共享 token embedding、`lm_head` 和 `targets=None` 分支。它依赖前文修正后的 `PositionEncoding`、`Encoder` 和 `Decoder`。
+下面保留 Notebook 的 `ModuleDict`、共享 token embedding、`lm_head` 和 `targets=None` 分支。它依赖上节明确列出的各模块定义；位置编码的 dropout 设为 0，由外层统一执行，避免重复 dropout。
 
 ```python
 import torch
@@ -225,10 +228,16 @@ class Transformer(nn.Module):
                 args.dim,
                 padding_idx=args.pad_id,
             ),
-            "wpe": PositionEncoding(args),
+            "wpe": SinusoidalPositionEncoding(args.dim, args.max_seq_len, dropout=0.0),
             "drop": nn.Dropout(args.dropout),
-            "encoder": Encoder(args),
-            "decoder": Decoder(args),
+            "encoder": Encoder(
+                lambda: EncoderLayer(args.dim, args.n_heads, args.hidden_dim, args.dropout),
+                args.n_layer, args.dim,
+            ),
+            "decoder": Decoder(
+                [DecoderLayer(args.dim, args.n_heads, args.hidden_dim, args.dropout)
+                 for _ in range(args.n_layer)], args.dim,
+            ),
         })
         self.lm_head = nn.Linear(args.dim, args.vocab_size, bias=False)
 
@@ -242,6 +251,8 @@ class Transformer(nn.Module):
         if tgt_input.size(1) > self.args.max_seq_len:
             raise ValueError("目标序列超过 max_seq_len")
 
+        if src_input.size(1) == 0 or tgt_input.size(1) == 0:
+            raise ValueError("源序列与目标前缀不能为空")
         src_is_pad = src_input.eq(self.args.pad_id)       # [B, S]
         tgt_is_pad = tgt_input.eq(self.args.pad_id)       # [B, T]
 
@@ -271,7 +282,7 @@ class Transformer(nn.Module):
         )
 
         enc_out = self.transformer.encoder(src_emb, src_mask)
-        dec_out = self.transformer.decoder(
+        dec_out, _ = self.transformer.decoder(
             tgt_emb,
             enc_out,
             target_mask=tgt_mask,
@@ -287,6 +298,8 @@ class Transformer(nn.Module):
         if targets.shape != tgt_input.shape:
             raise ValueError("targets 与 tgt_input 必须具有相同 shape")
 
+        if not targets.ne(self.args.pad_id).any():
+            raise ValueError("至少需要一个非填充标签，不能对空集合求平均损失")
         loss = F.cross_entropy(
             logits.reshape(-1, logits.size(-1)),
             targets.reshape(-1),
@@ -323,22 +336,28 @@ logits, loss = model(src_input, tgt_input, targets)
 ```python
 @torch.no_grad()
 def greedy_decode(model, src_input, bos_id, eos_id, max_new_tokens):
-    generated = torch.full(
-        (src_input.size(0), 1),
-        bos_id,
-        dtype=torch.long,
-        device=src_input.device,
-    )
-
-    for _ in range(max_new_tokens):
-        last_logits, _ = model(src_input, generated)
-        next_id = last_logits[:, -1].argmax(dim=-1, keepdim=True)
-        generated = torch.cat([generated, next_id], dim=1)
-
-        if torch.all(next_id.squeeze(-1).eq(eos_id)):
-            break
-
-    return generated
+    if max_new_tokens < 0:
+        raise ValueError("max_new_tokens 不能为负")
+    was_training = model.training
+    model.eval()
+    try:
+        generated = torch.full((src_input.size(0), 1), bos_id,
+                               dtype=torch.long, device=src_input.device)
+        finished = torch.zeros(src_input.size(0), dtype=torch.bool, device=src_input.device)
+        # 这份教学实现没有 KV Cache，每步重新计算前缀；不让输入越过位置表。
+        budget = min(max_new_tokens, model.args.max_seq_len)
+        for _ in range(budget):
+            last_logits, _ = model(src_input, generated)
+            next_id = last_logits[:, -1].argmax(dim=-1)
+            # 已结束的样本只追加 eos 占位，不再继续产生有效内容。
+            next_id = torch.where(finished, eos_id, next_id)
+            generated = torch.cat([generated, next_id[:, None]], dim=1)
+            finished |= next_id.eq(eos_id)
+            if finished.all():
+                break
+        return generated
+    finally:
+        model.train(was_training)
 ```
 
 若要使用 temperature、top-k 或 top-p，只需把 `argmax` 替换为 `Sampling.ipynb` 中对应的概率调整与采样步骤。

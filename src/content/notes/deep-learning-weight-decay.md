@@ -2,6 +2,7 @@
 title: '深度学习:权重衰减 — 直接缩小参数的防过拟合技术'
 description: '理解权重衰减的原理（每次更新时直接缩小参数）、与 L2 正则化在 SGD 下等价但在 Adam 下不等价的数学推导，以及 PyTorch 中的一行实现'
 pubDate: 2026-08-12
+updatedDate: 2026-10-19
 order: 25
 category: '深度学习'
 tags: ['权重衰减', 'Weight Decay', 'L2正则化', '过拟合', 'Adam']
@@ -19,7 +20,7 @@ tags: ['权重衰减', 'Weight Decay', 'L2正则化', '过拟合', 'Adam']
 ### 1.2 更新公式
 
 $$
-w_t = w_t - lr \cdot g_w - lr \cdot \lambda \cdot w_t
+w_{t+1} = (1-lr\cdot\lambda)w_t-lr\cdot g_t
 $$
 
 | 项 | 含义 |
@@ -27,7 +28,7 @@ $$
 | $lr \cdot g_w$ | 标准梯度下降的更新 |
 | $lr \cdot \lambda \cdot w_t$ | 额外的衰减：把参数往 0 的方向拉 |
 
-每次更新时，参数先被梯度更新，再被 $\lambda$ 按比例缩小。
+衰减与梯度项都基于旧参数 $w_t$。若先做梯度更新再整体缩放，会多出一个交叉项，不再是上式。
 
 ### 1.3 $\lambda$ 怎么选
 
@@ -82,7 +83,7 @@ $$
 | **L2 正则** | $\lambda w$ 先进入梯度 $g$ → $g$ 再经过 $V$ 和 $S$ 的变换 → 衰减效果被扭曲 |
 | **权重衰减** | 梯度走 Adam 流程，衰减项另走一条路，直接减 $lr \cdot \lambda w$（不经过 V/S） |
 
-**结论**：对于 Adam 优化器，必须用权重衰减而非 L2 正则。这就是 PyTorch 中 `AdamW` 的由来——它将权重衰减从梯度计算中解耦出来。
+若目标是让衰减不经过一阶、二阶矩，应使用 AdamW 的解耦衰减。Adam 加 L2 仍是合法的另一种正则化目标；二者行为不同，不能说 Adam 绝对不能使用 L2。
 
 > `AdamW` = Adam + **解耦的** Weight Decay（Decoupled Weight Decay）
 
@@ -94,8 +95,8 @@ $$
 |------|------|------|
 | 实现方式 | 修改 loss 函数 | 修改参数更新步骤 |
 | 经过 Adam 的 V/S | **会**（效果被扭曲） | **不会**（直接作用） |
-| 适用于 SGD | ✅ | ✅（两者等价） |
-| 适用于 Adam | ❌ 不推荐 | ✅ 用 AdamW |
+| 适用于 SGD | L2 项进入梯度 | 无动量的普通 SGD 下与匹配系数的 L2 等价 |
+| 适用于 Adam | 合法，但影响矩估计 | AdamW 将衰减与矩估计分开 |
 
 ---
 
@@ -127,3 +128,9 @@ optimizer = optim.AdamW(model.parameters(), lr=0.001, weight_decay=1e-4)
   SGD   → weight_decay 即可（等价 L2）
   Adam  → 用 AdamW（解耦权重衰减）
 ```
+
+## 适用条件与参考
+
+上述等价推导针对无动量的普通 SGD，损失使用 $\lambda\|w\|^2/2$。带动量时，把 L2 加进梯度会进入动量缓冲，不等价于另加一条解耦衰减路径。
+
+- [Decoupled Weight Decay Regularization](https://arxiv.org/abs/1711.05101)。

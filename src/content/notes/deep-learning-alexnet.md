@@ -2,6 +2,7 @@
 title: '深度学习:AlexNet — 开启深度学习黄金时代的 CNN'
 description: '理解 ImageNet 竞赛的背景、AlexNet 以 ReLU/Dropout/GPU 并行等创新大幅刷新 Top-5 错误率的历史意义，以及其八层网络架构与 PyTorch 实现'
 pubDate: 2026-08-16
+updatedDate: 2026-10-19
 order: 35
 category: '深度学习'
 tags: ['AlexNet', 'ImageNet', 'CNN', 'ReLU', 'Dropout', '深度学习里程碑']
@@ -22,7 +23,7 @@ tags: ['AlexNet', 'ImageNet', 'CNN', 'ReLU', 'Dropout', '深度学习里程碑']
 | 项目 | 信息 |
 |------|------|
 | 提出 | 李飞飞团队，2009 年 |
-| 规模 | 约 1,400 万张图，选 1,000 类，每类约 1,000 张精细标注 |
+| 规模 | 完整 ImageNet 超过千万张图；ILSVRC 常用分类子集为 1000 类、约 120 万张训练图 |
 | 竞赛 | ILSVRC（2010 年起每年举办） |
 
 此前计算机视觉依赖小数据集（CIFAR-10、MNIST）和手工特征（SIFT、HOG、SVM）。ImageNet 的 1000 类、百万级图像对传统方法构成巨大挑战。
@@ -46,14 +47,16 @@ AlexNet（Alex Krizhevsky、Ilya Sutskever、Geoffrey Hinton）：
 | 层 | 类型 | 输出尺寸 | 说明 |
 |------|------|---------|------|
 | 输入 | — | 224×224×3 | RGB 图像 |
-| 1 | 卷积 11×11, stride 4 + ReLU + LRN + MaxPool | 55×55×96 | 大卷积核做初始特征提取 |
-| 2 | 卷积 5×5 + ReLU + LRN + MaxPool | 27×27×256 | 局部响应归一化 |
+| 1 | 卷积 11×11, stride 4 + ReLU + LRN + MaxPool | 27×27×96 | 大卷积核做初始特征提取 |
+| 2 | 卷积 5×5 + ReLU + LRN + MaxPool | 13×13×256 | 局部响应归一化 |
 | 3 | 卷积 3×3 + ReLU | 13×13×384 | 更细粒度特征 |
 | 4 | 卷积 3×3 + ReLU | 13×13×384 | 与第 3 层配合提取复杂模式 |
 | 5 | 卷积 3×3 + ReLU + MaxPool | 6×6×256 | 下采样提取语义 |
 | 6 | 全连接 + ReLU + Dropout | 4096 | 高级分类特征 |
 | 7 | 全连接 + ReLU + Dropout | 4096 | 防过拟合 |
 | 8 | 全连接 + Softmax | 1000 | 输出 1000 类概率 |
+
+表中的输出尺寸计入该行末尾的池化，按 224 输入、首层 padding=2、3×3/stride=2 池化的约定计算。图示与本节简化代码的细节应分别对照。
 
 > 结构图分上下两部分，是因为当时用**两块 GPU** 并行训练，只在特定层通信。
 

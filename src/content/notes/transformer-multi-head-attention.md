@@ -2,6 +2,7 @@
 title: 'Transformer（三）：多头注意力与张量变形'
 description: '理解多头注意力为什么有效，逐步追踪拆头、并行计算、拼接与输出投影的张量形状，并给出可用于交叉注意力的实现。'
 pubDate: 2026-08-26
+updatedDate: 2026-10-19
 category: 'Transformer'
 tags: ['Multi-Head Attention', 'Shape', 'PyTorch', 'Attention']
 order: 3
@@ -137,7 +138,7 @@ $$
 
 ## 6. 正确的手写实现
 
-下面的实现支持 $T\ne S$，既能用于自注意力，也能用于交叉注意力。约定布尔 Mask 中 `True` 表示禁止注意。
+下面的实现支持 $T\ne S$，既能用于自注意力，也能用于交叉注意力。约定布尔 Mask 中 `True` 表示禁止注意。`[B,S]` 的 Padding Mask 必须先扩为 `[B,1,1,S]`。全屏蔽行在本例中约定权重及聚合值为 0，点积前提高计算精度以减小低精度溢出风险。
 
 ```python
 import math
@@ -184,16 +185,21 @@ class MultiHeadAttention(nn.Module):
         k = self._split_heads(self.k_proj(key))
         v = self._split_heads(self.v_proj(value))
 
-        scores = q @ k.transpose(-2, -1)
-        scores = scores / math.sqrt(self.head_dim)
-
-        if blocked_mask is not None:
-            scores = scores.masked_fill(blocked_mask, float("-inf"))
-
-        weights = torch.softmax(scores.float(), dim=-1).to(q.dtype)
-        weights = self.attn_dropout(weights)
-
-        output = weights @ v
+        work_dtype = torch.float64 if q.dtype == torch.float64 else torch.float32
+        with torch.autocast(device_type=q.device.type, enabled=False):
+            scores = (q.to(work_dtype) / math.sqrt(self.head_dim)) @ k.to(work_dtype).transpose(-2, -1)
+            if blocked_mask is not None:
+                if blocked_mask.dtype != torch.bool or blocked_mask.device != q.device:
+                    raise ValueError("Mask 必须是同设备的布尔张量")
+                mask = torch.broadcast_to(blocked_mask, scores.shape)
+                all_blocked = mask.all(dim=-1, keepdim=True)
+                scores = scores.masked_fill(mask, float("-inf")).masked_fill(all_blocked, 0.0)
+            weights = torch.softmax(scores, dim=-1)
+            if blocked_mask is not None:
+                weights = weights.masked_fill(all_blocked, 0.0)
+            weights = self.attn_dropout(weights)
+            output = (weights @ v.to(work_dtype)).to(q.dtype)
+        weights = weights.to(q.dtype)
         output = output.transpose(1, 2).contiguous()
         output = output.view(batch, target_len, self.dim)
         output = self.out_dropout(self.out_proj(output))
@@ -202,7 +208,7 @@ class MultiHeadAttention(nn.Module):
 
 ## 7. 为什么 `contiguous()` 常出现在这里
 
-`transpose` 只改变张量的视图和步长，不一定重新排列内存。转置后的张量直接 `view` 可能失败或产生不符合预期的解释。
+`transpose` 只改变张量的视图和步长，不一定重新排列内存。转置后的张量若步长不兼容，直接 `view` 会报错；`view` 不会悄悄按错误内存顺序重排数据。
 
 典型写法是：
 

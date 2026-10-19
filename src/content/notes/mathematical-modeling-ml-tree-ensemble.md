@@ -2,6 +2,7 @@
 title: '数学建模：树模型与集成学习'
 description: '决策树、随机森林、XGBoost等集成方法'
 pubDate: 2026-08-07
+updatedDate: 2026-10-19
 order: 12
 category: '数学建模'
 tags: ['决策树','随机森林','XGBoost','集成学习','机器学习']
@@ -438,13 +439,13 @@ print('回归树绝对值偏差均值:', mean_absolute_error(test_price, predict
 
 Step1：初始化训练数据的权值分布 每一个训练样本最开始时都被赋予相同的权值：$w_i=\frac{1}{N}$，这样得到训练样本集的初始权值分布。
 $$
-D_1(i)=(w_1,w_2,\dots,w_N)=\left(\frac{1}{N},\dots,\frac{1}{N}\right) $
+D_1(i)=(w_1,w_2,\dots,w_N)=\left(\frac{1}{N},\dots,\frac{1}{N}\right)
 $$
 Step2：进行多轮迭代 用 $t = 1,2,\dots,T$ 表示迭代的第几轮
 
 1. 选取一个当前误差率最低的弱分类器 $h$ 作为第 $t$ 个基本分类器 $H_t$，并计算该弱分类器在分布 $D_t$ 上的误差率 $e_t$：
    $$
-   e_t = P(H_t(x_i)\neq y_i)=\sum_{i=1}^N w_{ti}I(H_t(x_i)\neq y_i) $
+   e_t = P(H_t(x_i)\neq y_i)=\sum_{i=1}^N w_{ti}I(H_t(x_i)\neq y_i)
    $$
 
    > 由上述式子可知，$H_t(x)$ 在训练数据上的误差率 $e_t$ 就是被 $H_t(x)$ 误分类样本的权值之和。

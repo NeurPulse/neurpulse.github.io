@@ -2,6 +2,7 @@
 title: '深度学习:手写数字识别 — 从零手动实现 vs PyTorch 框架实现'
 description: '基于 MNIST 数据集，先手动实现一个完整的多分类神经网络（前向/反向/参数更新），再用 PyTorch 的 nn.Module/CrossEntropyLoss/SGD 重写，对比两者理解框架帮我们做了什么'
 pubDate: 2026-08-12
+updatedDate: 2026-10-19
 order: 19
 category: '深度学习'
 tags: ['MNIST', '手写数字识别', '反向传播', 'PyTorch', 'nn.Module', '从零实现']
@@ -25,7 +26,7 @@ image = image / 255.0                     # 归一化到 [0, 1]
 image = (image - 0.1307) / 0.3081         # 标准化（0.1307 和 0.3081 是全数据集统计值）
 ```
 
-> 这里是对**整张图片所有像素整体**做标准化，而不是按像素位置分别做。因为图像的信息来自像素间的明暗对比，必须作为整体处理。
+> 这里是对**整张图片所有像素整体**做标准化，而不是按像素位置分别做。这是本例选择的缩放方案，并非图像必须采用唯一的标准化方式。验证、测试应复用训练集统计量，不能在测试集单独拟合均值和标准差。
 
 #### 2.2 参数初始化
 
@@ -424,7 +425,7 @@ print(f"Test Accuracy: {100 * correct / total:.2f}%")
 
 | 手动实现 | PyTorch 替代 | 省掉了什么 |
 |----------|-------------|-----------|
-| 手写 `W, b` 的 Kaiming 初始化 | `nn.Linear` 自动完成 | 手算 $\sqrt{2/n}$ |
+| 手写初始化 | `nn.Linear` 提供默认初始化；复现 He 正态需显式设置 | 参数注册与初始化接口 |
 | 手写 `relu(x)`, `relu_grad(x)` | `nn.ReLU()` 自动完成 | 手写激活函数和导数 |
 | 手写 `softmax(x)` | `nn.CrossEntropyLoss` 内部完成 | 手写 Softmax + 数值稳定 |
 | 手写 `cross_entropy` | `nn.CrossEntropyLoss` | 手写 one-hot + log |

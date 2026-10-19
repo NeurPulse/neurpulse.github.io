@@ -2,6 +2,7 @@
 title: '深度学习:批量归一化 — 让深层网络每一层的输入都稳定'
 description: '理解 Batch Normalization 的核心操作（标准化 → 缩放平移）、γ/β 可学习参数的意义、为什么 BN 前不加 bias、推理时的指数加权平均切换，以及 PyTorch 实现'
 pubDate: 2026-08-12
+updatedDate: 2026-10-19
 order: 27
 category: '深度学习'
 tags: ['Batch Normalization', '批量归一化', 'BN', '训练稳定性', '正则化']
@@ -63,7 +64,7 @@ $$
 | $\beta$ | 0 | 可学习的平移参数 |
 
 有了 $\gamma$ 和 $\beta$，模型可以：
-- 学回原始的分布（当 $\gamma=\sigma$, $\beta=\mu$ 时，$z^{\text{BN}} = z$）
+- 对固定统计量，取 $\gamma=\sqrt{\sigma^2+\epsilon}$、$\beta=\mu$ 可恢复输入；统计量随 batch 改变时，一组固定参数不一定能对每个 batch 同时恢复
 - 或者学到任何更合适的分布
 
 > BN 并不是把输出强行固定到 N(0,1)，而是给模型一个**稳定训练的起点**，然后让模型自己学最合适的变换。
@@ -78,7 +79,7 @@ BN 时：$\hat{z} = \frac{z - \mu}{\sigma}$
 
 减均值后，$b$ 被抵消了——不论 $b$ 是多少，减去均值后效果相同。而 BN 里已经有了可学习的 $\beta$ 来控制平移。
 
-**结论**：BN 前面的 Linear 层设 `bias=False`。
+当 Linear/Conv 后紧接着对相同通道做 BN 时，前层通常可以设 `bias=False`；若中间还有其他运算，不能直接套用这一结论。
 
 ---
 
@@ -94,7 +95,7 @@ BN 时：$\hat{z} = \frac{z - \mu}{\sigma}$
     ...
 ```
 
-每一层的输出都有稳定的均值和方差 → 深层网络不再需要反复适应前面层的变化 → 训练更稳定、收敛更快。
+BN 控制当前统计范围内的尺度，通常有利于优化；这不保证整个输出分布恒定，也不能把其效果完全归因于消除分布漂移。
 
 ---
 
@@ -112,18 +113,16 @@ BN 最初不是为了正则化设计的，但实践中发现有防过拟合的�
 
 ## 6. 推理时的 BN
 
-推理时可能只有 1 条数据，无法计算 batch 均值和标准差。
+推理使用训练期间维护的运行统计量，以避免预测依赖当前 batch 的组成。对 `[N,C]` 的 BatchNorm1d，训练时每通道只有一个元素会报错；卷积 BN 的统计范围还包含空间维，不能简单说 batch size 为 1 就一定无法训练。
 
-**解决方案**：训练时用指数加权平均维护一组全局的 running mean 和 running var：
+PyTorch 的 `momentum=m` 使用以下约定（它不是优化器中的动量）：
 
-```python
-running_mean = β · running_mean + (1-β) · batch_mean
-running_var  = β · running_var  + (1-β) · batch_var
+```text
+running_mean = (1-m) * running_mean + m * batch_mean
+running_var  = (1-m) * running_var  + m * batch_var_unbiased
 ```
 
-推理时直接用 running mean 和 running var 做归一化。
-
----
+训练前向归一化使用总体方差估计（除以统计元素数），运行方差更新使用无偏估计。默认 `track_running_stats=True` 时，`eval()` 使用运行统计量；设为 `False` 时，推理仍使用当前 batch 的统计量。
 
 ## 7. 训练 vs 推理总结
 
@@ -160,6 +159,9 @@ class NeuralNetwork(nn.Module):
 
             nn.Linear(64, 10)                     # 输出层不加 BN
         )
+
+    def forward(self, x):
+        return self.model(x.flatten(1))
 ```
 
 **层的顺序**：`Linear(bias=False) → BatchNorm → ReLU`
@@ -184,3 +186,7 @@ BN 的作用：让每一层输出的分布稳定，训练更深更快
 
 PyTorch：Linear(bias=False) → BatchNorm1d → ReLU
 ```
+
+## 参考资料
+
+- [PyTorch BatchNorm1d](https://docs.pytorch.org/docs/stable/generated/torch.nn.BatchNorm1d.html)：统计维度、方差估计与运行统计量。

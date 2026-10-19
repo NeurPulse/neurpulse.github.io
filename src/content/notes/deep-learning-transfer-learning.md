@@ -2,6 +2,7 @@
 title: '深度学习:迁移学习 — 让预训练模型为你所用'
 description: '理解迁移学习的核心思想、神经网络中"冻结特征提取层 + 替换分类头"的标准流程，以及根据目标数据量选择不同微调策略的原则与 PyTorch 实现'
 pubDate: 2026-08-17
+updatedDate: 2026-10-19
 order: 39
 category: '深度学习'
 tags: ['迁移学习', '预训练模型', '微调', 'Fine-tuning', '分类头', 'ResNet']
@@ -78,7 +79,7 @@ tags: ['迁移学习', '预训练模型', '微调', 'Fine-tuning', '分类头', 
 ```python
 from torchvision import models
 
-model = models.resnet18(pretrained=True)   # 加载 ImageNet 预训练权重
+model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)   # 加载 ImageNet 预训练权重
 for param in model.parameters():
     param.requires_grad = False            # 冻结所有层
 
@@ -89,7 +90,7 @@ model.fc = nn.Linear(in_features, 1)       # 新二分类头
 ### 4.2 换分类头 + 解冻最后阶段（数据量适中）
 
 ```python
-model = models.resnet18(pretrained=True)
+model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
 for param in model.parameters():
     param.requires_grad = False            # 先冻结所有层
 
@@ -103,7 +104,7 @@ model.fc = nn.Linear(in_features, 1)       # 二分类
 ### 4.3 猫狗分类完整流程
 
 关键点：
-- `pretrained=True` 加载 ImageNet 权重
+- 使用 `weights=models.ResNet18_Weights.DEFAULT` 加载权重，并通过权重对象的 `transforms()` 对照验证/推理预处理
 - 数据增强（RandomCrop、RandomHorizontalFlip、ColorJitter）
 - 归一化用 ImageNet 的均值方差 `[0.485, 0.456, 0.406]` 和 `[0.229, 0.224, 0.225]`（**必须与预训练一致**）
 - 二分类：输出 1 个 logit + Sigmoid + BCELoss
@@ -129,7 +130,9 @@ model.fc = nn.Linear(in_features, 1)       # 二分类
   类别数不同 + 语义不同 + 浅层特征通用
 
 PyTorch 核心三行：
-  models.resnet18(pretrained=True)
+  models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
   param.requires_grad = False
   model.fc = nn.Linear(in_features, 新类别数)
 ```
+
+仅设置 `requires_grad=False` 不会冻结 BatchNorm 的运行均值和方差。只训练分类头时，可让主干保持 `eval()`，并只将分类头设为训练态；调用整个模型的 `train()` 会重新开启主干 BN。微调需要明确决定 BN 统计量是否更新。

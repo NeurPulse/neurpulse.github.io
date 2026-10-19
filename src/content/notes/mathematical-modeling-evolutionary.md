@@ -2,6 +2,7 @@
 title: '数学建模：进化计算与群体智能'
 description: '线性规划、遗传算法、粒子群算法、蚁群算法、模拟退火'
 pubDate: 2026-08-07
+updatedDate: 2026-10-19
 order: 15
 category: '数学建模'
 tags: ['优化算法','遗传算法','粒子群算法','蚁群算法','模拟退火']
@@ -58,7 +59,7 @@ $$
 
 #### case1:游戏升满级
 
-该游戏每天有100点体力，可通过反复通关A、B、C三张地图来获取经验升级，通关A图可获得20点经验，通关B图可获得30点经验，通关C图可获得45点经验，但通关地图会消耗体力，其中通关A图消耗4点体力，通关B图消耗8点体力，通关C图消耗5点体力，同时A、B、C三图每天加在一起最多通关20次，求该怎么组合通关ABC三个地图的次数来使今天获得的经验最大？
+该游戏每天有100点体力，可通过反复通关A、B、C三张地图来获取经验升级，通关A图可获得20点经验，通关B图可获得30点经验，通关C图可获得45点经验，但通关地图会消耗体力，其中通关A图消耗4点体力，通关B图消耗8点体力，通关C图消耗15点体力，同时A、B、C三图每天加在一起最多通关20次，求该怎么组合通关ABC三个地图的次数来使今天获得的经验最大？
 
 1. 决策变量：三个地图通关次数。设A、B、C三个地图通关的次数分别为$x_1,x_2,x_3$​
 2. 目标函数：获得的经验最高。设经验为y。$max\quad y = 20x_1 + 30x_2 + 45 x_3 $​
@@ -116,7 +117,7 @@ from scipy.optimize import linprog
 #       x1 + x2 + x3 <= 20
 #       x1, x2, x3 >= 0
 
-# linprog 默认求最小值，目标系数取负
+# 通关次数必须为整数；使用支持 integrality 的 SciPy/HiGHS。目标取负改为求最小。
 c = [-20, -30, -45]
 
 A = [[4, 8, 15],
@@ -126,7 +127,7 @@ b = [100, 20]
 
 bounds = [(0, None), (0, None), (0, None)]
 
-result = linprog(c, A_ub=A, b_ub=b, bounds=bounds)
+result = linprog(c, A_ub=A, b_ub=b, bounds=bounds, integrality=[1, 1, 1], method="highs")
 
 if result.success:
   x1, x2, x3 = result.x
@@ -141,12 +142,6 @@ else:
   print(f"求解失败: {result.message}")
 ```
 
-[代码讲解文档](E:\math_model\notebook\代码讲解-线性规划求解.md)
-
-
-
-
-
 ### 遗传算法
 
 > 应用于：非线性规划，离散优化，TSP 问题，VRP 问题，车间调度问题
@@ -159,7 +154,7 @@ else:
 >
 > 遗传算法借鉴了生物学的概念，首先需要对问题进行编码，通常是将函数编码为二进制代码以后，*随机产生初始种群作为初始解*。随后是遗传算法的核心操作之一——**选择**，通常选择首先要计算出个体的适应度，根据适应度不同来采取不同选择方法进行选择，常用方法有**适应度比例法、期望值法、排位次法、轮盘赌法**等。
 >
-> 在自然界中，基因的突变与染色体的交叉组合是常见现象，这里也需要在选择以后按照一定的概率发生突变和组合。不断重复上述操作直到收敛，得到的解即最优。
+> 在自然界中，基因的突变与染色体的交叉组合是常见现象，这里也需要在选择以后按照一定的概率发生突变和组合。重复操作直到满足终止条件，返回搜索过程中最好的一组解；有限次迭代不能保证全局最优。
 >
 > 本质思想：是一个搜索。
 >
@@ -205,15 +200,13 @@ plot_3d(ax)              # 调用绘图函数
 
 ![Pasted image 20240513112352](../../../public/images/math-modeling/Pasted image 20240513112352.png)
 
-[代码讲解文档](E:\math_model\notebook\代码讲解-遗传算法香蕉函数.md)
-
 执行遗传算法的第一步是**进行编码并初始化种群**，随后**评估种群适应度**。而评估适应度的过程中需要对编码后的算子进行解码，因此，给出**解码方法和适应度评估函数**：
 
 ```python
 def get_fitness(pop):
     x, y = translateDNA(pop)
     pred = F(x, y)
-    return pred
+    return np.max(pred) - pred + 1e-3  # 最小化目标；轮盘赌使用非负适应度
 # return pred - np.min(pred)+1e-3 # 求最大值时的适应度
 # return np.max(pred) - pred + 1e-3 # 求最小值时的适应度，通过这一步 fitness 的范围为[0, np.max(pred)-np.min(pred)]
 
@@ -226,18 +219,14 @@ def translateDNA(pop):
     return x, y
 ```
 
-[代码讲解文档](E:\math_model\notebook\代码讲解-遗传算法适应度与解码.md)
-
 在迭代过程中，需要不断进行交叉变异等操作。这里给出**变异操作的代码**：
 
 ```python
 def mutation(child, MUTATION_RATE=0.003):
     if np.random.rand() < MUTATION_RATE: # 以 MUTATION_RATE 的概率进行变异
-        mutate_point = np.random.randint(0, DNA_SIZE) # 随机产生一个实数，代表要变异基因的位置
+        mutate_point = np.random.randint(0, child.size) # 随机产生一个实数，代表要变异基因的位置
         child[mutate_point] = child[mutate_point] ^ 1 # 将变异点的二进制为反转
 ```
-
-[代码讲解文档](E:\math_model\notebook\代码讲解-遗传算法变异操作.md)
 
 **交叉操作的代码**
 
@@ -245,17 +234,15 @@ def mutation(child, MUTATION_RATE=0.003):
 def crossover_and_mutation(pop, CROSSOVER_RATE=0.8):
     new_pop = []
     for father in pop: # 遍历种群中的每一个个体，将该个体作为父亲
-        child = father # 孩子先得到父亲的全部基因（这里我把一串二进制串的那些 0，1 称为基因）
+        child = father.copy() # 孩子先得到父亲的全部基因（这里我把一串二进制串的那些 0，1 称为基因）
         if np.random.rand() < CROSSOVER_RATE: # 产生子代时不是必然发生交叉，而是以一定的概率发生交叉
             mother = pop[np.random.randint(POP_SIZE)] # 再种群中选择另一个个体，并将该个体作为母亲
             cross_points = np.random.randint(low=0, high=DNA_SIZE * 2) # 随机产生交叉的点
             child[cross_points:] = mother[cross_points:] # 孩子得到位于交叉点后的母亲的基因
-            mutation(child) # 每个后代有一定的机率发生变异
+        mutation(child, MUTATION_RATE=MUTATION_RATE) # 每个后代有一定的机率发生变异
         new_pop.append(child)
     return new_pop
 ```
-
-[代码讲解文档](E:\math_model\notebook\代码讲解-遗传算法交叉操作.md)
 
 最终，会对种群进行**自然选择，留下适应度高的部分**。自然选择的代码形如：
 
@@ -266,8 +253,6 @@ def select(pop, fitness):
                            p=(fitness) / (fitness.sum()))
     return pop[idx]
 ```
-
-[代码讲解文档](E:\math_model\notebook\代码讲解-遗传算法选择操作.md)
 
 **完整代码**
 
@@ -300,7 +285,7 @@ def plot_3d(ax):
 def get_fitness(pop):
     x, y = translateDNA(pop)
     pred = F(x, y)
-    return pred
+    return np.max(pred) - pred + 1e-3  # 最小化目标；轮盘赌使用非负适应度
     # return pred - np.min(pred)+1e-3  # 求最大值时的适应度
     # return np.max(pred) - pred + 1e-3  # 求最小值时的适应度，通过这一步fitness的范围为[0, np.max(pred)-np.min(pred)]
 def translateDNA(pop):  # pop表示种群矩阵，一行表示一个二进制编码表示的DNA，矩阵的行数为种群数目
@@ -312,17 +297,17 @@ def translateDNA(pop):  # pop表示种群矩阵，一行表示一个二进制编
 def crossover_and_mutation(pop, CROSSOVER_RATE=0.8):
     new_pop = []
     for father in pop:  # 遍历种群中的每一个个体，将该个体作为父亲
-        child = father  # 孩子先得到父亲的全部基因（这里我把一串二进制串的那些0，1称为基因）
+        child = father.copy()  # 孩子先得到父亲的全部基因（这里我把一串二进制串的那些0，1称为基因）
         if np.random.rand() < CROSSOVER_RATE:  # 产生子代时不是必然发生交叉，而是以一定的概率发生交叉
             mother = pop[np.random.randint(POP_SIZE)]  # 再种群中选择另一个个体，并将该个体作为母亲
             cross_points = np.random.randint(low=0, high=DNA_SIZE * 2)  # 随机产生交叉的点
             child[cross_points:] = mother[cross_points:]  # 孩子得到位于交叉点后的母亲的基因
-        mutation(child)  # 每个后代有一定的机率发生变异
+        mutation(child, MUTATION_RATE=MUTATION_RATE)  # 每个后代有一定的机率发生变异
         new_pop.append(child)
     return new_pop
 def mutation(child, MUTATION_RATE=0.003):
     if np.random.rand() < MUTATION_RATE:  # 以MUTATION_RATE的概率进行变异
-        mutate_point = np.random.randint(0, DNA_SIZE)  # 随机产生一个实数，代表要变异基因的位置
+        mutate_point = np.random.randint(0, child.size)  # 随机产生一个实数，代表要变异基因的位置
         child[mutate_point] = child[mutate_point] ^ 1  # 将变异点的二进制为反转
 def select(pop, fitness):  # nature selection wrt pop's fitness
     idx = np.random.choice(np.arange(POP_SIZE), size=POP_SIZE, replace=True,
@@ -355,12 +340,10 @@ if __name__ == "__main__":
     plot_3d(ax)
 ```
 
-[代码讲解文档](E:\math_model\notebook\代码讲解-遗传算法完整总览.md)
-
 #### case2:求函数的极值
 
 $$
-F(x,y) = x^2+ y^2+\sin(x)+(1-0.001)x^2
+F(x,y)=\frac12+\frac{\sin^2(x^2+y^2)-1/2}{[1+0.001(x^2+y^2)]^2}
 $$
 
 ```python
@@ -379,8 +362,6 @@ best_x, best_y = ga.run()
 print('best_x:', best_x, '\n', 'best_y:', best_y)
 ```
 
-[代码讲解文档](E:\math_model\notebook\代码讲解-sko-GA遗传算法.md)
-
 最终搜索到的最优解为 [0,0][0,0]。在迭代过程中的损失函数曲线也可以进行绘制：
 
 ```python
@@ -392,8 +373,6 @@ ax[0].plot(Y_history.index, Y_history.values, '.', color='red')
 Y_history.min(axis=1).cummin().plot(kind='line')
 plt.show()
 ```
-
-[代码讲解文档](E:\math_model\notebook\代码讲解-遗传算法收敛曲线.md)
 
 #### case3:利用遗传算法解 TSP 问题
 
@@ -415,8 +394,6 @@ def cal_total_distance(routine):
     return sum([distance_matrix[routine[i % num_points], routine[(i + 1) % num_points]] for i in range(num_points)])
 ```
 
-[代码讲解文档](E:\math_model\notebook\代码讲解-TSP旅行商问题.md)
-
 在 sko 中，有专门用于解决 TSP 问题的接口 `GA_TSP` 来通过遗传算法解决 TSP 问题。
 
 ```python
@@ -431,8 +408,6 @@ ax[1].plot(ga_tsp.generation_best_Y)
 plt.show()
 ```
 
-[代码讲解文档](E:\math_model\notebook\代码讲解-sko-GA-TSP求解.md)
-
 #### case 4:遗传算法进行数据拟合
 
 随机生成一组数据点：
@@ -442,8 +417,6 @@ x_true = np.linspace(-1.2, 1.2, 30)
 y_true = x_true ** 3 - x_true + 0.4 * np.random.rand(30)
 plt.plot(x_true, y_true, 'o')
 ```
-
-[代码讲解文档](E:\math_model\notebook\代码讲解-多项式拟合数据生成.md)
 
 使用 sko 库中的遗传算法(GA) 进行拟合：
 
@@ -458,7 +431,7 @@ def obj_fun(p):
 
 nga = GA(func=obj_fun, n_dim=4, size_pop=100, max_iter=500, lb=[-2] * 4, ub=[2] * 4)
 
-best_params, residuals = ga.run()
+best_params, residuals = nga.run()
 print('best_x:', best_params, '\n', 'best_y:', residuals)
 y_predict = f_fun(x_true, *best_params)
 fig, ax = plt.subplots()
@@ -467,8 +440,6 @@ ax.plot(x_true, y_predict, '-')
 plt.show()
 # best_x: [ 0.93360083 -0.0612649 -0.98437051 0.27416942] best_y: [0.2066883]
 ```
-
-[代码讲解文档](E:\math_model\notebook\代码讲解-遗传算法多项式拟合.md)
 
 ### 粒子群算法
 
@@ -519,75 +490,48 @@ ax3.plot_surface(x,y,Z ,cmap = "rainbow")
 plt.show()
 ```
 
-[代码讲解文档](E:\math_model\notebook\代码讲解-3D曲面图绘制.md)
-
-从图中可以看到函数有多个极值点，我们使用粒子群算法找到函数的全局最优点。
+图中有多个极值点，下面用粒子群搜索较优解；应对不同种子重复实验，不能从一条收敛曲线断言已找到全局最优。
 
 ```python
 import numpy as np
-# 初始化种群，群体规模，每个粒子的速度和规模
-N = 100 # 种群数目
-D = 2 # 维度
-T = 200 # 最大迭代次数
-c1 = c2 = 1.5 # 个体学习因子与群体学习因子
-w_max = 0.8 # 权重系数最大值
-w_min = 0.4 # 权重系数最小值
-x_max = 4 # 每个维度最大取值范围，如果每个维度不一样，那么可以写一个数组，下面代码依次需要改变
-x_min = -4 # 同上
-v_max = 1 # 每个维度粒子的最大速度
-v_min = -1 # 每个维度粒子的最小速度
+import matplotlib.pyplot as plt
 
-# 定义适应度函数
+rng = np.random.default_rng(42)
+N, D, T = 100, 2, 200
+c1 = c2 = 1.5
+x_min, x_max, v_max = -4.0, 4.0, 1.0
+
 def func(x):
-    return 3 * np.cos(x[0] * x[1]) + x[0] + x[1] ** 2
+    return 3 * np.cos(x[..., 0] * x[..., 1]) + x[..., 0] + x[..., 1] ** 2
 
-# 初始化种群个体
-x = np.random.rand(N, D) * (x_max - x_min) + x_min # 初始化每个粒子的位置
-v = np.random.rand(N, D) * (v_max - v_min) + v_min # 初始化每个粒子的速度
-# 初始化个体最优位置和最优值
-p = x # 用来存储每一个粒子的历史最优位置
-p_best = np.ones((N, 1)) # 每行存储的是最优值
-for i in range(N): # 初始化每个粒子的最优值，此时就是把位置带进去，把适应度值计算出来
-    p_best[i] = func(x[i, :])
-# 初始化全局最优位置和全局最优值
-g_best = 100 #设置真的全局最优值
-gb = np.ones(T) # 用于记录每一次迭代的全局最优值
-x_best = np.ones(D) # 用于存储最优粒子的取值
-
-# 按照公式依次迭代直到满足精度或者迭代次数
-for i in range(T):
-    for j in range(N):
-        # 个更新个体最优值和全局最优值
-        if p_best[j] > func(x[j,:]):
-            p_best[j] = func(x[j,:])
-            p[j,:] = x[j,:].copy()
-        # p_best[j] = func(x[j,:]) if func(x[j,:]) < p_best[j] else p_best[j]
-        # 更新全局最优值
-        if g_best > p_best[j]:
-            g_best = p_best[j]
-            x_best = x[j,:].copy() # 一定要加 copy，否则后面 x[j,:]更新也会将 x_best 更新
-        # 计算动态惯性权重
-        w = w_max - (w_max - w_min) * i / T
-        # 更新位置和速度
-        v[j, :] = w * v[j, :] + c1 * np.random.rand(1) * (p[j, :] - x[j, :]) + c2 * np.random.rand(1) * (x_best - x[j, :])
-        x[j, :] = x[j, :] + v[j, :]
-        # 边界条件处理
-        for ii in range(D):
-            if (v[j, ii] > v_max) or (v[j, ii] < v_min):
-                v[j, ii] = v_min + np.random.rand(1) * (v_max - v_min)
-            if (x[j, ii] > x_max) or (x[j, ii] < x_min):
-                x[j, ii] = x_min + np.random.rand(1) * (x_max - x_min)
-        # 记录历代全局最优值
-        gb[i] = g_best
-    print("最优值为", gb[T - 1],"最优位置为",x_best)
-    plt.plot(range(T),gb)
-    plt.xlabel("迭代次数")
-    plt.ylabel("适应度值")
-    plt.title("适应度进化曲线")
-    plt.show()
+x = rng.uniform(x_min, x_max, (N, D))
+v = rng.uniform(-v_max, v_max, (N, D))
+p = x.copy()  # 历史最好位置必须独立保存，不能用 p = x
+p_best = func(p)
+best_index = p_best.argmin()
+x_best = p[best_index].copy()
+g_best = float(p_best[best_index])
+history = []
+for step in range(T):
+    w = 0.8 - 0.4 * step / max(T - 1, 1)
+    v = w*v + c1*rng.random((N,D))*(p-x) + c2*rng.random((N,D))*(x_best-x)
+    v = np.clip(v, -v_max, v_max)  # 先限制速度，再更新位置
+    x = np.clip(x + v, x_min, x_max)
+    values = func(x)
+    improved = values < p_best
+    p[improved] = x[improved]
+    p_best[improved] = values[improved]
+    best_index = p_best.argmin()
+    if p_best[best_index] < g_best:
+        g_best = float(p_best[best_index])
+        x_best = p[best_index].copy()
+    history.append(g_best)
+print("搜索到的最好值:", g_best, "位置:", x_best)
+plt.plot(history)
+plt.xlabel("iteration")
+plt.ylabel("best objective")
+plt.show()
 ```
-
-[代码讲解文档](E:\math_model\notebook\代码讲解-PSO粒子群算法.md)
 
 ### 蚁群算法
 
@@ -613,11 +557,11 @@ for i in range(T):
   $$
   其中，*ρ* 是挥发率，$\Delta \tau_{i,j}$是路径 *i* 到 *j* 上新增的信息素量。
 
-> 注：蚁群算法的过程中边上信息素的一些状态和蚂蚁的行进信息可以用一个表格（数组）存储起来，这个表叫==禁忌表==。
+> 注：蚁群算法的过程中边上信息素的一些状态和蚂蚁的行进信息可以用一个表格（数组）存储起来，其中已访问节点列表常称禁忌表，信息素浓度矩阵是另一份状态，不能混称。
 
 ![Pasted image 20240513113701](../../../public/images/math-modeling/Pasted image 20240513113701.png)
 
-实现：
+下面保留一个受信息素思想启发的连续随机搜索教学示例。它不含上文 TSP 路径概率中的边信息素矩阵，不能当成标准 Ant System 的复现；这两种演示不应混为同一个实现。
 
 ```python
 import numpy as np
@@ -633,20 +577,20 @@ class ACO:
         self.bound.append(parameters[2])
         self.bound.append(parameters[3])
         self.pop_x = np.zeros((self.pop_size, self.var_num)) # 所有蚂蚁的位置
-        self.g_best = np.zeros((1, self.var_num)) # 全局蚂蚁最优的位置
+        self.g_best = np.zeros(self.var_num) # 全局蚂蚁最优的位置
 
         # 初始化第 0 代初始全局最优解
-        temp = -1
+        temp = -np.inf
         for i in range(self.pop_size):
             for j in range(self.var_num):
                 self.pop_x[i][j] = np.random.uniform(self.bound[0][j], self.bound[1][j])
             fit = self.fitness(self.pop_x[i])
             if fit > temp:
-                self.g_best = self.pop_x[i]
+                self.g_best = self.pop_x[i].copy()
                 temp = fit
 
     def fitness(self, ind_var):
-        ""个体适应值计算"""
+        """个体适应值计算"""
         x1 = ind_var[0]
         x2 = ind_var[1]
         x3 = ind_var[2]
@@ -660,19 +604,19 @@ class ACO:
         lamda = 1 / gen
         pi = np.zeros(self.pop_size)
         for i in range(self.pop_size):
+            pi[i] = (t_max - t[i]) / max(abs(t_max), np.finfo(float).eps)
             for j in range(self.var_num):
-                pi[i] = (t_max - t[i]) / t_max
-            # 更新位置
-            if pi[i] < np.random.uniform(0, 1):
-                self.pop_x[i][j] = self.pop_x[i][j] + np.random.uniform(-1, 1) * lamda
-            else:
-                self.pop_x[i][j] = self.pop_x[i][j] + np.random.uniform(-1, 1) * (
-                self.bound[1][j] - self.bound[0][j]) / 2
-            # 越界保护
-            if self.pop_x[i][j] < self.bound[0][j]:
-                self.pop_x[i][j] = self.bound[0][j]
-            if self.pop_x[i][j] > self.bound[1][j]:
-                self.pop_x[i][j] = self.bound[1][j]
+                # 更新位置
+                if pi[i] < np.random.uniform(0, 1):
+                    self.pop_x[i][j] = self.pop_x[i][j] + np.random.uniform(-1, 1) * lamda
+                else:
+                    self.pop_x[i][j] = self.pop_x[i][j] + np.random.uniform(-1, 1) * (
+                    self.bound[1][j] - self.bound[0][j]) / 2
+                # 越界保护
+                if self.pop_x[i][j] < self.bound[0][j]:
+                    self.pop_x[i][j] = self.bound[0][j]
+                if self.pop_x[i][j] > self.bound[1][j]:
+                    self.pop_x[i][j] = self.bound[1][j]
             # 更新 t 值
             t[i] = (1 - rou) * t[i] + Q * self.fitness(self.pop_x[i])
         # 更新全局最优值
@@ -696,10 +640,10 @@ class ACO:
             print(self.fitness(self.g_best))
             if self.fitness(self.g_best) > self.fitness(best):
                 best = self.g_best.copy()
-                popobj.append(self.fitness(best))
                 print('最好的位置：{}'.format(best))
                 print('最大的函数值：{}'.format(self.fitness(best)))
-            print("---- End of (successful) Searching ----")
+            popobj.append(self.fitness(best))
+            print("---- End of Searching ----")
         plt.figure()
         plt.title("Figure1")
         plt.xlabel("iterators", size=14)
@@ -718,8 +662,6 @@ if __name__ == '__main__':
     aco.main()
 ```
 
-[代码讲解文档](E:\math_model\notebook\代码讲解-ACO蚁群算法.md)
-
 ### 模拟退火算法
 
 > 引言：
@@ -732,7 +674,7 @@ if __name__ == '__main__':
 $$
 P = \exp(-\frac{E_{new}-E_{old}}{T})
 $$
-直接使用 Metropolis 算法可能会导致寻优速度太慢，以至于无法实际使用，为了确保在有限的时间收敛，必须设定控制算法收敛的参数，在上面的公式中，可以调节的参数就是 *T*，*T* 如果过大，就会导致退火太快，达到局部最优值就会结束迭代，如果取值较小，则计算时间会增加，实际应用中采用退火温度表，在退火初期采用较大的 *T* 值，随着退火的进行，逐步降低。
+直接使用 Metropolis 算法可能会导致寻优速度太慢，以至于无法实际使用，为了确保在有限的时间收敛，必须设定控制算法收敛的参数，在上面的公式中，可以调节的参数就是 *T*，较大的 $T$ 使算法更容易接受较差解，较小的 $T$ 使搜索更贪心；退火快慢取决于降温日程和每个温度下的迭代次数，实际应用中采用退火温度表，在退火初期采用较大的 *T* 值，随着退火的进行，逐步降低。
 
 ![Pasted image 20240513113856](../../../public/images/math-modeling/Pasted image 20240513113856.png)
 
@@ -789,9 +731,4 @@ while T >= Tmin:
     # 39.78060332087924 -32150.24487975278
 ```
 
-[代码讲解文档](E:\math_model\notebook\代码讲解-模拟退火算法.md)
-
-
-
-
-
+上述随机优化示例是教学实现，不提供有限预算下全局最优保证。先运行各案例的导入与参数定义，再运行分解步骤；完整代码块可单独运行。使用 scikit-opt 的案例还需要该包，不能把普通 Python 运行结果与全局最优证明混为一谈。

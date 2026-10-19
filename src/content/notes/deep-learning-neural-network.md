@@ -2,6 +2,7 @@
 title: '深度学习：神经网络'
 description: '矩阵计算、激活函数、softmax多分类与反向传播'
 pubDate: 2026-08-07
+updatedDate: 2026-10-19
 order: 13
 category: '深度学习'
 tags: ['神经网络','反向传播','激活函数','Softmax','多分类']
@@ -13,7 +14,7 @@ tags: ['神经网络','反向传播','激活函数','Softmax','多分类']
 
 ![img](../../../public/images/deep-learning/0806.png)
 
-> 神经网络中的一层我们叫做线性层（Linear Layer），因为其中每个神经元都是一个线性回归加上激活函数。或者叫做全连接层、稠密层（Dense Layer），因为每一层的每个神经元都和前一层的每个神经元进行连接，所以叫做全连接、稠密连接。
+> 这里讨论全连接网络。`nn.Linear` 只实现仿射变换，激活函数是独立操作；神经网络也可以包含卷积、注意力、归一化等其他类型的层。或者叫做全连接层、稠密层（Dense Layer），因为每一层的每个神经元都和前一层的每个神经元进行连接，所以叫做全连接、稠密连接。
 
 ### 神经网络与矩阵计算
 
@@ -32,37 +33,53 @@ $w_{1,1}^1$表示第一层的第一个神经元对第一个输入的权重参数
 
 **第一层第一个神经元线性计算**
 
-$$ z_1^1 = \left[ x_1,\ x_2,\ x_3,\ x_4 \right] \begin{bmatrix} w_{1,1}^1 \\ w_{2,1}^1 \\ w_{3,1}^1 \\ w_{4,1}^1 \end{bmatrix} $$​
+$$
+z_1^1 = \left[ x_1,\ x_2,\ x_3,\ x_4 \right] \begin{bmatrix} w_{1,1}^1 \\ w_{2,1}^1 \\ w_{3,1}^1 \\ w_{4,1}^1 \end{bmatrix}
+$$
 
 **第一层第二个神经元线性计算**
 
-$$ z_2^1 = \left[ x_1,\ x_2,\ x_3,\ x_4 \right] \begin{bmatrix} w_{1,2}^1 \\ w_{2,2}^1 \\ w_{3,2}^1 \\ w_{4,2}^1 \end{bmatrix} $$
+$$
+z_2^1 = \left[ x_1,\ x_2,\ x_3,\ x_4 \right] \begin{bmatrix} w_{1,2}^1 \\ w_{2,2}^1 \\ w_{3,2}^1 \\ w_{4,2}^1 \end{bmatrix}
+$$
 
 **第一层第三个神经元线性计算**
 
-$$ z_3^1 = \left[ x_1,\ x_2,\ x_3,\ x_4 \right] \begin{bmatrix} w_{1,3}^1 \\ w_{2,3}^1 \\ w_{3,3}^1 \\ w_{4,3}^1 \end{bmatrix} $$
+$$
+z_3^1 = \left[ x_1,\ x_2,\ x_3,\ x_4 \right] \begin{bmatrix} w_{1,3}^1 \\ w_{2,3}^1 \\ w_{3,3}^1 \\ w_{4,3}^1 \end{bmatrix}
+$$
 
 **一层全部神经元合并矩阵形式**
 
-$$ z^1 = \left[ z_1^1,\ z_2^1,\ z_3^1 \right] = \left[ x_1,\ x_2,\ x_3,\ x_4 \right] \begin{bmatrix} w_{1,1}^1 & w_{1,2}^1 & w_{1,3}^1 \\ w_{2,1}^1 & w_{2,2}^1 & w_{2,3}^1 \\ w_{3,1}^1 & w_{3,2}^1 & w_{3,3}^1 \\ w_{4,1}^1 & w_{4,2}^1 & w_{4,3}^1 \end{bmatrix} $$
+$$
+z^1 = \left[ z_1^1,\ z_2^1,\ z_3^1 \right] = \left[ x_1,\ x_2,\ x_3,\ x_4 \right] \begin{bmatrix} w_{1,1}^1 & w_{1,2}^1 & w_{1,3}^1 \\ w_{2,1}^1 & w_{2,2}^1 & w_{2,3}^1 \\ w_{3,1}^1 & w_{3,2}^1 & w_{3,3}^1 \\ w_{4,1}^1 & w_{4,2}^1 & w_{4,3}^1 \end{bmatrix}
+$$
 
 **批量样本矩阵运算**
 
-$$ \begin{bmatrix} x_{11} & x_{12} & x_{13} & x_{14} \\ x_{21} & x_{22} & x_{23} & x_{24} \end{bmatrix} \begin{bmatrix} w_{1,1}^1 & w_{1,2}^1 & w_{1,3}^1 \\ w_{2,1}^1 & w_{2,2}^1 & w_{2,3}^1 \\ w_{3,1}^1 & w_{3,2}^1 & w_{3,3}^1 \\ w_{4,1}^1 & w_{4,2}^1 & w_{4,3}^1 \end{bmatrix} $$ 
+$$
+\begin{bmatrix} x_{11} & x_{12} & x_{13} & x_{14} \\ x_{21} & x_{22} & x_{23} & x_{24} \end{bmatrix} \begin{bmatrix} w_{1,1}^1 & w_{1,2}^1 & w_{1,3}^1 \\ w_{2,1}^1 & w_{2,2}^1 & w_{2,3}^1 \\ w_{3,1}^1 & w_{3,2}^1 & w_{3,3}^1 \\ w_{4,1}^1 & w_{4,2}^1 & w_{4,3}^1 \end{bmatrix}
+$$
 
   $z^1 = \left[ z_1^1,\ z_2^1,\ z_3^1 \right]$，可以给线性回归结果加上偏置值 $\left[ b_1^1,\ b_2^1,\ b_3^1 \right]$。
 
 $b_2^1$ 表示第一层第二个神经元的偏置值。
 
- $$ z^1 = \left[ z_1^1,\ z_2^1,\ z_3^1 \right] + \left[ b_1^1,\ b_2^1,\ b_3^1 \right] $$ 
+ $$
+ z^1 = \left[ z_1^1,\ z_2^1,\ z_3^1 \right] + \left[ b_1^1,\ b_2^1,\ b_3^1 \right]
+ $$
 
 对每个元素应用sigmoid函数就得到了第1层的激活值：
 
- $$ a^1 = sigmoid\left(\left[ z_1^1,\ z_2^1,\ z_3^1 \right]\right) $$ 
+ $$
+ a^1 = sigmoid\left(\left[ z_1^1,\ z_2^1,\ z_3^1 \right]\right)
+ $$
 
  $a^1$ 成为神经网络第二层的输入，第二层的计算可以用矩阵运算完成。
 
- $$ z^2 = \left[ z_1^2,\ z_2^2,\ z_3^2 \right] = \left[ a_1^1,\ a_2^1,\ a_3^1 \right] \begin{bmatrix} w_{1,1}^2 & w_{1,2}^2 & w_{1,3}^2 \\ w_{2,1}^2 & w_{2,2}^2 & w_{2,3}^2 \\ w_{3,1}^2 & w_{3,2}^2 & w_{3,3}^2 \end{bmatrix} $$ 
+ $$
+ z^2 = \left[ z_1^2,\ z_2^2,\ z_3^2 \right] = \left[ a_1^1,\ a_2^1,\ a_3^1 \right] \begin{bmatrix} w_{1,1}^2 & w_{1,2}^2 & w_{1,3}^2 \\ w_{2,1}^2 & w_{2,2}^2 & w_{2,3}^2 \\ w_{3,1}^2 & w_{3,2}^2 & w_{3,3}^2 \end{bmatrix}
+ $$
 
 ### 激活函数
 
@@ -127,9 +144,13 @@ $b_2^1$ 表示第一层第二个神经元的偏置值。
 
     $$ O_1 = \frac{e^{z_1}}{e^{z_1}+e^{z_2}+e^{z_3}} $$ 
 
-   $$ O_2 = \frac{e^{z_2}}{e^{z_1}+e^{z_2}+e^{z_3}} $$ 
+   $$
+   O_2 = \frac{e^{z_2}}{e^{z_1}+e^{z_2}+e^{z_3}}
+   $$
 
-   $$ O_3 = \frac{e^{z_3}}{e^{z_1}+e^{z_2}+e^{z_3}} $$ 
+   $$
+   O_3 = \frac{e^{z_3}}{e^{z_1}+e^{z_2}+e^{z_3}}
+   $$
 
    然后我们给出通用的$$softmax$$的公式：假设这个分类问题有$n$个类别，也就是输出层有$n$个神经元，输出的logits值有$n$个。
 
@@ -186,27 +207,37 @@ $b_2^1$ 表示第一层第二个神经元的偏置值。
 
 第一个隐藏层的输出如下。其中$act()$是激活函数，对logits的值逐个应用激活函数：
 
- $$ \left[\begin{array}{ll} a_1^1 & a_2^1 \end{array}\right] = \left[\begin{array}{ll} act(z_1^1) & act(z_2^1) \end{array}\right] $$ 
+ $$
+ \left[\begin{array}{ll} a_1^1 & a_2^1 \end{array}\right] = \left[\begin{array}{ll} act(z_1^1) & act(z_2^1) \end{array}\right]
+ $$
 
 第一个隐藏层的输出作为第二个隐藏层的输入，则第二个隐藏层的logits为：
 
- $$ \left[\begin{array}{ll} z_1^2 & z_2^2 \end{array}\right] = \left[\begin{array}{ll} a_1^1 & a_2^1 \end{array}\right] \begin{bmatrix} w_{1,1}^2 & w_{1,2}^2 \\ w_{2,1}^2 & w_{2,2}^2 \end{bmatrix} + \left[\begin{array}{ll} b_1^2 & b_2^2 \end{array}\right] $$ 
+ $$
+ \left[\begin{array}{ll} z_1^2 & z_2^2 \end{array}\right] = \left[\begin{array}{ll} a_1^1 & a_2^1 \end{array}\right] \begin{bmatrix} w_{1,1}^2 & w_{1,2}^2 \\ w_{2,1}^2 & w_{2,2}^2 \end{bmatrix} + \left[\begin{array}{ll} b_1^2 & b_2^2 \end{array}\right]
+ $$
 
 第二个隐藏层的输出：
 
- $$ \left[\begin{array}{ll} a_1^2 & a_2^2 \end{array}\right] = \left[\begin{array}{ll} act(z_1^2) & act(z_2^2) \end{array}\right] $$ 
+ $$
+ \left[\begin{array}{ll} a_1^2 & a_2^2 \end{array}\right] = \left[\begin{array}{ll} act(z_1^2) & act(z_2^2) \end{array}\right]
+ $$
 
 输出层的logits：
 
- $$ \left[\begin{array}{lll} z_1^3 & z_2^3 & z_3^3 \end{array}\right] = \left[\begin{array}{ll} a_1^2 & a_2^2 \end{array}\right] \begin{bmatrix} w_{1,1}^3 & w_{1,2}^3 & w_{1,3}^3 \\ w_{2,1}^3 & w_{2,2}^3 & w_{2,3}^3 \end{bmatrix} + \left[\begin{array}{lll} b_1^3 & b_2^3 & b_3^3 \end{array}\right] $$ 
+ $$
+ \left[\begin{array}{lll} z_1^3 & z_2^3 & z_3^3 \end{array}\right] = \left[\begin{array}{ll} a_1^2 & a_2^2 \end{array}\right] \begin{bmatrix} w_{1,1}^3 & w_{1,2}^3 & w_{1,3}^3 \\ w_{2,1}^3 & w_{2,2}^3 & w_{2,3}^3 \end{bmatrix} + \left[\begin{array}{lll} b_1^3 & b_2^3 & b_3^3 \end{array}\right]
+ $$
 
 输出层经过$softmax$​得到神经网络的输出：
 
 > **Softmax — 把 logits 变成概率分布**
 >
-> $$Softmax(z_i) = \frac{e^{z_i}}{\sum_{j} e^{z_j}}$$
+> $$
+> Softmax(z_i) = \frac{e^{z_i}}{\sum_{j} e^{z_j}}
+> $$
 >
-> ```python
+> ```text
 > # 例如：
 > z = [2.0, 1.0, 0.1]
 > e^z = [7.389, 2.718, 1.105]
@@ -214,19 +245,27 @@ $b_2^1$ 表示第一层第二个神经元的偏置值。
 > softmax(z) = [0.659, 0.242, 0.099]   # 三个值加起来 = 1
 > ```
 >
-> $$[\hat{y}_1 \quad \hat{y}_2 \quad \hat{y}_3] = [Softmax(z_1^3) \quad Softmax(z_2^3) \quad Softmax(z_3^3)]$$
+> $$
+> [\hat{y}_1 \quad \hat{y}_2 \quad \hat{y}_3] = [Softmax(z_1^3) \quad Softmax(z_2^3) \quad Softmax(z_3^3)]
+> $$
 
- $$ a^3 = \left[\begin{array}{lll} a_1^3 & a_2^3 & a_3^3 \end{array}\right],\quad a_i^3 = \frac{e^{z_i^3}}{\sum_{j=1}^3 e^{z_j^3}} $$ 
+ $$
+ a^3 = \left[\begin{array}{lll} a_1^3 & a_2^3 & a_3^3 \end{array}\right],\quad a_i^3 = \frac{e^{z_i^3}}{\sum_{j=1}^3 e^{z_j^3}}
+ $$
 
 网络输出结果和标签值利用交叉熵损失函数来计算loss：真实标签用一维的one-hot向量表示：
 
- $$ y = \left[\begin{array}{lll} y_1 & y_2 & y_3 \end{array}\right] $$ 
+ $$
+ y = \left[\begin{array}{lll} y_1 & y_2 & y_3 \end{array}\right]
+ $$
 
 其中向量$y$​的元素中只有一个元素为1，其余元素为0。则交叉熵loss公式为：
 
 > 对于多分类问题，损失函数是**交叉熵损失**：
 >
-> $$L = -\sum_{c=1}^{C} y_c \cdot \ln(\hat{y}_c)$$
+> $$
+> L = -\sum_{c=1}^{C} y_c \cdot \ln(\hat{y}_c)
+> $$
 >
 > 其中：
 >
@@ -236,7 +275,7 @@ $b_2^1$ 表示第一层第二个神经元的偏置值。
 >
 > **例子**：真实标签是类别 0，模型预测的概率为 [0.7, 0.2, 0.1]
 >
-> ```python
+> ```text
 > y_true = [1, 0, 0]         # one-hot 编码
 > y_pred = [0.7, 0.2, 0.1]   # softmax 输出
 > 
@@ -247,7 +286,9 @@ $b_2^1$ 表示第一层第二个神经元的偏置值。
 >
 > ---
 
- $$ loss = -\big(y_1 \ln a_1^3 + y_2 \ln a_2^3 + y_3 \ln a_3^3\big) $$​
+ $$
+ loss = -\big(y_1 \ln a_1^3 + y_2 \ln a_2^3 + y_3 \ln a_3^3\big)
+ $$
 
 #### **反向传播过程— 输出层梯度推导**
 
@@ -257,9 +298,13 @@ $b_2^1$ 表示第一层第二个神经元的偏置值。
 
 **loss对logits求导**
 
-$$ \frac{\partial loss}{\partial z_i^3} = a_i^3 - y_i \quad (i = 1,2,3) $$
+$$
+\frac{\partial loss}{\partial z_i^3} = a_i^3 - y_i \quad (i = 1,2,3)
+$$
 
-$$ \delta^3 = \left[\begin{array}{ccc} a_1^3 - y_1 & a_2^3 - y_2 & a_3^3 - y_3 \end{array}\right] $$
+$$
+\delta^3 = \left[\begin{array}{ccc} a_1^3 - y_1 & a_2^3 - y_2 & a_3^3 - y_3 \end{array}\right]
+$$
 
 Softmax + 交叉熵组合的梯度特别简单：**预测概率 - 真实标签**。
 
@@ -267,7 +312,9 @@ Softmax + 交叉熵组合的梯度特别简单：**预测概率 - 真实标签**
 
 输出层的logits计算公式如下：
 
- $$ \left[\begin{array}{ccc} z_1^3 & z_2^3 & z_3^3 \end{array}\right] = \left[\begin{array}{cc} a_1^2 & a_2^2 \end{array}\right] \left[\begin{array}{ccc} w_{11}^3 & w_{12}^3 & w_{13}^3 \\ w_{21}^3 & w_{22}^3 & w_{23}^3 \end{array}\right] + \left[\begin{array}{ccc} b_1^3 & b_2^3 & b_3^3 \end{array}\right] $$
+ $$
+ \left[\begin{array}{ccc} z_1^3 & z_2^3 & z_3^3 \end{array}\right] = \left[\begin{array}{cc} a_1^2 & a_2^2 \end{array}\right] \left[\begin{array}{ccc} w_{11}^3 & w_{12}^3 & w_{13}^3 \\ w_{21}^3 & w_{22}^3 & w_{23}^3 \end{array}\right] + \left[\begin{array}{ccc} b_1^3 & b_2^3 & b_3^3 \end{array}\right]
+ $$
 
 下边分别**求loss对每一个 $w_{ij}^3$ 的梯度。 **
 
@@ -283,11 +330,15 @@ Softmax + 交叉熵组合的梯度特别简单：**预测概率 - 真实标签**
 
 依次类推，我们可以求出每个 $w_{ij}^3$ 的梯度
 
- $$ \left[\begin{array}{ccc} \delta_1^3 a_1^2 & \delta_2^3 a_1^2 & \delta_3^3 a_1^2 \\ \delta_1^3 a_2^2 & \delta_2^3 a_2^2 & \delta_3^3 a_2^2 \end{array}\right] $$ 
+ $$
+ \left[\begin{array}{ccc} \delta_1^3 a_1^2 & \delta_2^3 a_1^2 & \delta_3^3 a_1^2 \\ \delta_1^3 a_2^2 & \delta_2^3 a_2^2 & \delta_3^3 a_2^2 \end{array}\right]
+ $$
 
 可以用矩阵运算表示如下：
 
- $$ \frac{\partial loss}{\partial w^3} = (a^2)^T \delta^3 = \left[\begin{array}{c} a_1^2 \\ a_2^2 \end{array}\right] \left[\begin{array}{ccc} \delta_1^3 & \delta_2^3 & \delta_3^3 \end{array}\right] $$
+ $$
+ \frac{\partial loss}{\partial w^3} = (a^2)^T \delta^3 = \left[\begin{array}{c} a_1^2 \\ a_2^2 \end{array}\right] \left[\begin{array}{ccc} \delta_1^3 & \delta_2^3 & \delta_3^3 \end{array}\right]
+ $$
 
 ---
 
@@ -297,13 +348,17 @@ Softmax + 交叉熵组合的梯度特别简单：**预测概率 - 真实标签**
 
  loss对$b_1^3$求偏导，因为只有$b_1^3$只和$z_1^3$有关，所以：
 
- $$ \frac{\partial loss}{\partial b_1^3} = \frac{\partial loss}{\partial z_1^3} \cdot \frac{\partial z_1^3}{\partial b_1^3} $$ 
+ $$
+ \frac{\partial loss}{\partial b_1^3} = \frac{\partial loss}{\partial z_1^3} \cdot \frac{\partial z_1^3}{\partial b_1^3}
+ $$
 
 其中$\displaystyle \frac{\partial loss}{\partial z_1^3}$为$\delta_1^3$，又因为$\displaystyle z_1^3 = a_1^2 \times w_{11}^3 + a_2^2 \times w_{21}^3 + b_1^3$，所以$\displaystyle \frac{\partial z_1^3}{\partial b_1^3}$就等于1。
 
 最终结果为：
 
- $$ \frac{\partial loss}{\partial b_1^3} = \frac{\partial loss}{\partial z_1^3} \cdot \frac{\partial z_1^3}{\partial b_1^3} = \delta_1^3 $$ 
+ $$
+ \frac{\partial loss}{\partial b_1^3} = \frac{\partial loss}{\partial z_1^3} \cdot \frac{\partial z_1^3}{\partial b_1^3} = \delta_1^3
+ $$
 
 同理，loss对$b_2^3,b_3^3$的偏导为：$\delta_2^3,\delta_3^3$，所以loss对于第三层偏置的偏导就等于$\delta^3$。
 
@@ -313,19 +368,27 @@ Softmax + 交叉熵组合的梯度特别简单：**预测概率 - 真实标签**
 
 我们以loss对$a_1^2$为例：
 
- $$ \begin{aligned} \frac{\partial loss}{\partial a_1^2} &= \frac{\partial loss}{\partial z_1^3} \cdot \frac{\partial z_1^3}{\partial a_1^2} + \frac{\partial loss}{\partial z_2^3} \cdot \frac{\partial z_2^3}{\partial a_1^2} + \frac{\partial loss}{\partial z_3^3} \cdot \frac{\partial z_3^3}{\partial a_1^2} \\ &= \delta_1^3 w_{11}^3 + \delta_2^3 w_{12}^3 + \delta_3^3 w_{13}^3 \end{aligned} $$ 
+ $$
+ \begin{aligned} \frac{\partial loss}{\partial a_1^2} &= \frac{\partial loss}{\partial z_1^3} \cdot \frac{\partial z_1^3}{\partial a_1^2} + \frac{\partial loss}{\partial z_2^3} \cdot \frac{\partial z_2^3}{\partial a_1^2} + \frac{\partial loss}{\partial z_3^3} \cdot \frac{\partial z_3^3}{\partial a_1^2} \\ &= \delta_1^3 w_{11}^3 + \delta_2^3 w_{12}^3 + \delta_3^3 w_{13}^3 \end{aligned}
+ $$
 
 同理，可以得到：
 
- $$ \frac{\partial loss}{\partial a_2^2} = \delta_1^3 w_{21}^3 + \delta_2^3 w_{22}^3 + \delta_3^3 w_{23}^3 $$ 
+ $$
+ \frac{\partial loss}{\partial a_2^2} = \delta_1^3 w_{21}^3 + \delta_2^3 w_{22}^3 + \delta_3^3 w_{23}^3
+ $$
 
 改为矩阵表示loss对第二层激活值的偏导为：
 
- $$ \frac{\partial loss}{\partial a^2} = \delta^3 (w^3)^T = \left[\begin{array}{ccc} \delta_1^3 & \delta_2^3 & \delta_3^3 \end{array}\right] \left[\begin{array}{cc} w_{11}^3 & w_{21}^3 \\ w_{12}^3 & w_{22}^3 \\ w_{13}^3 & w_{23}^3 \end{array}\right] $$​
+ $$
+ \frac{\partial loss}{\partial a^2} = \delta^3 (w^3)^T = \left[\begin{array}{ccc} \delta_1^3 & \delta_2^3 & \delta_3^3 \end{array}\right] \left[\begin{array}{cc} w_{11}^3 & w_{21}^3 \\ w_{12}^3 & w_{22}^3 \\ w_{13}^3 & w_{23}^3 \end{array}\right]
+ $$
 
 接**求loss对第二层logits值的偏导**：
 
- $$ \delta^2 = \frac{\partial loss}{\partial z^2} = \frac{\partial loss}{\partial a^2} \cdot \frac{\partial a^2}{\partial z^2} = \delta^3 (w^3)^T \odot act'(z^2) $$ 
+ $$
+ \delta^2 = \frac{\partial loss}{\partial z^2} = \frac{\partial loss}{\partial a^2} \cdot \frac{\partial a^2}{\partial z^2} = \delta^3 (w^3)^T \odot act'(z^2)
+ $$
 
 其中$\odot$是矩阵对应元素相乘（哈达玛积），因为激活函数是对每个$z$值单独应用的，所以这里求导也是逐个元素应用的。
 
@@ -333,19 +396,25 @@ Softmax + 交叉熵组合的梯度特别简单：**预测概率 - 真实标签**
 
 与上边对输出层的权重和偏置的求导方法一样，我们可以得到：
 
- $$ \frac{\partial loss}{\partial w^2} = (a^1)^T \delta^2 $$ 
+ $$
+ \frac{\partial loss}{\partial w^2} = (a^1)^T \delta^2
+ $$
 
 loss对于第二层偏置的偏导就等于$\delta^2$。 
 
 loss对于第一层logits值的偏导为：
 
- $$ \delta^1 = \delta^2 (w^2)^T \odot act'(z^1) $$ 
+ $$
+ \delta^1 = \delta^2 (w^2)^T \odot act'(z^1)
+ $$
 
  第一层的梯度
 
  loss对于第一层权重的偏导为：
 
- $$ \frac{\partial loss}{\partial w^1} = x^T \delta^1 $$ 
+ $$
+ \frac{\partial loss}{\partial w^1} = x^T \delta^1
+ $$
 
 loss对于第一层偏置的偏导就等于$\delta^1$
 
@@ -355,19 +424,29 @@ $x$是输入向量，$y$是one-hot的label向量。
 
 则：
 
- $$ \delta^n = a^n - y $$ 
+ $$
+ \delta^n = a^n - y
+ $$
 
 对于第$i$层而言：
 
- $$ \delta^i = \delta^{i+1} (w^{i+1})^T \odot act'(z^i) $$
+ $$
+ \delta^i = \delta^{i+1} (w^{i+1})^T \odot act'(z^i)
+ $$
 
- $$ \frac{\partial loss}{\partial w^i} = (a^{i-1})^T \delta^i $$
+ $$
+ \frac{\partial loss}{\partial w^i} = (a^{i-1})^T \delta^i
+ $$
 
- $$ \frac{\partial loss}{\partial b^i} = \delta^i $$
+ $$
+ \frac{\partial loss}{\partial b^i} = \delta^i
+ $$
 
  第一层的输入是$x$：
 
- $$ a^0 = x $$
+ $$
+ a^0 = x
+ $$
 
 ![image-20260702104414688](../../../public/images/deep-learning/backprop-1.png)
 

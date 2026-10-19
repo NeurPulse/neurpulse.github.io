@@ -2,6 +2,7 @@
 title: 'LLaMA（5）：从零实现 RMSNorm'
 description: '以课程 RMSNorm.ipynb 为代码主线，从最小实现出发补齐 epsilon、混合精度、正确验证和 PyTorch 对照测试。'
 pubDate: 2026-09-10
+updatedDate: 2026-10-19
 category: 'LLaMA'
 tags: ['RMSNorm', 'PyTorch', '从零实现', '混合精度']
 order: 5
@@ -122,7 +123,7 @@ $$
 
 注意 $\epsilon$ 通常放在根号内部。
 
-## 6. 推荐的训练级实现
+## 6. 带数值保护的教学实现
 
 下面保持 Notebook 的类结构，同时补充 $\epsilon$、float32 归一化和 dtype 恢复：
 
@@ -145,8 +146,9 @@ class RMSNorm(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # 低精度训练时，用 float32 计算平方均值更稳定。
-        normalized = self._norm(x.float()).to(dtype=x.dtype)
-        return normalized * self.weight
+        work = x if x.dtype == torch.float64 else x.float()
+        normalized = self._norm(work)
+        return (normalized * self.weight.to(work.dtype)).to(x.dtype)
 ```
 
 `torch.rsqrt(z)` 等价于 $1/\sqrt{z}$，可以直接与 `x` 相乘。
@@ -158,8 +160,8 @@ class RMSNorm(nn.Module):
 ```text
 低精度输入
 → float32 计算 mean_square 与 rsqrt
-→ 转回输入 dtype
 → 乘可学习 weight
+→ 转回输入 dtype
 ```
 
 这并不意味着整个模型都使用 float32；只是对数值敏感的小段计算提高精度。
@@ -218,7 +220,7 @@ assert torch.isfinite(norm.weight.grad).all()
 ```python
 def rms_norm_reference(x, weight, eps):
     rms = torch.sqrt(x.float().pow(2).mean(-1, keepdim=True) + eps)
-    return (x.float() / rms).to(x.dtype) * weight
+    return ((x.float() / rms) * weight.float()).to(x.dtype)
 
 
 x = torch.randn(2, 3, 16)

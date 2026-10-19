@@ -2,6 +2,7 @@
 title: 'LLaMA（3）：RMSNorm 原理及其与 LayerNorm 的区别'
 description: '从中心化与尺度归一化出发，推导 RMSNorm 公式、性质和计算流程，并辨析它与 LayerNorm 的真正差异。'
 pubDate: 2026-09-10
+updatedDate: 2026-10-19
 category: 'LLaMA'
 tags: ['RMSNorm', 'LayerNorm', '归一化', 'LLaMA 1']
 order: 3
@@ -44,7 +45,7 @@ $$
 
 其中 $\gamma,\beta\in\mathbb{R}^{D}$ 是可学习参数。
 
-LayerNorm 既具有重缩放不变性，也具有重新中心化不变性：对输入整体乘常数或加常数，归一化结果在理想条件下基本不变。
+LayerNorm 既具有重缩放不变性，也具有重新中心化不变性：忽略 epsilon 时，对输入整体乘正数或加相同常数，归一化部分具有相应不变性；乘负数会翻转归一化结果的符号。
 
 ## 3. RMSNorm 的公式
 
@@ -132,7 +133,7 @@ RMSNorm 对每个 batch、每个 token 独立地沿最后一个隐藏维度 $D$ 
 
 ## 7. RMSNorm 到底保留了什么性质
 
-若输入整体乘以正数 $c$：
+忽略 $\epsilon$ 时，若输入整体乘以正数 $c$：
 
 $$
 \frac{cx}{\operatorname{RMS}(cx)}
@@ -142,7 +143,7 @@ $$
 \frac{x}{\operatorname{RMS}(x)}
 $$
 
-所以它对整体重缩放具有不变性。直觉上，无论残差流向量整体变大或变小，进入子层前都被拉回稳定尺度。
+因此在忽略 $\epsilon$ 的理想化公式中，对正数整体重缩放具有不变性；实际 $\epsilon>0$ 时只是近似性质，尤其不能对极小输入直接套用。直觉上，无论残差流向量整体变大或变小，进入子层前都被拉回稳定尺度。
 
 但如果输入整体加常数，RMSNorm 不会像 LayerNorm 那样消除该平移，因此不具备重新中心化不变性。
 

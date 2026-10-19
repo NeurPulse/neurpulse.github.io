@@ -2,6 +2,7 @@
 title: '深度学习:梯度消失与梯度爆炸 — 为什么深层网络难训练'
 description: '理解链式法则连乘导致的梯度消失/爆炸的根本原因，以及三大应对策略：选择 ReLU 激活函数、Kaiming 参数初始化、消除神经元对称性'
 pubDate: 2026-08-11
+updatedDate: 2026-10-19
 order: 18
 category: '深度学习'
 tags: ['梯度消失', '梯度爆炸', 'ReLU', '参数初始化', 'Kaiming初始化']
@@ -28,7 +29,8 @@ $$
 把 $\delta^1$ 逐层展开：
 
 $$
-\frac{\partial \text{loss}}{\partial W^1} = x^T \cdot \underbrace{(a^3 - y)}_{\text{输出误差}} \cdot \underbrace{(W^3)^T \odot \text{act}'(z^2) \cdot (W^2)^T \odot \text{act}'(z^1)}_{\text{连乘项}}
+\frac{\partial \text{loss}}{\partial W^1}
+=x^T\left[\left(\left((a^3-y)(W^3)^T\right)\odot\text{act}'(z^2)\right)(W^2)^T\odot\text{act}'(z^1)\right]
 $$
 
 ### 1.2 层数变深的后果
@@ -62,9 +64,9 @@ $$
 | 导函数取值范围 | (0, 0.25] |
 | 最大值 | 仅 0.25，且只在 $x=0$ 处取得 |
 
-连乘多个 ≤0.25 的数 → **必然梯度消失**。
+多个 sigmoid 的局部导数可能使梯度衰减，但完整 Jacobian 还包含权重矩阵，不能只由导数上界推出必然梯度消失。
 
-**结论**：Sigmoid 仅用于二分类**输出层**，不适合隐藏层。
+**结论**：深层前馈网络的隐藏层通常避免大量使用 sigmoid，但 LSTM 等门控结构仍会使用它；并非只能用于二分类输出层。
 
 ### 2.2 Tanh — 比 Sigmoid 好，但仍有问题
 
@@ -86,7 +88,7 @@ $$
 | $x > 0$ 时导数 | **恒为 1** |
 | $x \leq 0$ 时导数 | 0（神经元抑制） |
 
-导数为 1 意味着——正半轴上梯度在传播时**不会被缩放**，连乘再多层也不会消失。
+导数为 1 意味着——正半轴上梯度在传播时**不会被缩放**，这一局部导数不缩小梯度；权重矩阵、非激活通路等因素仍可能导致整体梯度消失或爆炸。
 
 这是 ReLU 能支持深层网络训练的根本原因。
 
@@ -125,9 +127,9 @@ $$
 | 激活函数 | 推荐初始化 | 标准差 |
 |----------|-----------|--------|
 | ReLU | Kaiming (He) | $\sqrt{2/n}$ |
-| Tanh / Sigmoid | Xavier (Glorot) | $\sqrt{1/n}$（不同变体略有差异） |
+| Tanh / Sigmoid | Xavier (Glorot) | $g\sqrt{2/(fan_{in}+fan_{out})}$，$g$ 取决于激活约定 |
 
-PyTorch 中定义网络层时，**框架会自动帮你完成参数初始化**，不需要手动设置。
+PyTorch 层会执行默认初始化，但它不一定是针对后续 ReLU 的 He 正态初始化。要复现上述标准差，应明确调用 `nn.init.kaiming_normal_`；相关细节见 [PyTorch 初始化](/notes/pytorch-model-initialization/)。
 
 ---
 

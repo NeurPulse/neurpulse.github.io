@@ -2,6 +2,7 @@
 title: '深度学习:RMSProp 优化器 — 每个参数拥有自己的学习率'
 description: '理解统一学习率的困境、RMSProp 自适应学习率的核心思想（梯度大的除以大数、梯度小的除以小数），以及梯度平方指数加权平均的递推计算'
 pubDate: 2026-08-12
+updatedDate: 2026-10-19
 order: 23
 category: '深度学习'
 tags: ['RMSProp', '优化器', '自适应学习率', '指数加权平均']
@@ -93,7 +94,7 @@ optimizer = optim.RMSprop(model.parameters(), lr=0.001, alpha=0.9, eps=1e-8)
 
 RMSProp 解法：
   S = β·S + (1-β)·g²       ← 追踪梯度平方的历史
-  w = w - lr/√(S+ε) · g     ← 历史大的除得多，历史小的除得少
+  w = w - lr/(√S+ε) · g     ← 历史大的除得多，历史小的除得少
 
 效果：
   ├── 每个参数自适应学习率

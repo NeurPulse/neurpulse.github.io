@@ -2,6 +2,7 @@
 title: '数学建模：神经网络'
 description: '多层感知机（MLP）与反向传播'
 pubDate: 2026-08-07
+updatedDate: 2026-10-19
 order: 14
 category: '数学建模'
 tags: ['神经网络','MLP','深度学习']
@@ -49,7 +50,9 @@ $$
 $$
 为了发挥多层架构的潜力，我们还需要一个额外的关键要素：在仿射变换之后对每个隐藏单元应用非线性的**激活函数（activation function）**$\sigma$。激活函数的输出（例如，$\sigma(\cdot)$）被称为**活性值（activations）**。一般来说，有了激活函数，就不可能再将我们的多层感知机退化成线性模型：
 
- $$ \begin{align} \boldsymbol{H} &= \sigma(\boldsymbol{X}\boldsymbol{W}^{(1)} + \boldsymbol{b}^{(1)}), \\ \boldsymbol{O} &= \boldsymbol{H}\boldsymbol{W}^{(2)} + \boldsymbol{b}^{(2)}. \end{align} \tag{4.1.3} $$ 
+$$
+\begin{aligned} \boldsymbol{H} &= \sigma(\boldsymbol{X}\boldsymbol{W}^{(1)} + \boldsymbol{b}^{(1)}), \\ \boldsymbol{O} &= \boldsymbol{H}\boldsymbol{W}^{(2)} + \boldsymbol{b}^{(2)}. \end{aligned} \tag{4.1.3}
+$$
 
 由于$\boldsymbol{X}$中的每一行对应于小批量中的一个样本，出于记号习惯的考量，我们定义非线性函数$\sigma$也以按行的方式作用于其输入，即一次计算一个样本。应用于隐藏层的激活函数通常不仅按行操作，也按元素操作。这意味着在计算每一层的线性部分之后，我们可以计算每个活性值，而不需要查看其他隐藏单元所取的值。对于大多数激活函数都是这样。 
 
@@ -137,12 +140,12 @@ $$
    # 5. 得出结果
    out = net(input) #out是一个计算矩阵，可以用Fun.softmax(out)转化为概率矩阵
    prediction = torch.max(out, 1)[1] # 返回index  0返回原值
-   pred_y = prediction.data.numpy()
-   target_y = label.data.numpy()
+   pred_y = prediction.detach().cpu().numpy()
+   target_y = label.detach().cpu().numpy()
    
    # 6.衡量准确率
    accuracy = float((pred_y == target_y).astype(int).sum()) / float(target_y.size)
-   print("莺尾花预测准确率",accuracy)
+   print("鸢尾花训练集准确率（不代表泛化）", accuracy)
    
    ```
 
@@ -162,7 +165,12 @@ $$
            # 选取相关的数据特征
            feature = ["Pclass", "Sex", "SibSp", "Parch", "Fare"]
            # np.array()将数据转换成矩阵，方便进行接下来的计算
-           self.x_data = torch.from_numpy(np.array(pd.get_dummies(xy[feature])))
+           self.fare_mean = xy["Fare"].mean()
+           features = xy[feature].copy()
+           features["Fare"] = features["Fare"].fillna(self.fare_mean)
+           encoded = pd.get_dummies(features, dtype=float)
+           self.feature_columns = encoded.columns
+           self.x_data = torch.from_numpy(encoded.to_numpy(dtype=np.float32))
            self.y_data = torch.from_numpy(np.array(xy["Survived"]))
    
        # getitem函数，可以使用索引拿到数据
@@ -186,7 +194,7 @@ $$
        def __init__(self):
            super(Model, self).__init__()
            # 要先对选择的特征进行独热表示计算出维度，而后再选择神经网络开始的维度
-           self.linear1 = torch.nn.Linear(6, 3)
+           self.linear1 = torch.nn.Linear(dataset.x_data.shape[1], 3)
            self.linear2 = torch.nn.Linear(3, 1)
    
            self.sigmoid = torch.nn.Sigmoid()
@@ -248,8 +256,10 @@ $$
    test_url = "https://raw.githubusercontent.com/minsuk-heo/kaggle-titanic/master/input/test.csv"
    test_data=pd.read_csv(test_url)
    feature = ["Pclass", "Sex", "SibSp", "Parch", "Fare"]
-   df_feature['Fare'] = df_feature['Fare'].fillna(df_feature['Fare'].mean())
-   test=torch.from_numpy(np.array(pd.get_dummies(test_data[feature])))
+   test_features = test_data[feature].copy()
+   test_features['Fare'] = test_features['Fare'].fillna(dataset.fare_mean)
+   encoded = pd.get_dummies(test_features, dtype=float).reindex(columns=dataset.feature_columns, fill_value=0)
+   test = torch.from_numpy(encoded.to_numpy(dtype=np.float32))
    y=model.test(test.float())
    
    # 输出预测结果
@@ -262,70 +272,64 @@ $$
 
    
 
+#### 时间序列最小示例
+
+这个案例独立于前面的 Titanic 模型，需要本地 `Bitcoin.csv` 的 `Bitcoin` 数值列。按时间排序后使用；先留出最后 200 个观测，再用训练段拟合缩放器。下面从窗口构造到模型训练、递归预测使用同一个 LSTM，避免把分类模型误当成时序模型。
+
 ```python
-data=pd.read_csv("Bitcoin.csv")
-all_data=data['Bitcoin'].to_numpy()
-
-all_data
-
-test_data_size = 200
-
-train_data = all_data[:-test_data_size]
-test_data = all_data[-test_data_size:]
+import numpy as np
+import pandas as pd
+import torch
+from torch import nn
 from sklearn.preprocessing import MinMaxScaler
 
+all_data = pd.read_csv("Bitcoin.csv")["Bitcoin"].to_numpy(dtype=float)
+train_window, test_data_size = 12, 200
+if len(all_data) <= test_data_size + train_window or not np.isfinite(all_data).all():
+    raise ValueError("需要足够长度且无缺失的有序数值序列")
+train_data, test_data = all_data[:-test_data_size], all_data[-test_data_size:]
 scaler = MinMaxScaler(feature_range=(-1, 1))
-train_data_normalized = scaler.fit_transform(train_data.reshape(-1, 1))
+scaled = scaler.fit_transform(train_data[:, None]).ravel()
+X = torch.tensor(np.stack([scaled[i:i+train_window] for i in range(len(scaled)-train_window)]), dtype=torch.float32).unsqueeze(-1)
+y = torch.tensor(scaled[train_window:], dtype=torch.float32).unsqueeze(-1)
 
-print(train_data_normalized[:5])
+class ForecastLSTM(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.lstm = nn.LSTM(1, 32, batch_first=True)
+        self.fc = nn.Linear(32, 1)
 
-train_data_normalized = torch.FloatTensor(train_data_normalized).view(-1)
+    def forward(self, x):
+        hidden, _ = self.lstm(x)
+        return self.fc(hidden[:, -1])
+
+torch.manual_seed(42)
+forecast_model = ForecastLSTM()
+optimizer = torch.optim.Adam(forecast_model.parameters(), lr=1e-3)
+for epoch in range(30):
+    forecast_model.train()
+    optimizer.zero_grad()
+    loss = nn.functional.mse_loss(forecast_model(X), y)
+    loss.backward()
+    optimizer.step()
+
+forecast_model.eval()
+history = scaled[-train_window:].tolist()
+with torch.no_grad():
+    for _ in range(12):
+        seq = torch.tensor(history[-train_window:], dtype=torch.float32).view(1, train_window, 1)
+        history.append(forecast_model(seq).item())
+prediction = scaler.inverse_transform(np.array(history[-12:])[:, None]).ravel()
+print("留出段前 12 步的递归预测 MSE:", np.mean((prediction-test_data[:12])**2))
+print("持久性基线 MSE:", np.mean((train_data[-1]-test_data[:12])**2))
 ```
 
-
-
-```python
-train_window = 12
-def create_inout_sequences(input_data, tw):
-    inout_seq = []
-    L = len(input_data)
-    for i in range(L-tw):
-        train_seq = input_data[i:i+tw]
-        train_label = input_data[i+tw:i+tw+1]
-        inout_seq.append((train_seq ,train_label))
-    return inout_seq
-
-train_inout_seq = create_inout_sequences(train_data_normalized, train_window)
-train_inout_seq[:5]
-```
-
-
-
-```python
-fut_pred = 12
-test_inputs = train_data_normalized[-train_window:].tolist()
-print(test_inputs)
-```
-
-
-
-```python
-model.eval()
-
-for i in range(fut_pred):
-    seq = torch.FloatTensor(test_inputs[-train_window:])
-    with torch.no_grad():
-        model.hidden = (torch.zeros(1, 1, model.hidden_layer_size),
-                        torch.zeros(1, 1, model.hidden_layer_size))
-        test_inputs.append(model(seq).item())
-```
-
-
+30 轮仅用于展示流程，预测效果取决于数据，不能由这段代码断言优于基线。调参时应在训练段内再划出较晚的验证段，最终留出段不参与选择。
 
 ```python
 from tensorflow import keras
 from tensorflow.keras.datasets import mnist
-from tensorflow.python.keras.utils import np_utils
+from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Activation
 from tensorflow.keras.optimizers import RMSprop
@@ -338,8 +342,8 @@ print(x_test.shape,y_test.shape)
 # 数据预处理
 x_train = x_train.reshape(x_train.shape[0],-1) / 255.0
 x_test = x_test.reshape(x_test.shape[0],-1) / 255.0
-y_train = np_utils.to_categorical(y_train,num_classes=10)
-y_test = np_utils.to_categorical(y_test,num_classes=10)
+y_train = to_categorical(y_train,num_classes=10)
+y_test = to_categorical(y_test,num_classes=10)
 
 # 直接使用keras.Sequential()搭建全连接网络模型
 model = Sequential()
@@ -379,8 +383,13 @@ model = Sequential()
 model.add(LSTM(50, activation='relu', input_shape=(X.shape[1], X.shape[2])))  # 50个LSTM单元
 model.add(Dense(1))  # 输出层，因为我们的任务是回归，所以这里是1个神经元
 model.compile(optimizer='adam', loss='mse', metrics=['mse'])
-history = model.fit(X, y, epochs=100, batch_size=32, validation_split=0.2)
-test_loss = model.evaluate(X, y)  # 假设X_test和y_test是你的测试数据和标签
-print('Test Mean Absolute Error:', test_loss)
+cut = int(len(X) * 0.8)
+history = model.fit(X[:cut], y[:cut], epochs=100, batch_size=32,
+                    validation_split=0.2, shuffle=False)
+test_loss = model.evaluate(X[cut:], y[cut:], return_dict=True)
+print('留出段 MSE:', test_loss['mse'])
 ```
 
+### 示例运行条件
+
+各案例需分别运行，避免复用前一案例的 `model`。Titanic 示例需要对应字段完整的训练 CSV；测试集无标签时只能导出预测，不能计算测试准确率。TensorFlow 案例需要额外安装 TensorFlow，不能仅凭代码语法通过就视作完成数据集复现。

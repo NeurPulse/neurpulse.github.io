@@ -2,6 +2,7 @@
 title: '深度学习:神经网络的多分类 — Softmax 与交叉熵损失'
 description: '理解多分类网络的输出层改造（N 类 N 个神经元）、Softmax 的设计动机与公式推导、多分类交叉熵损失函数，以及二分类的两种实现方式对比'
 pubDate: 2026-08-11
+updatedDate: 2026-10-19
 order: 16
 category: '深度学习'
 tags: ['多分类', 'Softmax', '交叉熵', 'Logits', '输出层']
@@ -9,7 +10,7 @@ tags: ['多分类', 'Softmax', '交叉熵', 'Logits', '输出层']
 
 ## 1. 改造输出层
 
-逻辑回归做多分类要用"一对多"训练多个模型，麻烦。神经网络可以直接在**一个模型**内完成。
+逻辑回归也可以通过 multinomial/softmax 形式在一个模型中完成多分类，不必总是使用一对多。神经网络可以直接在**一个模型**内完成。
 
 ### 做法
 
@@ -81,7 +82,7 @@ $e^x$ 的指数增长，将微小的 logits 差异**非线性放大**：
 | 直接归一化 | [0.22, 0.22, 0.56] — 差异平缓 |
 | Softmax | [0.045, 0.045, 0.909] — **差异明显** |
 
-类别 3 的概率从 0.56 被拉到了 0.91，模型"更自信"了。这有利于梯度更快速地更新参数。
+类别 3 的概率从 0.56 被拉到了 0.91，模型"更自信"了。这给出一个有效的可微概率映射，不保证训练更快；过于尖锐的 softmax 也可能产生饱和。实际计算应减去最大 logit，或直接使用框架的稳定实现。
 
 ---
 
@@ -127,7 +128,8 @@ $$
 batch size = $N$：
 
 $$
-\text{loss} = -\frac{1}{N} \sum_{n=1}^{N} \sum_{i=1}^{C} y_i^n \log(p_i^n)$$
+\text{loss} = -\frac{1}{N} \sum_{n=1}^{N} \sum_{i=1}^{C} y_i^n \log(p_i^n)
+$$
 
 ---
 
@@ -136,8 +138,8 @@ $$
 | | 输出神经元数 | 激活函数 | 损失函数 |
 |------|------|------|------|
 | 二分类 | **1 个** | Sigmoid | BCELoss |
-| 二分类（备选） | 2 个 | Softmax | CrossEntropyLoss |
-| 多分类 | **C 个** | Softmax | CrossEntropyLoss |
+| 二分类（备选） | 2 个 | 训练直接传 logits | CrossEntropyLoss |
+| 多分类 | **C 个** | 训练直接传 logits | CrossEntropyLoss |
 
 二分类也可以用 2 个输出神经元 + Softmax。但实践中更常用 **1 个神经元 + Sigmoid**，参数更少，效率更高。
 
@@ -156,7 +158,8 @@ $$
   ↓
 Softmax → 概率分布（和 = 1，每项在 (0,1)）
   ↓
-CrossEntropyLoss → 与真实 one-hot 标签对比
+训练：CrossEntropyLoss 直接接收 logits，常用 long 类型类别索引
+推理：对 logits 做 Softmax 得到概率
   ↓
 梯度反向传播 → 更新所有层参数
 
@@ -164,3 +167,5 @@ CrossEntropyLoss → 与真实 one-hot 标签对比
   Softmax 的指数运算 = 解决正负问题 + 放大类间差异
   交叉熵 = 只看真实类别对应的预测概率，越接近 1 越好
 ```
+
+对于单 logit 二分类，通常优先使用 `BCEWithLogitsLoss`，训练前不再手动 sigmoid。多标签问题与互斥多分类不同，通常是每类独立 logit 配合二元交叉熵。

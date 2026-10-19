@@ -2,6 +2,7 @@
 title: '数学建模：微分方程'
 description: '微分方程基础、数值解法与Python实现'
 pubDate: 2026-08-07
+updatedDate: 2026-10-19
 order: 5
 category: '数学建模'
 tags: ['微分方程','数值方法','SciPy','SymPy']
@@ -29,7 +30,7 @@ $$
 
 ![Pasted image 20240423220303](../../../public/images/math-modeling/Pasted image 20240423220303.png)
 
-> 微分实际上描述的是点*M*处切线的斜率；导数则描述的是割线*MN*的斜率。但当d*x*足够小的时候，切线的斜率和割线的斜率就会非常接近
+> 导数 $f'(x)$ 描述切线斜率；割线斜率是 $\Delta y/\Delta x$，在函数可导且 $\Delta x\to0$ 时趋于导数。微分为 $dy=f'(x)dx$，是一阶线性近似的变化量，不是斜率。
 >
 > 割线是与曲线相交于两个点的直线
 >
@@ -66,7 +67,7 @@ $$
 > 变量分离和变形
 
 $$
-\frac{1}{y}dy = P(x)dx
+\frac{1}{y}dy = -P(x)dx
 $$
 
 > 对两边进行不定积分,得到解的通式
@@ -126,14 +127,14 @@ $$
 
 两种形式的特解分别为:
 $$
-f(x) = x_kP_m(x)e^{\lambda x}
+f_p(x) = x^k\widetilde P_m(x)e^{\lambda x}
 $$
 
 $$
 f(x) = x^ke^{\lambda x}[P_i\cos(\omega x) + Q_i(x)\sin(\omega x)]. i = \max\{m,n\}
 $$
 
-> *k*的取值取决于特征方程根的个数：如果有两个不同的实根，则k*=2；如果有两个相同的实根，则k*=1；如果没有实根，则k=0。
+> $k$ 是外力对应的 $\lambda$（振荡形式为 $\lambda+i\omega$）作为特征根的重数：不是根时 $k=0$，单根时 $k=1$，二重根时 $k=2$。待定系数多项式须重新设未知系数，不能直接复用右侧已知多项式。
 
 ### Numpy和SciPy进行函数的微分和积分计算
 
@@ -151,25 +152,18 @@ print(f'定积分的结果是：{integral}')
 # 定积分的结果是：0.7951866427656943 
 
 # integral 返回的是积分近似值
-# error    返回的是误差估计（绝对误差的上界）
+# error 返回估计的绝对误差，不是对所有被积函数都成立的严格上界
 # quad 底层使用自适应高斯-克朗罗德求积法，适合光滑函数的高精度数值积分。
 ```
 
 使用梯形法则来近似计算函数的定积分
 
 ```python
-h=x[1]-x[0]
-xn=0.7
-s=0
-for i in range(1000):
-    xn1=xn+h
-    yn=np.cos(2*np.pi*xn)*np.exp(-xn)+1.2
-    yn1=np.cos(2*np.pi*xn1)*np.exp(-xn1)+1.2
-    s0=(yn+yn1)*h/2
-    s+=s0
-    xn=xn1
-s
-# 24.31183595181452
+from scipy.integrate import trapezoid
+
+x = np.linspace(0.0, 0.7, 1001)
+s = trapezoid(f(x), x=x)
+print("梯形近似:", s)
 ```
 
 函数的微分使用Numpy库中的`gradient`函数来近似求解。
@@ -195,11 +189,6 @@ print(f'在x = 1处的导数值是：{derivate_at_1}')
 
 ### Scipy和Sympy解微分方程
 
+### 公式核对
 
-
-
-
-
-
-
-
+- [MIT OCW：常系数微分方程与待定系数法](https://ocw.mit.edu/courses/18-03-differential-equations-spring-2010/)：共振时乘 $x^k$ 的重数规则。

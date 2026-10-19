@@ -2,6 +2,7 @@
 title: '数学建模：线性判别与支持向量机'
 description: '线性判别分析（LDA）与支持向量机（SVM）'
 pubDate: 2026-08-07
+updatedDate: 2026-10-19
 order: 11
 category: '数学建模'
 tags: ['线性判别','SVM','机器学习','分类']
@@ -26,7 +27,7 @@ tags: ['线性判别','SVM','机器学习','分类']
   J = \frac{\boldsymbol{w}^T (\boldsymbol{\mu}_0 - \boldsymbol{\mu}_1)(\boldsymbol{\mu}_0 - \boldsymbol{\mu}_1)^T \boldsymbol{w}}{\boldsymbol{w}^T (\Sigma_0 + \Sigma_1)\boldsymbol{w}}
   $$
 
-- 记$S_w = \Sigma_0 + \Sigma_1$，$S_b = (\boldsymbol{\mu}_0 - \boldsymbol{\mu}_1)(\boldsymbol{\mu}_0 - \boldsymbol{\mu}_1)^T$，那目标函数就变成了一个广义瑞利商 $$J = \frac{\boldsymbol{w}^T S_b \boldsymbol{w}}{\boldsymbol{w}^T S_w \boldsymbol{w}}$$ 于是问题等价成一个凸优化问题，再将分母规约得到：
+- 记$S_w = \Sigma_0 + \Sigma_1$，$S_b = (\boldsymbol{\mu}_0 - \boldsymbol{\mu}_1)(\boldsymbol{\mu}_0 - \boldsymbol{\mu}_1)^T$，那目标函数就变成了一个广义瑞利商 $$J = \frac{\boldsymbol{w}^T S_b \boldsymbol{w}}{\boldsymbol{w}^T S_w \boldsymbol{w}}$$ 这是广义特征值/瑞利商优化问题，不能把下列等式约束二次问题直接称为凸优化；将分母归一后得到：
   $$
   \begin{cases} \min \quad -\boldsymbol{w}^T S_b \boldsymbol{w} \\ \text{s.t.}\quad \boldsymbol{w}^T S_w \boldsymbol{w} = 1 \end{cases} ​
   $$
@@ -293,7 +294,7 @@ def sigmoid_kernel(beta, c):
 
     return k
 
-测试不同核函数下样本会被如何核化：
+# 测试不同核函数下样本会被如何核化：
 
 kernels = [
 
@@ -395,5 +396,4 @@ plt.show()
 
 ```
 
-
-
+核函数示例中，多项式核应使用非负整数次数，RBF 的 sigma 必须大于 0，余弦核要求输入非零。sigmoid 核并非任意参数下都半正定；图上的可分类现象不能替代合法核的条件检查。

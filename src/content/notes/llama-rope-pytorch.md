@@ -2,6 +2,7 @@
 title: 'LLaMA（10）：用 PyTorch 从零实现 RoPE'
 description: '以课程 ROPE.ipynb 为主线，完成频率预计算、复数旋转、广播与 shape 检查，并验证范数和相对位置性质。'
 pubDate: 2026-09-11
+updatedDate: 2026-10-19
 category: 'LLaMA'
 tags: ['LLaMA 1', 'RoPE', 'PyTorch', '从零实现', '复数']
 order: 10
@@ -81,13 +82,18 @@ freqs_cis:  [seq_len, head_dim / 2]  # complex
 ```python
 def apply_rope(x: torch.Tensor, freqs_cis: torch.Tensor) -> torch.Tensor:
     """x: [batch, heads, seq_len, head_dim]"""
+    if x.ndim != 4 or not x.is_floating_point():
+        raise ValueError("x 必须是四维浮点张量")
+    if freqs_cis.shape != (x.size(-2), x.size(-1) // 2) or freqs_cis.device != x.device:
+        raise ValueError("旋转表长度、维度和设备必须与输入匹配")
     if x.shape[-1] % 2 != 0:
         raise ValueError("head_dim 必须是偶数")
 
     original_dtype = x.dtype
 
     # view_as_complex 需要最后一维长度为 2；为兼容混合精度先转 float32。
-    x_pairs = x.float().reshape(*x.shape[:-1], -1, 2)
+    work = x if x.dtype == torch.float64 else x.float()
+    x_pairs = work.reshape(*x.shape[:-1], -1, 2).contiguous()
     x_complex = torch.view_as_complex(x_pairs)
 
     # [seq_len, head_dim / 2] -> [1, 1, seq_len, head_dim / 2]
