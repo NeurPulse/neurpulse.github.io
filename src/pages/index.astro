@@ -59,85 +59,88 @@ const recent = [...byTopic.values()].slice(0, 5).map((group) => {
 <BaseLayout>
   <div class="home">
     <section class="home-hero" aria-labelledby="home-title">
-      <h1 id="home-title">你好，我是{AUTHOR}</h1>
-      <p>计算机科学与技术研究生，记录从数学建模到深度学习的学习笔记与实践。</p>
+      <p class="home-identity">{AUTHOR} · 计算机科学与技术研究生</p>
+      <h1 id="home-title">在数学与代码之间，<br />记录理解的过程。</h1>
+      <p>从数学建模到深度学习，整理推导、代码与实践中的思考。</p>
     </section>
 
-    {
-      topics.length > 0 && (
-        <section class="home-section" aria-labelledby="home-topics-title">
-          <div class="home-section-head">
-            <h2 id="home-topics-title">按专题阅读</h2>
-            <a href="/notes/">全部专题 →</a>
-          </div>
-          <nav aria-label="研究方向与专题入口">
-            <ul class="home-topic-links">
-              {topics.map((topic) => (
-                <li>
-                  <a href={topic.href}>
-                    <span>{topic.name}</span>
-                    <span class="home-topic-count">{topic.count} 篇</span>
-                  </a>
-                </li>
+    <div class="home-reading-grid">
+      {
+        featured.length > 0 && (
+          <section class="home-section home-featured" aria-labelledby="home-featured-title">
+            <div class="home-section-head">
+              <h2 id="home-featured-title">精选文章</h2>
+            </div>
+            <div class="home-featured-list">
+              {featured.map(({ post, base }) => (
+                <article class="home-featured-card">
+                  <h3><a href={`${base}/${post.id}/`}>{post.data.title}</a></h3>
+                  <div class="home-article-meta">
+                    <a href={base === '/notes' ? topicHref(post.data.category) : '/research/'}>
+                      {post.data.category}
+                    </a>
+                    <time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate)}</time>
+                  </div>
+                  {post.data.description && <p>{post.data.description}</p>}
+                  <a class="home-read-link" href={`${base}/${post.id}/`} aria-label={`阅读精选文章：${post.data.title}`}>阅读全文 →</a>
+                </article>
               ))}
-            </ul>
-          </nav>
-        </section>
-      )
-    }
+            </div>
+          </section>
+        )
+      }
 
-    {
-      featured.length > 0 && (
-        <section class="home-section" aria-labelledby="home-featured-title">
-          <div class="home-section-head">
-            <h2 id="home-featured-title">精选文章</h2>
-          </div>
-          <div class="home-featured-list">
-            {featured.map(({ post, base }) => (
-              <article class="home-featured-card">
-                <h3><a href={`${base}/${post.id}/`}>{post.data.title}</a></h3>
+      {
+        topics.length > 0 && (
+          <section class="home-section home-topics" aria-labelledby="home-topics-title">
+            <div class="home-section-head">
+              <h2 id="home-topics-title">按专题阅读</h2>
+            </div>
+            <nav aria-label="研究方向与专题入口">
+              <ul class="home-topic-links">
+                {topics.map((topic) => (
+                  <li>
+                    <a href={topic.href}>
+                      <span>{topic.name}</span>
+                      <span class="home-topic-count">{topic.count} 篇</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+            <a class="home-read-link" href="/notes/">全部专题 →</a>
+          </section>
+        )
+      }
+
+      <section class="home-section home-recent" aria-labelledby="home-recent-title">
+        <div class="home-section-head">
+          <h2 id="home-recent-title">最近更新</h2>
+          <a href="/notes/">全部笔记 →</a>
+        </div>
+        <p class="home-section-intro">按专题追踪新的笔记与研究记录。</p>
+        <ul class="home-update-list">
+          {recent.map(({ post, base, date, sameDayCount }) => (
+            <li>
+              <article class="home-update">
                 <div class="home-article-meta">
                   <a href={base === '/notes' ? topicHref(post.data.category) : '/research/'}>
                     {post.data.category}
                   </a>
-                  <time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate)}</time>
+                  <time datetime={date.toISOString()}>{formatDate(date)}</time>
+                  {sameDayCount > 1 && <span>同日更新 {sameDayCount} 篇</span>}
                 </div>
+                <h3><a href={`${base}/${post.id}/`}>{post.data.title}</a></h3>
                 {post.data.description && <p>{post.data.description}</p>}
-                <a class="home-read-link" href={`${base}/${post.id}/`} aria-label={`阅读精选文章：${post.data.title}`}>阅读全文 →</a>
               </article>
-            ))}
-          </div>
-        </section>
-      )
-    }
-
-    <section class="home-section" aria-labelledby="home-recent-title">
-      <div class="home-section-head">
-        <h2 id="home-recent-title">最近更新</h2>
-        <a href="/notes/">全部笔记 →</a>
-      </div>
-      <p class="home-section-intro">按专题追踪新的笔记与研究记录。</p>
-      <ul class="home-update-list">
-        {recent.map(({ post, base, date, sameDayCount }) => (
-          <li>
-            <article class="home-update">
-              <div class="home-article-meta">
-                <a href={base === '/notes' ? topicHref(post.data.category) : '/research/'}>
-                  {post.data.category}
-                </a>
-                <time datetime={date.toISOString()}>{formatDate(date)}</time>
-                {sameDayCount > 1 && <span>同日更新 {sameDayCount} 篇</span>}
-              </div>
-              <h3><a href={`${base}/${post.id}/`}>{post.data.title}</a></h3>
-              {post.data.description && <p>{post.data.description}</p>}
-            </article>
-          </li>
-        ))}
-      </ul>
-      <nav class="home-more-links" aria-label="更多阅读">
-        <a href="/research/">研究记录 →</a>
-        <a href="/search/">搜索文章 →</a>
-      </nav>
-    </section>
+            </li>
+          ))}
+        </ul>
+        <nav class="home-more-links" aria-label="更多阅读">
+          <a href="/research/">研究记录 →</a>
+          <a href="/search/">搜索文章 →</a>
+        </nav>
+      </section>
+    </div>
   </div>
 </BaseLayout>
