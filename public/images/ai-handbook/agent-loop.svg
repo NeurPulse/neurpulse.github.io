@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 610" role="img" aria-labelledby="diagram-title diagram-desc">
+  <title id="diagram-title">Agent：决策、行动、观察与停止</title><desc id="diagram-desc">动态选择下一步，但执行范围、预算和最终完成条件由系统共同约束。</desc>
+  <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#5c6c80"/></marker></defs>
+  <rect width="1120" height="610" fill="#fff"/>
+  <g font-family="system-ui, -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif">
+  <text x="40" y="51" font-size="30" font-weight="700" fill="#172c46">Agent：决策、行动、观察与停止</text>
+  <text x="40" y="85" font-size="19" fill="#526175">动态选择下一步，但执行范围、预算和最终完成条件由系统共同约束。</text>
+  <path d="M270 229H435" fill="none" stroke="#5c6c80" stroke-width="2.8"  marker-end="url(#arrow)"/><path d="M675 229H840" fill="none" stroke="#5c6c80" stroke-width="2.8"  marker-end="url(#arrow)"/><path d="M965 293V469H685" fill="none" stroke="#5c6c80" stroke-width="2.8"  marker-end="url(#arrow)"/><path d="M560 405V303" fill="none" stroke="#5c6c80" stroke-width="2.8"  marker-end="url(#arrow)"/><path d="M445 469H280" fill="none" stroke="#5c6c80" stroke-width="2.8"  marker-end="url(#arrow)"/><g><rect x="40" y="165" width="230" height="128" rx="12" fill="#edf4ff" stroke="#275a9b" stroke-width="2"/>
+    <text x="58" y="200" fill="#275a9b" font-size="23" font-weight="700">目标与状态</text>
+    <text x="58" y="234" fill="#273244" font-size="19">已验证事实、约束</text><text x="58" y="261" fill="#273244" font-size="19">待办与剩余预算</text></g><g><rect x="445" y="165" width="230" height="128" rx="12" fill="#edf4ff" stroke="#275a9b" stroke-width="2"/>
+    <text x="463" y="200" fill="#275a9b" font-size="23" font-weight="700">选择下一步</text>
+    <text x="463" y="234" fill="#273244" font-size="19">回答、追问或工具</text><text x="463" y="261" fill="#273244" font-size="19">依据当前观察</text></g><g><rect x="850" y="165" width="230" height="128" rx="12" fill="#fff3df" stroke="#8b5b15" stroke-width="2"/>
+    <text x="868" y="200" fill="#8b5b15" font-size="23" font-weight="700">校验并执行</text>
+    <text x="868" y="234" fill="#273244" font-size="19">权限、参数、白名单</text><text x="868" y="261" fill="#273244" font-size="19">真实工具与回执</text></g><g><rect x="445" y="405" width="230" height="128" rx="12" fill="#edf4ff" stroke="#275a9b" stroke-width="2"/>
+    <text x="463" y="440" fill="#275a9b" font-size="23" font-weight="700">观察并更新</text>
+    <text x="463" y="474" fill="#273244" font-size="19">区分成功、失败</text><text x="463" y="501" fill="#273244" font-size="19">核对实际产物</text></g><g><rect x="40" y="405" width="230" height="128" rx="12" fill="#eaf5ed" stroke="#286947" stroke-width="2"/>
+    <text x="58" y="440" fill="#286947" font-size="23" font-weight="700">完成或停止</text>
+    <text x="58" y="474" fill="#273244" font-size="19">目标完成或无进展</text><text x="58" y="501" fill="#273244" font-size="19">预算、异常与人工</text></g><text x="585" y="363" fill="#526175" font-size="21">继续</text><text x="312" y="449" fill="#526175" font-size="21">退出</text>
+  <text x="40" y="583" font-size="19" fill="#526175">模型说“完成”只是待核实信号；有副作用的操作还需要真实授权与幂等控制。</text>
+  </g></svg>

@@ -15,6 +15,21 @@ interface TopicGuide {
 
 // 固定专题锚点，新增或合并分类时不会改变已有分享链接。
 export const TOPIC_GUIDES: Record<string, TopicGuide> = {
+  'AI 技术与原理': {
+    id: 'category-ai-handbook',
+    summary: '面向零基础，从最小数学、机器学习与大模型机制，逐步学习 RAG、微调、Agent、评估与系统交付。',
+    audience: '希望把 AI 术语、原理、例子与工程实践连起来的入门读者。',
+    prerequisites: '可以从零开始；数学与术语会解释，最小代码主要使用 Python 标准库。',
+    outcome: '理解模型怎样学习和生成，能区分不同应用方案，并检查数据、证据、权限、成本与验收。',
+    steps: [
+      { label: '学习地图与完整目录', postId: 'ai-handbook-roadmap' },
+      { label: '最小数学与术语', postId: 'ai-handbook-math-and-vocabulary' },
+      { label: '大模型训练与生成', postId: 'ai-handbook-llm-training-and-generation' },
+      { label: 'RAG 与知识库', postId: 'ai-handbook-rag-pipeline' },
+      { label: 'Agent 与流程', postId: 'ai-handbook-workflow-and-agent' },
+      { label: '综合实践与交付', postId: 'ai-handbook-knowledge-assistant-case' },
+    ],
+  },
   '深度学习': {
     id: 'category-0',
     summary: '从回归与梯度下降出发，逐步学习卷积网络、自然语言处理和序列模型。',

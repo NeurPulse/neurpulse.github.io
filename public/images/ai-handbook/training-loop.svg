@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 550" role="img" aria-labelledby="diagram-title diagram-desc">
+  <title id="diagram-title">一次训练：预测 → 比较 → 求梯度 → 更新</title><desc id="diagram-desc">输入与目标给出学习信号；参数在优化器这一步发生变化。</desc>
+  <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#5c6c80"/></marker></defs>
+  <rect width="1120" height="550" fill="#fff"/>
+  <g font-family="system-ui, -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif">
+  <text x="40" y="51" font-size="30" font-weight="700" fill="#172c46">一次训练：预测 → 比较 → 求梯度 → 更新</text>
+  <text x="40" y="85" font-size="19" fill="#526175">输入与目标给出学习信号；参数在优化器这一步发生变化。</text>
+  <path d="M270 254H300" fill="none" stroke="#5c6c80" stroke-width="2.8"  marker-end="url(#arrow)"/><path d="M540 254H570" fill="none" stroke="#5c6c80" stroke-width="2.8"  marker-end="url(#arrow)"/><path d="M810 254H840" fill="none" stroke="#5c6c80" stroke-width="2.8"  marker-end="url(#arrow)"/><path d="M965 318V425H155V328" fill="none" stroke="#5c6c80" stroke-width="2.8"  marker-end="url(#arrow)"/><g><rect x="40" y="190" width="230" height="128" rx="12" fill="#edf4ff" stroke="#275a9b" stroke-width="2"/>
+    <text x="58" y="225" fill="#275a9b" font-size="23" font-weight="700">1 前向预测</text>
+    <text x="58" y="259" fill="#273244" font-size="19">输入经过各层</text><text x="58" y="286" fill="#273244" font-size="19">得到预测值</text></g><g><rect x="310" y="190" width="230" height="128" rx="12" fill="#edf4ff" stroke="#275a9b" stroke-width="2"/>
+    <text x="328" y="225" fill="#275a9b" font-size="23" font-weight="700">2 计算损失</text>
+    <text x="328" y="259" fill="#273244" font-size="19">预测与目标比较</text><text x="328" y="286" fill="#273244" font-size="19">得到错误大小</text></g><g><rect x="580" y="190" width="230" height="128" rx="12" fill="#fff3df" stroke="#8b5b15" stroke-width="2"/>
+    <text x="598" y="225" fill="#8b5b15" font-size="23" font-weight="700">3 反向传播</text>
+    <text x="598" y="259" fill="#273244" font-size="19">沿计算图求梯度</text><text x="598" y="286" fill="#273244" font-size="19">尚未更新参数</text></g><g><rect x="850" y="190" width="230" height="128" rx="12" fill="#eaf5ed" stroke="#286947" stroke-width="2"/>
+    <text x="868" y="225" fill="#286947" font-size="23" font-weight="700">4 优化器更新</text>
+    <text x="868" y="259" fill="#273244" font-size="19">使用梯度与学习率</text><text x="868" y="286" fill="#273244" font-size="19">改变可训练参数</text></g><text x="40" y="151" fill="#526175" font-size="21">数据、训练目标与当前参数</text><text x="342" y="461" fill="#526175" font-size="21">更新后的参数用于下一次前向计算</text>
+  <text x="40" y="523" font-size="19" fill="#526175">验证与测试使用独立数据检查效果，不因计算了一次损失就更新参数。</text>
+  </g></svg>

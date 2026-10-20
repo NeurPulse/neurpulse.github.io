@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 550" role="img" aria-labelledby="diagram-title diagram-desc">
+  <title id="diagram-title">普通自回归推理：生成一个，再接着生成</title><desc id="diagram-desc">参数通常固定；每次新增的 Token 成为下一次预测的前缀。</desc>
+  <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#5c6c80"/></marker></defs>
+  <rect width="1120" height="550" fill="#fff"/>
+  <g font-family="system-ui, -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif">
+  <text x="40" y="51" font-size="30" font-weight="700" fill="#172c46">普通自回归推理：生成一个，再接着生成</text>
+  <text x="40" y="85" font-size="19" fill="#526175">参数通常固定；每次新增的 Token 成为下一次预测的前缀。</text>
+  <path d="M220 249H245" fill="none" stroke="#5c6c80" stroke-width="2.8"  marker-end="url(#arrow)"/><path d="M435 249H460" fill="none" stroke="#5c6c80" stroke-width="2.8"  marker-end="url(#arrow)"/><path d="M650 249H675" fill="none" stroke="#5c6c80" stroke-width="2.8"  marker-end="url(#arrow)"/><path d="M865 249H890" fill="none" stroke="#5c6c80" stroke-width="2.8"  marker-end="url(#arrow)"/><path d="M990 313V425H345V323" fill="none" stroke="#5c6c80" stroke-width="2.8"  marker-end="url(#arrow)"/><g><rect x="40" y="185" width="180" height="128" rx="12" fill="#edf4ff" stroke="#275a9b" stroke-width="2"/>
+    <text x="58" y="220" fill="#275a9b" font-size="23" font-weight="700">输入文本</text>
+    <text x="58" y="254" fill="#273244" font-size="19">规则、资料</text><text x="58" y="281" fill="#273244" font-size="19">用户问题</text></g><g><rect x="255" y="185" width="180" height="128" rx="12" fill="#edf4ff" stroke="#275a9b" stroke-width="2"/>
+    <text x="273" y="220" fill="#275a9b" font-size="23" font-weight="700">分词与向量</text>
+    <text x="273" y="254" fill="#273244" font-size="19">Token ID</text><text x="273" y="281" fill="#273244" font-size="19">Embedding</text></g><g><rect x="470" y="185" width="180" height="128" rx="12" fill="#edf4ff" stroke="#275a9b" stroke-width="2"/>
+    <text x="488" y="220" fill="#275a9b" font-size="23" font-weight="700">网络计算</text>
+    <text x="488" y="254" fill="#273244" font-size="19">读取上下文</text><text x="488" y="281" fill="#273244" font-size="19">产生隐表示</text></g><g><rect x="685" y="185" width="180" height="128" rx="12" fill="#edf4ff" stroke="#275a9b" stroke-width="2"/>
+    <text x="703" y="220" fill="#275a9b" font-size="23" font-weight="700">候选分布</text>
+    <text x="703" y="254" fill="#273244" font-size="19">logits</text><text x="703" y="281" fill="#273244" font-size="19">采样或选最大</text></g><g><rect x="900" y="185" width="180" height="128" rx="12" fill="#eaf5ed" stroke="#286947" stroke-width="2"/>
+    <text x="918" y="220" fill="#286947" font-size="23" font-weight="700">新 Token</text>
+    <text x="918" y="254" fill="#273244" font-size="19">追加到前缀</text><text x="918" y="281" fill="#273244" font-size="19">检查停止条件</text></g><text x="368" y="463" fill="#526175" font-size="21">尚未结束：处理新增 Token，复用合适的 KV Cache</text>
+  <text x="40" y="523" font-size="19" fill="#526175">采样策略改变选择分布，不自动保证事实正确；停止后解码为可见文字。</text>
+  </g></svg>

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 625" role="img" aria-labelledby="diagram-title diagram-desc">
+  <title id="diagram-title">RAG：先建可检索资料，再按问题找证据</title><desc id="diagram-desc">上行是资料准备，下行是一次问答；来源、版本与权限必须贯穿流程。</desc>
+  <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#5c6c80"/></marker></defs>
+  <rect width="1120" height="625" fill="#fff"/>
+  <g font-family="system-ui, -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif">
+  <text x="40" y="51" font-size="30" font-weight="700" fill="#172c46">RAG：先建可检索资料，再按问题找证据</text>
+  <text x="40" y="85" font-size="19" fill="#526175">上行是资料准备，下行是一次问答；来源、版本与权限必须贯穿流程。</text>
+  <path d="M270 219H300" fill="none" stroke="#5c6c80" stroke-width="2.8"  marker-end="url(#arrow)"/><path d="M540 219H570" fill="none" stroke="#5c6c80" stroke-width="2.8"  marker-end="url(#arrow)"/><path d="M810 219H840" fill="none" stroke="#5c6c80" stroke-width="2.8"  marker-end="url(#arrow)"/><path d="M965 283V355H425V415" fill="none" stroke="#5c6c80" stroke-width="2.8" stroke-dasharray="8 6" marker-end="url(#arrow)"/><path d="M270 489H300" fill="none" stroke="#5c6c80" stroke-width="2.8"  marker-end="url(#arrow)"/><path d="M540 489H570" fill="none" stroke="#5c6c80" stroke-width="2.8"  marker-end="url(#arrow)"/><path d="M810 489H840" fill="none" stroke="#5c6c80" stroke-width="2.8"  marker-end="url(#arrow)"/><g><rect x="40" y="155" width="230" height="128" rx="12" fill="#edf4ff" stroke="#275a9b" stroke-width="2"/>
+    <text x="58" y="190" fill="#275a9b" font-size="23" font-weight="700">获取与解析</text>
+    <text x="58" y="224" fill="#273244" font-size="19">文档、网页、扫描件</text><text x="58" y="251" fill="#273244" font-size="19">检查文字与结构</text></g><g><rect x="310" y="155" width="230" height="128" rx="12" fill="#edf4ff" stroke="#275a9b" stroke-width="2"/>
+    <text x="328" y="190" fill="#275a9b" font-size="23" font-weight="700">分块与元数据</text>
+    <text x="328" y="224" fill="#273244" font-size="19">保留条件与章节</text><text x="328" y="251" fill="#273244" font-size="19">来源、时效、权限</text></g><g><rect x="580" y="155" width="230" height="128" rx="12" fill="#edf4ff" stroke="#275a9b" stroke-width="2"/>
+    <text x="598" y="190" fill="#275a9b" font-size="23" font-weight="700">计算表示</text>
+    <text x="598" y="224" fill="#273244" font-size="19">文档块转向量</text><text x="598" y="251" fill="#273244" font-size="19">可结合关键词索引</text></g><g><rect x="850" y="155" width="230" height="128" rx="12" fill="#eaf5ed" stroke="#286947" stroke-width="2"/>
+    <text x="868" y="190" fill="#286947" font-size="23" font-weight="700">建立索引</text>
+    <text x="868" y="224" fill="#273244" font-size="19">保存与查询入口</text><text x="868" y="251" fill="#273244" font-size="19">支持更新与撤销</text></g><g><rect x="40" y="425" width="230" height="128" rx="12" fill="#edf4ff" stroke="#275a9b" stroke-width="2"/>
+    <text x="58" y="460" fill="#275a9b" font-size="23" font-weight="700">用户问题</text>
+    <text x="58" y="494" fill="#273244" font-size="19">取得会话身份</text><text x="58" y="521" fill="#273244" font-size="19">明确当前任务</text></g><g><rect x="310" y="425" width="230" height="128" rx="12" fill="#edf4ff" stroke="#275a9b" stroke-width="2"/>
+    <text x="328" y="460" fill="#275a9b" font-size="23" font-weight="700">检索与重排</text>
+    <text x="328" y="494" fill="#273244" font-size="19">过滤可访问资料</text><text x="328" y="521" fill="#273244" font-size="19">选取相关候选</text></g><g><rect x="580" y="425" width="230" height="128" rx="12" fill="#edf4ff" stroke="#275a9b" stroke-width="2"/>
+    <text x="598" y="460" fill="#275a9b" font-size="23" font-weight="700">组织证据</text>
+    <text x="598" y="494" fill="#273244" font-size="19">问题＋资料＋约束</text><text x="598" y="521" fill="#273244" font-size="19">保留引用标识</text></g><g><rect x="850" y="425" width="230" height="128" rx="12" fill="#eaf5ed" stroke="#286947" stroke-width="2"/>
+    <text x="868" y="460" fill="#286947" font-size="23" font-weight="700">生成与检查</text>
+    <text x="868" y="494" fill="#273244" font-size="19">检查答案与出处</text><text x="868" y="521" fill="#273244" font-size="19">不足时追问或拒答</text></g><text x="40" y="133" fill="#526175" font-size="21">建库</text><text x="40" y="403" fill="#526175" font-size="21">问答</text>
+  <text x="40" y="598" font-size="19" fill="#526175">检索没有找到正确证据时，先排查资料与召回；不要只要求生成器“更认真”。</text>
+  </g></svg>
