@@ -65,6 +65,7 @@ export const TOPIC_GUIDES: Record<string, TopicGuide> = {
       { label: '必备数学与 Python', postId: 'mathematical-modeling-foundations' },
       { label: '数据与统计基础', postId: 'mathematical-modeling-data-preprocessing' },
       { label: '规划与决策', postId: 'mathematical-modeling-optimization' },
+      { label: '最优化绪论与课本习题详解', postId: 'mathematical-modeling-optimization-introduction' },
       { label: '时间序列与验证', postId: 'mathematical-modeling-time-series' },
       { label: '预测到备货综合案例', postId: 'mathematical-modeling-integrated-case' },
     ],

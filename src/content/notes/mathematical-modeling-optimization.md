@@ -12,6 +12,8 @@ tags: ["线性规划","整数规划","优化","零基础"]
 
 ## 学习目标与先修知识
 
+需要从符号、导数和课本例题开始逐步学习时，可先读[最优化方法第一章绪论零基础学习笔记](/notes/mathematical-modeling-optimization-introduction/)。该篇完整推导生产、水槽、运输等模型，并详解六道课后习题；本篇继续关注通用建模与 Python 求解。
+
 学完应能把资源分配写成目标与约束，区分连续、整数与非线性模型，并检查求解是否可行、有界和成功。先修为一次函数、矩阵与不等式。小例子先手算和枚举，再使用 SciPy，避免软件输出无法解释。
 
 可回看：[学习地图与完整流程](/notes/mathematical-modeling-roadmap/) · [必备数学与 Python 基础](/notes/mathematical-modeling-foundations/)。

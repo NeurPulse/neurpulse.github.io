@@ -160,6 +160,8 @@ assert 2*x + y <= 8 and x + y <= 5
 
 ### 运行代码的准备
 
+**最优化方法补充阅读：** [最优化方法第一章绪论零基础学习笔记](/notes/mathematical-modeling-optimization-introduction/)按课本一章完整讲解数学符号、建模、问题分类和全局与局部最优，推导五个例题并详解六道习题。它是原 27 篇主线之外的章节补充，附独立笔记与标准库计算代码包。
+
 使用 Python 3.11 或兼容版本。先下载[完整示例代码包](/downloads/math-modeling/math-modeling-examples.zip)并解压，进入解压后的文件夹。包内每个英文文件对应一篇笔记，数据由代码生成或来自 scikit-learn 内置数据，不需要先准备 Bitcoin 或 Titanic 文件。
 
 在终端执行：
