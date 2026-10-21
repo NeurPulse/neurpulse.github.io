@@ -1,199 +1,131 @@
 ---
-title: '数学建模：时间序列'
-description: '介绍什么是时间序列，时间序列的应用'
+title: "数学建模：时间序列分析与验证"
+description: "识别趋势、季节和相关性，建立按时间验证的流程"
 pubDate: 2026-08-10
-updatedDate: 2026-10-19
-order: 6
+updatedDate: 2026-10-21
+order: 13
 category: '数学建模'
-tags: ['时间序列']
+tags: ["时间序列","零基础"]
 ---
 
-## 时间序列
+> [专题学习地图](/notes/mathematical-modeling-roadmap/) · 第 13 / 27 篇
 
-**定义**：
+## 学习目标与先修知识
 
-> 以时间作为索引、具备先后顺序的序列数据。采样间隔可以为日、小时、分钟、秒；传统时序模型大多默认等时间间隔采样。
+目标是识别趋势、季节、循环与残差，理解平稳性和自相关，设计没有未来信息泄漏的滚动验证，并与简单预测基线比较。先修为数据清洗、均值、方差与 MAE。读完再进入移动平均、指数平滑和 ARIMA。
 
-**应用**：
+可回看：[数据预处理与插值](/notes/mathematical-modeling-data-preprocessing/) · [统计模型与假设检验](/notes/mathematical-modeling-statistics/)。
 
-1. 天气预报中每一天的天气按照时间构成了一个序列，这属于离散的时间序列（可选用马尔可夫、ARIMA、深度学习等多种模型建模)
-2. 股票每日开盘价、收盘价随时间变化，也是时间序列。
+## 问题背景与使用时机
 
-时间序列两大目标：特征分析和预测
+销量、温度、流量、价格按时间排列后，昨天与今天通常有关联。把记录随机打乱再分训练测试，可能让未来模式提前进入训练，得到难以部署的成绩。
 
-**何为预测？**
+在预测某天之前，只能用那个时点已经掌握的信息。昨天的真实销量可用于今天的一步预测；明天的真实销量不能用于今天发出的多步预测。这两个预测场景的评价方式不同。
 
-基于历史时序数据，对未来时刻数值做推断。
+## 核心概念与符号
 
-例：利用历史气象数据预测未来24小时天气；利用历史股价预测未来一周股价走势。
+### 先认识数据结构
 
-**何为特征分析？**
+单个对象按时间记录是一元或多元时间序列；同一时点多个对象是截面；多个对象在多个时点重复观测是面板。采样间隔必须明确，例如日历日、工作日和交易日并不等价。
 
-通过模型估计参数，挖掘序列内在统计特征，结合业务/领域知识解读现象。
+趋势是长期水平变化；季节项有固定周期；循环的长度通常不固定；剩余项是模型未解释的部分，不应在未检验前就断言完全不可预测。加法分解常写 $y_t=T_t+S_t+R_t$，乘法写 $y_t=T_tS_tR_t$，经典乘法分解通常要求 y 为正。
 
-> 参数学习：是模型的手段，不是最终任务，通过拟合得到模型参数，刻画趋势、周期、相关性等序列特征。
+经典分解中的趋势一般把趋势与较慢循环合并，不会自动分出两个独立分量。默认居中滤波还会使用后续观测，所以全序列分解图只能作描述，不能直接作为历史预测时可用的特征。
 
-**时间序列的分解**：
+### 平稳与相关
 
-> 为了能更好的对一个时间序列进行分析，我们需要用到分解
+弱平稳要求均值恒定、方差有限且协方差只依赖时滞。图像大致水平不是充分证据。自相关 $\rho(h)$ 描述序列与滞后 h 的线性关联；ACF 看各滞后相关，PACF 进一步控制中间滞后的线性影响。
 
-基础概念：
+一阶差分 $\Delta y_t=y_t-y_{t-1}$ 可消除某些趋势，但不保证任何序列都平稳；季节差分为 $y_t-y_{t-m}$。过度差分也会引入不必要结构。
 
-1. 截面数据：同一时点多个观察单位的数据，如同一天多个河流监测站的各项指标。
-2. 面板数据：多个观察单位在多个时点的重复观测，同时包含个体维度与时间维度。单个站点多个指标的日序列属于多元时间序列，不因指标多就成为面板数据。
-3. 时间序列：一个或多个变量按时间排列的观测。
+### 预测评价
 
-弱平稳（协方差平稳）要求有限二阶矩、均值为常数，且协方差只依赖时滞：
+同一预测起点发出未来 H 步预测，和每天更新信息的一步滚动预测不是同一个任务。MAE 与 RMSE 必须在相同目标尺度、时段和预测步长下比较。
 
-$$
-\mathbb E[Y_t]=\mu,\qquad\operatorname{Cov}(Y_t,Y_{t+h})=\gamma(h).
-$$
+## 手算一个最小例子
 
-这不等于一条样本路径的波动幅度处处完全相同，也不能只凭图像水平就确定平稳性。
+销量为 $10,12,11,13$。差分为 $2,-1,2$；持久性预测“明天等于今天”在后三个时点的预测为 $10,12,11$，误差为 $2,-1,2$。
 
-时间序列四个要素：
+因此 MAE 为 $(2+1+2)/3=5/3$，RMSE 为 $\sqrt{(4+1+4)/3}=\sqrt3$。这是一项一步预测基线，而不是对原序列做平滑。
 
-- **长期趋势 T**：较长时间段内整体持续变化走向，多为平滑曲线，代表长期发展态势。 
-- **季节波动 S**：固定短周期带来的周期性变动，不限于一年四季，24小时日内周期也属于季节项。周期固定且较短。 
-- **循环波动 C**：中长期周期性变动，**没有严格固定周期**，周期长度大于季节波动。
-- **不规则波动 I（噪声）**：偶然随机因素带来的扰动，无规律，不可预测。
+如果固定在第 2 天预测第 3、4 天，持久性模型两步都预测12；不能在预测第4天时偷用第3天真实值11，再把它称为同一个起点的两步预测。
 
-时序分解模型（用于拆分四大要素）
+## 建模步骤与完整案例
 
-> 联系：时间序列是待分析的数据对象，分解模型是拆分解析时序数据的数学方法，把原始序列$Y[t]$拆解为T、S、C、I四个组分。
+案例：构造140天带周周期的日销量。最后28天用于最终评估，前112天用于探索和模型选择。假设每天都营业，预测时前一天销量已经结算。
 
-1. 加法模型：
-   $$
-   \boldsymbol{Y[t] = T[t] + S[t] + C[t] + I[t]}
-   $$
-   特点：各项使用相同量纲相加，适合波动幅度不随水平明显变化的情况；分解形式本身并不保证各项统计独立。
+读取真实数据时按日期解析、排序，检查重复、缺口、有限值和单位；不能直接删掉缺失天就把不等间隔序列假装成等间隔。对每个验证起点，仅使用此前数据。
 
-2. 乘法模型:
-   $$
-   \boldsymbol{Y[t] = T[t] \times S[t] \times C[t] \times I[t]}
-   $$
-   特点：仅趋势项T与最终序列Y量纲一致；季节、循环和不规则项为无量纲的比例因子；波动幅度会随趋势增减同步放大 / 缩小。
+本篇比较训练均值、昨天销量和上周同日销量三个基线。季节周期7是教学数据设定；真实数据需要由业务与诊断支持，不能只因一年365天就预设价格具有年周期。
 
-   > 乘法分解不要求不规则因子服从正态分布。经典乘法分解通常要求序列严格为正；取对数后可转成加法形式。
-   >
-   > 适合：波动幅度会跟随趋势同步放大/缩小的数据。
+## Python 实现与结果解释
 
-
+配套文件：[查看或下载本篇完整脚本](/downloads/math-modeling/mathematical-modeling-time-series.py)。
 
 ```python
+import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from statsmodels.tsa.seasonal import seasonal_decompose
 
+rng = np.random.default_rng(42)
+t = np.arange(140)
+y = 30 + 0.05*t + 3*np.sin(2*np.pi*t/7) + rng.normal(0, 1, len(t))
+series = pd.Series(y, index=pd.date_range("2026-01-01", periods=len(y), freq="D"))
+cut = 112
+train = series.iloc[:cut]
+# 分解只在训练段做描述，不把居中趋势作为预测输入。
+decomposition = seasonal_decompose(train, model="additive", period=7)
+reconstructed = decomposition.trend+decomposition.seasonal+decomposition.resid
+valid = reconstructed.notna()
+assert np.allclose(reconstructed[valid], train[valid])
 
-df = pd.read_csv("Bitcoin.csv")
-df["Date"] = pd.to_datetime(df["Date"])
-df = df.set_index("Date", drop=True)
-df["Bitcoin"] = df["Closing Price (USD)"]
-y = df.Bitcoin
-
-# 绘制时间序列图
-plt.figure(figsize=(12, 4))
-plt.plot(y, label='比特币价格')
-plt.title('比特币时间序列图')
-plt.xlabel('日期')
-plt.ylabel('价格（美元）')
-plt.xticks(rotation=45)
-plt.legend()
-plt.tight_layout()
-plt.show()
-
-# 时序分解
-decompose_result = seasonal_decompose(y.dropna(), model="multiplicative", period=365)
-plt.rcParams["figure.figsize"] = (14, 10)
-fig = decompose_result.plot()
-
-axes = fig.axes
-axes[0].set_title('原始序列')
-axes[1].set_title('长期趋势 T')
-axes[2].set_title('季节波动 S')
-axes[3].set_title('不规则噪声 I')
-
-axes[0].set_ylabel('价格')
-axes[1].set_ylabel('趋势')
-axes[2].set_ylabel('季节')
-axes[3].set_ylabel('残差噪声')
-
-plt.tight_layout()
-plt.show()
-
-T = decompose_result.trend
-S = decompose_result.seasonal
-I = decompose_result.resid
+truth = y[cut:]
+predictions = {
+    "training mean": np.full(len(truth), train.mean()),
+    "yesterday": y[cut-1:-1],
+    "last week": y[cut-7:-7],
+}
+for name, prediction in predictions.items():
+    mae = np.mean(np.abs(truth-prediction))
+    rmse = np.sqrt(np.mean((truth-prediction)**2))
+    print(name, "MAE", round(mae, 3), "RMSE", round(rmse, 3))
+print("一阶差分均值:", np.diff(train).mean())
+assert len(predictions["last week"]) == len(truth)
 ```
 
+测试段内使用前一天或上周已观察到的销量，符合“每天滚动发出一步预测”的设定；这些测试值没有被用来调参。若业务要求一次提前28天备货，就要重新设计固定起点的28步预测，不能直接复用这份误差结果。
 
+## 方法选择与常见误区
 
-```python
-import pandas as pd
-import matplotlib.pyplot as plt
-import statsmodels.api as sm
+- 无趋势无季节时可比较均值、移动平均和简单指数平滑。
+- 平滑趋势可比较 Holt；稳定固定周期可比较季节朴素与 Holt–Winters。
+- 差分后仍有自相关时，可考虑 ARIMA 或季节 ARIMA。
+- 有外部已知驱动变量时，可做时序回归，但未来外部变量本身也可能需要预测。
+- 不规则观测、结构突变、节假日、缺货造成的销量截断，需要先改数据和任务设定。
+- 回测只能说明历史规则下的表现；更换业务机制后可能失效。残差仍有明显相关，表示预测模型可能遗漏可利用结构。
 
-# 读取数据
-df = pd.read_csv("Bitcoin.csv")
-df["Date"] = pd.to_datetime(df["Date"])
-df = df.set_index("Date", drop=True)
-df["Bitcoin"] = df["Closing Price (USD)"]
+## 练习
 
+1. 记录某店连续100天的收入和客流，是面板数据吗？
+2. 为什么随机划分时间序列可能高估效果？
+3. 训练有趋势，去掉一条直线后能保证平稳吗？
+4. 预测7天后的销量与预测明天，误差能直接比较吗？
 
+## 参考答案
 
-# 加法模型时序分解
-res = sm.tsa.seasonal_decompose(df.Bitcoin, model='additive', period=365)
+1. 这是单个对象的多元时间序列；多个门店跨日期重复观察才形成典型面板。
+2. 未来模式、相邻记录与预处理信息可能进入训练；真实预测时这些信息并不可用。
+3. 不能，仍可能有随机趋势、季节性、方差变化或结构突变。
+4. 通常不能，难度和预测时可用信息不同。应在相同步长、起点和尺度下比较方法。
 
-fig = res.plot()
-# 设置总标题
-plt.suptitle('时序分解 — 加法模型', y=1.02)
+## 复习卡片与下一步
 
+预测先写清“在何时、用哪些已知信息、预测多远”。下一篇用同样的信息边界手算移动平均，体会平滑和预测之间的一期差别。
 
-axes = fig.axes
-axes[0].set_title('原始序列')
-axes[1].set_title('长期趋势 T')
-axes[2].set_title('季节波动 S')
-axes[3].set_title('不规则残差 I')
+[上一篇 主成分分析与降维](/notes/mathematical-modeling-pca/) · [下一篇 时间序列之移动平均法](/notes/mathematical-modeling-moving-average-method/)
 
-axes[0].set_ylabel('价格')
-axes[1].set_ylabel('趋势')
-axes[2].set_ylabel('季节')
-axes[3].set_ylabel('残差')
+## 参考资料
 
-plt.tight_layout()
-plt.show()
-
-# 提取各分量
-trend_add = res.trend
-seasonal_add = res.seasonal
-resid_add = res.resid
-
-
-# ----------------乘法模型对比（中文）----------------
-res_mul = sm.tsa.seasonal_decompose(df.Bitcoin, model='multiplicative', period=365)
-fig2 = res_mul.plot()
-plt.suptitle('时序分解 — 乘法模型', y=1.02)
-
-axes2 = fig2.axes
-axes2[0].set_title('原始序列')
-axes2[1].set_title('长期趋势 T')
-axes2[2].set_title('季节波动 S')
-axes2[3].set_title('不规则残差 I')
-
-axes2[0].set_ylabel('价格')
-axes2[1].set_ylabel('趋势')
-axes2[2].set_ylabel('季节')
-axes2[3].set_ylabel('残差')
-
-plt.tight_layout()
-plt.show()
-
-trend_mul = res_mul.trend
-seasonal_mul = res_mul.seasonal
-resid_mul = res_mul.resid
-```
-
-示例需要按日等间隔、无缺失的 `Bitcoin.csv`，含 `Date` 与正的 `Closing Price (USD)` 列，且至少覆盖两轮设定周期。`period=365` 只是年度周期的示范设定，不代表已证明数据有年度季节性。先排序并检查重复日期、缺口；直接 `dropna()` 可能破坏等间隔条件。
-
-`seasonal_decompose` 的 `trend` 通常是趋势与循环的合并项，并不分别估计上述 T 与 C；默认居中滤波会使用未来数据，不能直接把全序列分解结果作为在线预测特征。
+- [Datawhale《数学建模导论》第8章](https://datawhalechina.github.io/intro-mathmodel/#/CH8/第8章-时间序列)：用于建立知识目录，建议与本篇的手算和案例对照阅读。
+- [Forecasting Principles and Practice 第3版](https://otexts.com/fpp3/)：分解、基线与滚动评价。
+- [statsmodels seasonal_decompose](https://www.statsmodels.org/stable/generated/statsmodels.tsa.seasonal.seasonal_decompose.html)。

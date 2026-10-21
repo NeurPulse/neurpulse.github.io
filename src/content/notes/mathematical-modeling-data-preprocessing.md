@@ -1,225 +1,145 @@
 ---
-title: '数学建模：数据预处理与插值'
-description: '数据清洗、标准化与插值方法'
+title: "数学建模：数据预处理与插值"
+description: "从缺失、重复和量纲走到可用数据，理解插值与信息泄漏"
 pubDate: 2026-08-07
-updatedDate: 2026-10-19
-order: 1
+updatedDate: 2026-10-21
+order: 3
 category: '数学建模'
-tags: ['数据预处理','插值','Pandas','Scikit-learn']
+tags: ["数据预处理","插值","Pandas","Scikit-learn","零基础"]
 ---
 
-## 数据处理
+> [专题学习地图](/notes/mathematical-modeling-roadmap/) · 第 3 / 27 篇
 
+## 学习目标与先修知识
 
+学完后，你应能区分错误重复与真实重复、缺失与零、插值与外推，能在训练数据上拟合填补器和缩放器，并保持测试信息独立。先看数学与 Python 基础，至少理解“行是样本、列是变量”。
 
-何为数据？
+可回看：[必备数学与 Python 基础](/notes/mathematical-modeling-foundations/)。
 
-- 数值类数据，例如结构化的excel表格和SQL文件。
-- 文本类数据，例如新闻报道、微博评论、餐饮点评等文字。
-- 图像类数据，以一定尺寸的黑白或彩色图像在计算机内存储。
-- 音频类数据，例如音乐、电话录音等。
-- 信号类数据，例如地震波的波形、电磁波信号、脑电信号等。
+## 问题背景与使用时机
 
-### 数据预处理
+预测学生后续成绩时，表里可能有漏填的练习时长、重复导出的学号、不同量纲的特征。模型不会自动知道某个 0 是“没有练习”还是“缺失时误填”。
 
-在现实生活中，我们得到的数据往往很混乱，不全面，这对一个模型来说是不利的。无法从中有效的识别并提取信息。
+清洗的目标是让数据表达实际观察，不是把所有数都变得平滑好看。保留原始表，记录每个处理规则及受影响行数；真实的极端事件也可能是最有价值的观测。
 
-在数据处理中会遇到的问题：空缺，重复，异常记录
+## 核心概念与符号
 
-怎么处理？
+### 先判断数据的含义
 
-1. 重复数据：先明确主键和业务含义，确认是误重复后再删除；重复观测不一定是错误。
-2. 缺失数据：结合缺失机制、变量用途和缺失比例决定删除或填补，没有通用的 5%、20%、50% 硬阈值。均值填补会改变方差与相关结构；插值需要合理的有序坐标和变化假设。
-3. 预测任务：先划分数据，插补器只在训练集拟合。时间序列预测不能借未来观测填补当前输入；这里的整表清洗和双向插值示例用于离线数据整理。
+主键用于识别观察单位，例如“学生编号 + 日期”。只有确认同一观察被重复录入，才删除重复；同一学生不同日期的记录不能随意去掉。缺失机制包括完全随机缺失、依赖已观测信息的缺失和依赖未观测值的缺失；简单均值填补不能自动解决选择偏差。
 
-数据处理借助pandas
+数值特征可用均值、中位数或模型填补；类别特征可增设“未知”。整列都缺失时没有可估计的列均值，应删除、补采或使用事先定义的规则。目标标签缺失的训练行通常不能直接参与普通监督拟合。
 
-相应的说明
+### 缩放与编码
+
+标准化 $z=(x-\mu_{\mathrm{train}})/s_{\mathrm{train}}$ 把尺度转为相对训练数据的距离。Min-Max 缩放为 $(x-a)/(b-a)$，其中极值也只能来自训练集。常量列分母为零，需要明确处理。类别如城市不能随意编码为 1、2、3 后当作等距数字；独热编码为每种类别建立一个指示列。
+
+### 插值及其边界
+
+线性插值在两个已知位置之间连直线；样条在各区间用低次多项式拼接；拉格朗日插值构造一个通过所有节点的多项式。坐标可以不等间隔，但必须已知且互不重复。超出已知区间是外推，风险不同。
+
+三次样条还需边界条件；自然样条指定两端二阶导数为零，not-a-knot 是另一种条件。高次多项式即使穿过所有观测，也可能在节点间剧烈振荡。
+
+## 手算一个最小例子
+
+已知 1 日记录 10、3 日记录 14，想填 2 日：
+
+$$
+\hat y(2)=10+\frac{14-10}{3-1}(2-1)=12.
+$$
+
+这里额外假设区间内变化近似线性。若 2 日恰好发生突发事件，12 不一定接近真实值。
+
+训练时长为 $1,2,3$ 小时，均值 2；用总体式标准差 $s=\sqrt{2/3}\approx0.8165$，则 3 小时标准化为 $(3-2)/0.8165\approx1.2247$。scikit-learn 的 StandardScaler 使用这种分母为 $n$ 的方差定义，不等于统计推断中分母 $n-1$ 的样本方差。
+
+训练集为 $1,3,\text{缺失}$ 时，中位数是 2。测试集即使出现 100，填补训练缺失的值仍应为 2；把测试值混进估计会泄漏信息。
+
+## 建模步骤与完整案例
+
+案例：用练习时长预测成绩。先按学生分出训练和测试，再做填补、标准化和回归。假设各学生相互独立，练习时长在预测时已知；真实研究中不能把考试后才能获得的字段作为输入。
+
+流程为：检查编号唯一性 → 区分特征与标签 → 留出测试学生 → 在训练折估计预处理参数 → 拟合模型 → 对测试行只做 transform → 评价误差。交叉验证时这些步骤也要在每个训练折内部重做，Pipeline 可以自动保持边界。
+
+![先划分再拟合预处理的边界](/images/math-modeling/learning/validation-boundary.svg)
+
+## Python 实现与结果解释
+
+配套文件：[查看或下载本篇完整脚本](/downloads/math-modeling/mathematical-modeling-data-preprocessing.py)。
 
 ```python
 import numpy as np
-import pandas as pd
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+from sklearn.linear_model import LinearRegression
 
-# （1）创建pandas dataframe
-df = pd.DataFrame({'From_To': ['LoNDon_paris', 'MAdrid_miLAN', 'londON_StockhOlm',
-                               'Budapest_PaRis', 'Brussels_londOn'],
-              'FlightNumber': [10045, np.nan, 10065, np.nan, 10085],
-              'RecentDelays': [[23, 47], [], [24, 43, 87], [13], [67, 32]],
-                   'Airline': ['KLM(!)', '<Air France> (12)', '(British Airways. )',
-                               '12. Air France', '"Swiss Air"']})
-df
+X_train = np.array([[1.], [2.], [np.nan], [4.], [5.]])
+y_train = np.array([52., 54., 56., 58., 60.])
+X_test = np.array([[3.], [6.]])
+y_test = np.array([56., 62.])
+model = make_pipeline(
+    SimpleImputer(strategy="median"),
+    StandardScaler(),
+    LinearRegression()
+)
+model.fit(X_train, y_train)
+prediction = model.predict(X_test)
+imputer = model.named_steps["simpleimputer"]
+print("训练填补值:", imputer.statistics_)
+print("预测值:", prediction)
+print("测试MAE:", np.mean(np.abs(prediction-y_test)))
+assert np.allclose(imputer.statistics_, [3.])
+assert np.allclose(prediction, [56., 62.])
 
-# （2）FlightNumber列中有某些缺失值，缺失值常用nan表示，请在该列中添加10055与10075填充该缺失值。
-df['FlightNumber'] = df['FlightNumber'].interpolate().astype(int)
-
-# （3）由于列From_To 代表从地点A到地点B，因此可以将这列拆分成两列，并赋予为列From与To。
-temp = df['From_To'].str.split("_", expand=True)
-temp.columns = ['From', 'To']
-
-# （4）将列From和To转化成只有首字母大写的形式。
-temp['From'] = temp['From'].str.capitalize()
-temp['To'] = temp['To'].str.capitalize()
-
-# （5）将列From_To从df中去除，并把列From和To添加到df中
-df.drop('From_To', axis=1, inplace=True)
-df[['From', 'To']] = temp
-
-# （6）清除列中的特殊字符，只留下航空公司的名字。
-df['Airline'] = df['Airline'].str.extract(r'([a-zA-Z\s]+)', expand=False).str.strip()
-
-# （7）在 RecentDelays 列中，值已作为列表输入到 DataFrame 中。我们希望每个第一个值在它自己的列中，每个第二个值在它自己的列中，依此类推。如果没有第 N 个值，则该值应为 NaN。将 Series 列表展开为名为 的 DataFrame delays，重命名列delay_1，delay_2等等，并将不需要的 RecentDelays 列替换df为delays。
-delays = df['RecentDelays'].apply(pd.Series)
-delays.columns = ['delay_%s' % i for i in range(1, len(delays.columns)+1)]
-df = df.drop('RecentDelays', axis=1).join(delays, how='left')
-
-# （8）将delay_i列的控制nan都填为自身的平均值。
-for i in range(1, 4):
-    df[f'delay_{i}'] = df[f'delay_{i}'].fillna(np.mean(df[f'delay_{i}']))
-
-# （9）在df中增加一行，值与FlightNumber=10085的行保持一致。
-df = pd.concat([df, df.loc[df['FlightNumber'] == 10085]], ignore_index=True)
-
-# （10）对df进行去重，由于df添加了一行的值与FlightNumber=10085的行一样的行，因此去重时需要去掉。
-df = df.drop_duplicates()
+# 独立的插值案例：只在已知区间内查询。
+from scipy.interpolate import interp1d, CubicSpline, BarycentricInterpolator
+x = np.array([1., 2., 3., 4.])
+y = np.array([1., 4., 9., 16.])
+linear = interp1d(x, y, kind="linear", bounds_error=True)
+natural_spline = CubicSpline(x, y, bc_type="natural", extrapolate=False)
+polynomial = BarycentricInterpolator(x, y)
+print("2.5处三种插值:", linear(2.5), natural_spline(2.5), polynomial(2.5))
+assert np.isclose(linear(2.5), 6.5)
+assert np.isclose(polynomial(2.5), 6.25)
 ```
 
-### 插值模型
+训练填补值为 3，测试 MAE 为 0。这是人为构造的直线数据，目的是验证流程，不代表现实成绩可完美预测。2.5 处真实平方函数为 6.25；线性插值得到 6.5，说明“通过节点”不等于“节点间也完全正确”。
 
-#### 线性插值
+## 方法选择与常见误区
 
-利用两个点求线性方程来进行插值
+| 情况 | 可优先尝试 | 必须核查 |
+|---|---|---|
+| 少量数值缺失、分布有极端值 | 中位数与缺失指示 | 缺失是否含额外信息 |
+| KNN、SVM、神经网络输入 | 训练集内缩放 | 测试是否只 transform |
+| 树模型 | 通常不依赖尺度缩放 | 缺失支持随实现而异 |
+| 离线传感器缺口 | 有序坐标下插值 | 变化规律是否合理 |
+| 未来预测 | 仅用过去填补 | 双向插值可能用到未来 |
+| 类别变量 | 独热或明确的类别处理 | 测试出现新类别怎么办 |
 
-比如有原始数据列{y}和数据的下标{x} 注：*数据下标x可能并不是固定频率的连续取值而是和y一样存在缺失的*
+异常检测只标出待核查记录，不代表必须删除。不要根据测试集的预测误差反复修改清洗规则后仍称它是“独立测试”。
 
-有数据点(xk,yk)和(xk+1,yk+1)，需要对两个点之间构造直线进行填充。
+## 练习
 
-根据直线的点斜式方程  $\to$ 已知直线过点 $P_0(x_0,y_0)$，斜率为 k  方程：$\boldsymbol{y-y_0=k(x-x_0)}$
+1. 训练值 $2,4,\text{缺失},8$，中位数填补是多少？
+2. 1 时刻为 4、4 时刻为 10，线性插值的 2 时刻是多少？
+3. 为什么用整张表标准化后再划分数据有问题？
+4. 城市编码“北京=1，上海=2，广州=3”直接送入 KNN，会暗含什么假设？
 
-得到：
-$$
-L_1(x) = y_k + \frac{y_{k + 1} - y_k}{x_{k + 1} - x_k}(x - x_k)
-$$
+## 参考答案
 
-```python
-import numpy as np
-#数据准备
-X = np.arange(-2*np.pi, 2*np.pi, 1) # 定义样本点X，从-pi到pi每次间隔1
-Y = np.sin(X) # 定义样本点Y，形成sin函数
-new_x = np.linspace(X.min(), X.max(), 200)  # 限制在观测范围内，避免无意外推 # 定义插值点
-# 进行样条插值
-import scipy.interpolate as spi
-# 进行一阶样条插值
-ipo1 = spi.splrep(X, Y, k=1)  # 样本点导入，生成参数
-iy1 = spi.splev(new_x, ipo1)  # 根据观测点和样条参数，生成插值
-```
+1. 有效值排序为 $2,4,8$，中位数为 4。
+2. 斜率 $(10-4)/(4-1)=2$，所以 2 时刻为 $4+2=6$。
+3. 均值、方差等已经使用测试信息。正确顺序是先划分，并在训练集或交叉验证训练折拟合。
+4. 暗含城市之间存在人为的等距顺序，例如北京到广州的距离是北京到上海的两倍；这种数字距离通常没有业务依据。
 
+## 复习卡片与下一步
 
+记住四条：确认观察单位；处理规则来自训练；预测时只能用当时可用的信息；插值需要坐标和变化假设。下一篇通过图检查数据分布、异常和关系。
 
-#### 三次样条插值
+[上一篇 必备数学与 Python 基础](/notes/mathematical-modeling-foundations/) · [下一篇 数据可视化与探索分析](/notes/mathematical-modeling-data-visualization/)
 
-两个数据点间的填充为三次多项式。
+## 参考资料
 
-在一组离散的点中间插值。在**每两个相邻点 $x_i$与 $x_{i+1}$ 之间**，用一段**三次多项式** $S_i(x)=a_ix^3+b_ix^2+c_ix+d_i ，\text{定义域}x \in [x_i,x_{i + 1}]$去连接这两个点
-
-插值先要求每段通过自己的两个端点：$S_i(x_i)=y_i$、$S_i(x_{i+1})=y_{i+1}$。相邻段 $S_i$ 与 $S_{i+1}$ 的共同节点是 $x_{i+1}$，应在该点满足：
-
-$$
-S_i(x_{i+1})=S_{i+1}(x_{i+1}),\quad
-S_i'(x_{i+1})=S_{i+1}'(x_{i+1}),\quad
-S_i''(x_{i+1})=S_{i+1}''(x_{i+1}).
-$$
-
-注：内部节点只能给出部分方程，还需要2 个边界条件才能唯一确定整套样条。
-
-* 自然样条：两端二阶导数 \(S''=0\)
-* 夹持样条：指定两端一阶导数值
-
-```python
-import scipy.interpolate as spi
-
-# X,Y：原始离散样本点
-# k=3 代表使用三次样条
-ipo3 = spi.splrep(X, Y, k=3)    # 计算样条全部参数
-# new_x：你想要插值的一系列新横坐标
-iy3 = spi.splev(new_x, ipo3)   # 代入新x，算出插值得到的y值
-```
-
-
-
-#### 拉格朗日插值
-
-核心目标：
-
-已知**n+1 个离散点**$(x_0,y_0),(x_1,y_1),\dots,(x_n,y_n)$（所有x_i互不相等），构造**一个次数不超过 n 的多项式**$L(x)$，让这个多项式精准穿过每一个已知点，也就是满足$L(x_k)=y_k,\ k=0,1,\dots,n$，把离散点连成一条连续曲线，这个方法就是拉格朗日插值。
-
-对于一组数据\(\{y\}\)和下标\(\{x\}\)，定义 n+1 个拉格朗日插值基函数：
-$$
-l_k(x) = \prod_{\substack{i=0,i\neq k}}^{n} \frac{x - x_i}{x_k - x_i} 
-$$
-解释：
-
-当$x=x_k$时：分子每一项$x_k-x_i$和分母$x_k-x_i$完全相等，每一个分式都等于1，累乘结果$\boldsymbol{l_k(x_k)=1}$；
-
-当$x=x_m $($m\neq k$，其他已知节点）：分子会出现$x_m-x_m=0$，整个累乘结果$\boldsymbol{l_k(x_m)=0}$​。
-
-举个最简单例子：2 个点$x_0,x_1$，
-
-$k=0$时：
-
-$l_0(x)=\frac{x-x_1}{x_0-x_1}$
-
-$x=x_0$时$l_0=1$，$x=x_1$时$l_0=0$；
-
-$k=1$时$l_1(x)=\frac{x-x_0}{x_1-x_0}$，$x=x_1$时$l_1=1$，$x=x_0$时$l_1=0$​。
-
-**一句话总结基函数作用：$l_k(x)$只在自己的节点$x_k$上取 1，在其他所有已知节点上都取 0。**
-
-这本质上是一个分式，当$x=x_k$时$l_k(x)=1$，这一操作实现了离散数据的连续化。按照对应下标的函数值加权求和可以得到整体的拉格朗日插值函数：
-$$
-L(x) = \sum_{k=0}^{n} y_k l_k(x) 
-$$
-
-代入任意节点$x_m$：除了$k=m$那一项$y_m l_m(x_m)=y_m\times1=y_m$，其余所有$k\neq m$的项$y_k l_k(x_m)=y_k\times0=0$，最终$\boldsymbol{L(x_m)=y_m}$，完美贴合已知点；
-
-每个$y_k$搭配一个 “专属开关函数”$l_k(x)$：走到$x_k$位置，这个开关打开输出$y_k$​，走到别的节点开关全部关闭不干扰，把所有开关加权拼起来，曲线就刚好穿过全部已知点。
-
-拉格朗日插值的核心就是**构造一组 “定点开关” 基函数，用已知函数值加权组合，强制多项式穿过所有离散节点，实现离散数据连续拟合**。
-
-
-```python
-def lagrange(x0,y0,x):
-    y=[]
-    for k in range(len(x)):
-        s=0
-        for i in range(len(y0)):
-           t=y0[i]
-           for j in range(len(y0)):
-              if i!=j:
-                t*=(x[k]-x0[j])/(x0[i]-x0[j])
-           s+=t
-        y.append(s)
-    return y
-```
-
-```python
-import matplotlib.pyplot as plt
-from scipy.interpolate import interp1d
-x0=[1,2,3,4,5]
-y0=[1.6,1.8,3.2,5.9,6.8]
-x=np.arange(1,5,1/30)
-f1=interp1d(x0,y0,'linear')
-y1=f1(x)
-f2=interp1d(x0,y0,'cubic')
-y2=f2(x)
-y3=lagrange(x0,y0,x)
-plt.plot(x0,y0,'r*')
-plt.plot(x,y1,'b-',x,y2,'y-',x,y3,'r-')
-plt.show()
-```
-
-
-
-
-
-
-
+- [Datawhale《数学建模导论》第6章](https://datawhalechina.github.io/intro-mathmodel/#/CH6/第六章-数据处理与拟合模型)：用于建立知识目录，建议与本篇的手算和案例对照阅读。
+- [scikit-learn 常见错误与信息泄漏](https://scikit-learn.org/stable/common_pitfalls.html)。
+- [SciPy 插值指南](https://docs.scipy.org/doc/scipy/tutorial/interpolate.html)。

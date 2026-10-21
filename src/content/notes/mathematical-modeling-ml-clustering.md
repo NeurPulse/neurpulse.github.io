@@ -1,268 +1,134 @@
 ---
-title: '数学建模：聚类算法'
-description: 'K-Means、DBSCAN等无监督聚类方法'
+title: "数学建模：聚类算法"
+description: "通过手算分组理解 K-Means、DBSCAN、层次聚类和 GMM"
 pubDate: 2026-08-07
-updatedDate: 2026-10-19
-order: 13
+updatedDate: 2026-10-21
+order: 21
 category: '数学建模'
-tags: ['聚类','K-Means','DBSCAN','无监督学习']
+tags: ["聚类","K-Means","DBSCAN","无监督学习","零基础"]
 ---
 
-### 聚类算法
+> [专题学习地图](/notes/mathematical-modeling-roadmap/) · 第 21 / 27 篇
 
-#### k-means 算法
+## 学习目标与先修知识
 
-> K-means 算法，也称为 K 平均或者 K 均值，一般作为掌握聚类算法的第一个算法。这里的 k 为常数，需事先设定，通俗地说该算法是将没有标注的 M 个样本通过迭代的方式聚集成 k 个簇。在对样本进行聚集的过程往往是以样本之间的距离作为指标来划分。
+目标是手算 K-Means 一轮更新和轮廓系数，理解 DBSCAN 的核心点、边界点与噪声，以及层次聚类和 GMM 的区别。先修为距离、均值和标准化。聚类没有已知类别标签，不代表结果可以不评价。
 
-> 它和 KNN 有很多共同之处，同样需要计算距离，同样会进行近邻寻找，但它的过程没有标签指导，所以具体流程也就有所不同。
+可回看：[几何模型与线性代数](/notes/mathematical-modeling-geometry/) · [机器学习流程与 KNN](/notes/mathematical-modeling-ml-sklearn-knn/)。
 
-通俗一点来说，聚类如果希望我们把数据分成 k 堆，那么首先会随机抽 k 个幸运儿作为样本的中心点，然后对于数据中每个样本，找到它最近的那个中心点作为 “大哥”，然后加入他的帮派；每个小弟都找到自己大哥以后帮派内会 “比武” 选出新的 “大哥”，K-means 的新中心是簇内各点的算术平均，不必对应某个原始样本；选择最接近中心的实际样本属于另一类代表点思路；然后所有的小弟集中起来，再去给他们重新选择自己想加入的堂口的机会，于是诞生了一批二五仔换到其他的帮派里面去…… 当这个数据集里面不再存在二五仔的时候聚类就结束了，每个堂口的老大也确定了
+## 问题背景与使用时机
 
-k-means 算法是根据给定的 n 个数据对象的数据集，构建 k 个划分聚类的方法，每个划分聚类即为一个簇。该方法将数据划分为 k 个簇，每个簇至少有一个数据对象，每个数据对象必须属于而且只能属于一个簇。同时要满足同一簇中的数据对象相似度高，不同簇中的数据对象相似度较小。聚类相似度是利用各簇中对象的均值来进行计算的。
+想按客户行为分群，却没有现成的“高价值、中价值、低价值”标签，可以先探索聚类。算法会按选定特征和距离组织样本，业务含义仍需后续解释。
 
-K-Means 的执行流程
+如果本来就有明确标签并希望预测新客户类别，任务可能应该设为监督分类。聚类编号0、1、2没有天然的优劣顺序。
 
-1. 选取 K 个点做为初始聚集的簇心（也可选择非样本点）。
+## 核心概念与符号
 
-2. 分别计算每个样本点到 K 个簇核心的距离，找到离该点最近的簇核心，将它归属到对应的簇。
+### K-Means
 
-3. 所有点都归属到簇之后，M 个点就分为了 K 个簇。之后重新计算每个簇的中心，也就是每个堂口的老大。
+交替执行“分配到最近中心”和“更新为组均值”，最小化：
 
-4. 反复迭代 2 - 3 步骤，直到达到某个中止条件。常用的中止条件有迭代次数、最小平方误差 MSE、簇中心点变化率等。
-
-对于 KMean 算法来说有三个比较重要的因素要考虑，分别如下：
-
-- k 值的选择：k 值对最终结果的影响至关重要，而它却必须要预先给定。比较合适的方法有肘部图法、轮廓系数法等。
-- 异常点的干扰：K-means 算法在迭代的过程中使用所有点的均值作为新的中心，如果簇中存在异常点，将导致均值偏差比较严重。
-- 初值敏感：K-means 算法是初值敏感的，选择不同的初始值可能导致不同的簇划分规则。为了避免这种敏感性导致的最终结果异常性，可以采用初始化多套初始节点构造不同的分类规则，然后选择最优的构造规则。针对这点后面因此衍生了：二分 K-Means 算法、K-Means++ 算法、Canopy 算法等。
-
-衡量聚类好坏的标准可以用轮廓系数来描述。轮廓系数的定义为:
 $$
-s(i)=\frac{b(i)-a(i)}{\max\{a(i),b(i)\}}
+J=\sum_{k=1}^K\sum_{i:c_i=k}\|\boldsymbol x_i-\boldsymbol\mu_k\|^2.
 $$
-轮廓系数在 [-1,1] 之间，越大越合理。
 
-判断最优的 k 值会采取肘部图策略。肘部法则的计算原理是损失函数，损失函数是每个变量点到其类别中心的位置距离平方和。在选择类别数量上，肘部法则会把不同值的成本函数值画出来。肘部就是指这个图的拐点，下降从快到慢的点。
+中心可以不在任何原始样本上。算法依赖初值，通常只能保证相应迭代目标不增加，不保证找到全局最好分组。K-Means++ 改善初始化，多次启动增加找到较好局部解的机会。空簇需要实现中的明确处理。
+
+轮廓系数为 $s(i)=[b(i)-a(i)]/\max(a(i),b(i))$，a 是到同簇其他点的平均距离，b 是到其他各簇平均距离的最小值。范围[-1,1]，一般越大表示当前距离下更分离，单样本簇通常约定0。
+
+### DBSCAN
+
+eps 邻域内至少有 min_samples 个点的为核心点，scikit-learn 计数包括自身。边界点自身不够密，但能从核心点到达；既非核心也无法从核心到达的标为噪声-1。密度直达通常不对称，密度相连用于组织簇。
+
+### 层次与概率分组
+
+凝聚层次聚类从单点出发，按簇间准则合并。单链接看最近点对、全链接看最远点对、Ward 关注组内平方和增量。Ward 通常配欧氏几何。GMM 假设由多个高斯分布混合产生，可输出软归属概率，不只是一枚硬标签。
+
+## 手算一个最小例子
+
+一维样本0、2、8、10，初始中心0和10。第一次分配为{0,2}、{8,10}，更新中心为1和9；再分配不变，停止。
+
+组内平方和为 $1+1+1+1=4$。对点0，同簇距离 a=2，到另簇的平均距离 b=(8+10)/2=9，轮廓系数为 $(9-2)/9=7/9$。
+
+这并不证明现实中必然有两个群体：K是我们给定的，结果还依赖使用了哪些变量和怎样缩放。若某个变量单位从元换成分，欧氏距离可能改变，分群也可能改变。
+
+## 建模步骤与完整案例
+
+案例：用三团二维教学点比较不同聚类结构。先标准化，在预先给定的 K=2至5 中比较内部轮廓系数，再演示 DBSCAN、Ward 与 GMM。
+
+这里是在描述当前样本，不把全样本的轮廓分数称为对未来标签的预测准确率。真实客户分群还应看不同样本、时间和参数下的稳定性，解释群体特征，并判断分群是否支持行动。
+
+## Python 实现与结果解释
+
+配套文件：[查看或下载本篇完整脚本](/downloads/math-modeling/mathematical-modeling-ml-clustering.py)。
 
 ```python
 import numpy as np
+from sklearn.datasets import make_blobs
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans, DBSCAN, AgglomerativeClustering
+from sklearn.mixture import GaussianMixture
+from sklearn.metrics import silhouette_score
 
-def init_cent(dataset, K):
-    idx = np.random.choice(len(dataset), size=K, replace=False)
-    return dataset[idx].astype(float, copy=True)
+small = np.array([[0.], [2.], [8.], [10.]])
+hand = KMeans(n_clusters=2, init=np.array([[0.], [10.]]), n_init=1, random_state=42)
+hand.fit(small)
+assert np.allclose(np.sort(hand.cluster_centers_.ravel()), [1., 9.])
+assert np.isclose(hand.inertia_, 4.)
 
-def Kmeans(dataset, K, init_cent=init_cent, max_iter=300):
-    dataset = np.asarray(dataset, dtype=float)
-    if dataset.ndim != 2 or not np.isfinite(dataset).all() or not 1 <= K <= len(dataset):
-        raise ValueError("要求二维有限数据且 1 <= K <= 样本数")
-    centroids = init_cent(dataset, K)
-    previous = np.full(len(dataset), -1, dtype=int)
-    for _ in range(max_iter):
-        distances = ((dataset[:, None, :] - centroids[None, :, :]) ** 2).sum(-1)
-        cluster = distances.argmin(axis=1)
-        if np.array_equal(cluster, previous):
-            break
-        previous = cluster.copy()
-        for i in range(K):
-            members = dataset[cluster == i]
-            if len(members):
-                centroids[i] = members.mean(axis=0)
-            # 简化约定：空簇保留旧中心，避免对空数组求均值产生 NaN。
-    cluster = ((dataset[:, None, :] - centroids[None, :, :]) ** 2).sum(-1).argmin(1)
-    return centroids, cluster
+X, _ = make_blobs(n_samples=180, centers=3, cluster_std=0.7, random_state=42)
+z = StandardScaler().fit_transform(X)
+scores = {}
+for k in range(2, 6):
+    labels = KMeans(n_clusters=k, n_init=10, random_state=42).fit_predict(z)
+    scores[k] = silhouette_score(z, labels)
+print("各K轮廓系数:", scores)
+
+density_labels = DBSCAN(eps=0.35, min_samples=5).fit_predict(z)
+hierarchy_labels = AgglomerativeClustering(n_clusters=3, linkage="ward").fit_predict(z)
+mixture = GaussianMixture(n_components=3, random_state=42).fit(z)
+probability = mixture.predict_proba(z)
+print("DBSCAN簇标签及数量:", np.unique(density_labels, return_counts=True))
+print("层次聚类标签:", np.unique(hierarchy_labels))
+print("第一个点的GMM归属概率:", probability[0])
+assert np.allclose(probability.sum(axis=1), 1.)
 ```
 
-```python
-from sklearn.cluster import KMeans  
+轮廓系数需要适当数量的有效簇；如果 DBSCAN 全是噪声或只有一个簇，就不能机械调用它。噪声标签是算法在当前 eps、尺度与密度阈值下的结果，不自动意味着数据错误。
 
-import numpy as np  
+## 方法选择与常见误区
 
-# 创建一个随机数据集  
+| 特征结构 | 可先尝试 | 局限 |
+|---|---|---|
+| 紧凑、近似球形且规模相近 | K-Means | 初值、异常值和非球形簇 |
+| 非规则形状、有噪声 | DBSCAN | 单一eps难适应变密度 |
+| 想观察不同粒度的合并 | 层次聚类 | 链接准则影响明显，计算成本 |
+| 椭圆簇及软归属 | GMM | 高斯假设、成分数与协方差估计 |
 
-X = np.random.rand(100, 2)   
+肘部图和轮廓只是辅助，不会自动给出唯一正确的K。若有外部已知标签，可额外用 ARI 等比较，但不得又用该标签来挑结果，再假装完全无监督发现。
 
-# 创建KMeans聚类模型，设置簇的数量为3  
+## 练习
 
-kmeans = KMeans(n_clusters=3)  
+1. K-Means 中心一定是样本点吗？
+2. 若 DBSCAN 某点邻域数量不足，但紧邻核心点，它一定是噪声吗？
+3. 组编号从0变成2是否意味着聚类变差？
+4. 为什么把收入和年龄原始值直接计算距离可能不合理？
 
-# 使用数据集拟合模型  
+## 参考答案
 
-kmeans.fit(X)  
+1. 不一定，它是组均值，可能位于样本之间。
+2. 不一定，可能是边界点。只有无法从核心结构到达等情形才标噪声。
+3. 不是，编号可以置换，比较应看成员划分及相应指标。
+4. 单位和数值尺度不同，收入可能几乎支配距离。缩放或重新定义相似性应反映分析目的。
 
-# 输出聚类中心点  
+## 复习卡片与下一步
 
-print("Cluster centers:")  
+聚类先定特征和距离，再定算法与参数，最后检验稳定性和业务含义。下一篇用可训练的多层映射学习非线性关系。
 
-print(kmeans.cluster_centers_)  
+[上一篇 树模型与集成学习](/notes/mathematical-modeling-ml-tree-ensemble/) · [下一篇 神经网络与反向传播](/notes/mathematical-modeling-ml-neural-network/)
 
-# 对数据集进行预测，得到每个数据点的聚类标签  
+## 参考资料
 
-labels = kmeans.predict(X)  
-
-print("Labels of data points:")  
-
-print(labels)
-```
-
-#### DBSCAN算法
-
-DBSCAN 算法是密度聚类算法，所谓密度聚类算法就是说这个算法是根据样本的密集程度来进行聚类。
-
-要根据样本中的数据密度进行聚类，首先定义样本中数据密度大的地方应该怎样表示，这两个参数引出了两个概念：
-
-- ε- 邻域：若 $x_i $是一个样本点，邻域就是指距离 $x_i$ 不超过 ε 的范围。本质上就是衡量离 A 样本有多远。
-- 核心对象：如果$ x_i$ 的 ε- 邻域内至少含有 M 个样本，则$ x_i$ 是一个核心对象。这个 M 也被定义为密集的阈值
-
-定义核心对象之间的几何关系：
-
-- 从 A 密度直达 B：A 必须是核心点，且 B 位于 A 的 ε-邻域内；B 不必是核心点，因此这一关系一般不对称。
-- 从 A 密度可达 C：存在一条从 A 到 C 的链，链上每一步均从核心点密度直达下一点。
-- A 与 C 密度相连：存在某个点 B，使 A 和 C 都从 B 密度可达。
-
-本质上这个算法就是统计数据中的核心对象并将其归类，但这个算法有一个特点就是非核心点还可能是某个簇的边界点；只有不能从任意核心点到达的点才标为噪声 `-1`。scikit-learn 的 `min_samples` 计数包含点自身。
-
-DBSCAN 虽然能比较好地分类出离群点，但是算法稳定性很不好，参数稍微改变一点会对性能产生很大影响。
-
-步骤：
-
-1. 选择合适的ε值和M值。
-
-2. 计算每个样本点的ε-邻域。
-
-3. 确定核心对象。
-
-4. 建立密度连接关系。
-
-5. 合并密度相连的核心对象为同一聚类。
-
-6. 将离群点分类。
-
-```python
-from sklearn.cluster import DBSCAN  
-
-from sklearn.datasets import make_moons  
-
-import matplotlib.pyplot as plt  
-
-# 生成半月形数据集  
-
-X, y = make_moons(n_samples=200, noise=0.05, random_state=0)  
-
-# 执行DBSCAN聚类  
-
-dbscan = DBSCAN(eps=0.3, min_samples=5)  
-
-dbscan.fit(X)  
-
-labels = dbscan.labels_  
-
-# 绘制聚类结果  
-
-unique_labels = set(labels)  
-
-colors = [plt.cm.Spectral(each)  
-
-          for each in np.linspace(0, 1, len(unique_labels))]  
-
-for k, col in zip(unique_labels, colors):  
-
-    if k == -1:  
-
-        # Black used for noise.  
-
-        col = [0, 0, 0, 1]  
-
-    class_member_mask = (labels == k)  
-
-    xy = X[class_member_mask]  # 噪声点也需要画出
-
-    plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=tuple(col),  
-
-             markeredgecolor='k', markersize=14)  
-
-plt.title('DBSCAN')  
-
-plt.show()
-```
-
-
-
-#### 层次聚类法
-
-层次聚类法（计算距离进行聚类），不过这种聚类是一种树状结构的聚类。层次聚类有两种顺序：自上而下和自底而上。层次聚类比较新的算法有例如 BIRCH，ROCK 等。
-
-自上而下的层次聚类输入样本数据和聚类数量后进行操作：
-
-- 将样本归为一类。
-- 在一个类里面计算样本的距离，找到距离最远的 a,b。
-- 将 a,b 分到两个不同的簇里面。
-- 对剩下样本，到 a 和到 b 哪个距离更小就去哪一堆。
-- 递归生成聚类树。
-
-自底而上的层次聚类则按照这个顺序进行：
-
-- 一个样本作为一个类。
-- 计算两两之间的距离，最小的两个点合并为一个类别。
-- 重复上一个操作直到所有数据被归为一类。
-
-```python
-import numpy as np  
-
-import matplotlib.pyplot as plt  
-
-from scipy.cluster.hierarchy import dendrogram, linkage  
-
-# 生成随机数据  
-
-np.random.seed(0)  
-
-X = np.random.multivariate_normal([0, 0], [[1, 0.5], [0.5, 1]], size=500)  
-
-# 执行层次聚类  
-
-linked = linkage(X, 'ward')  
-
-# 绘制层次聚类模型图  
-
-fig = plt.figure(figsize=(10, 7))  
-
-dendrogram(linked,  
-
-                      orientation='top',  
-
-                      distance_sort='descending',  
-
-                      show_leaf_counts=True)  
-
-plt.show()
-```
-
-```python
-from sklearn.cluster import AgglomerativeClustering  
-
-import matplotlib.pyplot as plt  
-
-# 生成随机数据  
-
-X = np.random.multivariate_normal([0, 0], [[1, 0.5], [0.5, 1]], size=500)   
-
-# 执行层次聚类  
-
-cluster = AgglomerativeClustering(n_clusters=2, metric='euclidean')
-
-cluster.fit(X)  
-
-labels = cluster.labels_
-
-# 绘制层次聚类模型图  
-
-fig = plt.figure(figsize=(10, 7))  
-
-plt.scatter(X[:, 0], X[:, 1], c=labels)  
-
-plt.show()
-```
-
-### 参考资料
-
-- [scikit-learn：聚类](https://scikit-learn.org/stable/modules/clustering.html)：K-means 目标、DBSCAN 核心点、边界点和噪声点。
+- [Datawhale《数学建模导论》第9章](https://datawhalechina.github.io/intro-mathmodel/#/CH9/第九章-机器学习与统计模型)：用于建立知识目录，建议与本篇的手算和案例对照阅读。
+- [scikit-learn 聚类](https://scikit-learn.org/stable/modules/clustering.html)。
+- [高斯混合模型](https://scikit-learn.org/stable/modules/mixture.html)。

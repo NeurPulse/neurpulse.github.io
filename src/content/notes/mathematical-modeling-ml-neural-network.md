@@ -1,395 +1,170 @@
 ---
-title: '数学建模：神经网络'
-description: '多层感知机（MLP）与反向传播'
+title: "数学建模：神经网络与反向传播"
+description: "从单个神经元的手算更新走到可验证的 MLP"
 pubDate: 2026-08-07
-updatedDate: 2026-10-19
-order: 14
+updatedDate: 2026-10-21
+order: 22
 category: '数学建模'
-tags: ['神经网络','MLP','深度学习']
+tags: ["神经网络","MLP","深度学习","零基础"]
 ---
 
-### 神经网络
+> [专题学习地图](/notes/mathematical-modeling-roadmap/) · 第 22 / 27 篇
 
-> 神经网络是一种具有非常强大能力的模型，不仅能够做常规的分类、回归等任务，还可以处理非结构化数据。但神经网络需要在大量数据下使用才有其意义，需要注意使用条件。
+## 学习目标与先修知识
 
-多层感知机
+目标是手算一个神经元的前向、损失与梯度更新，读懂多层感知机的尺寸、激活和训练循环，并完成带缩放与早停的分类案例。先修为内积、导数、分类指标与验证集。框架语法不是本篇的先修要求。
 
-> 多层感知机（MLP，Multilayer Perceptron）也叫人工神经网络（ANN，Artificial Neural Network），除了输入输出层，它中间可以有多个隐层。
->
-> 多层感知机（MLP）是一种神经网络，它由三种类型的层组成：输入层、一个或多个隐藏层（中间层），以及输出层。在这些层之间，数据会经过线性映射和激活函数处理，然后传递到下一层。
+可回看：[回归与曲线拟合](/notes/mathematical-modeling-regression/) · [机器学习流程与 KNN](/notes/mathematical-modeling-ml-sklearn-knn/)。
 
-步骤：
+## 问题背景与使用时机
 
-1. 输入层接收输入数据，并将其传递到第一个隐藏层。
+线性模型只能表达一类相对简单的关系。多个仿射变换之间加入非线性激活后，可以组合出更丰富的模式。网络更灵活，也更需要数据、正则化和验证。
 
-2. 在每一层，数据会经过线性映射（即，每个神经元的输入是上一层输出的加权和），然后通过激活函数进行非线性转换。
+多层感知机 MLP 是神经网络的一类，神经网络还包括卷积、循环等结构。小数据也可使用小网络，但不能据此认为一定优于线性或树模型。
 
-3. 经过所有隐藏层的处理后，数据最终到达输出层，得到预测结果。
+## 核心概念与符号
 
-在建立了基本的神经网络模型之后，接下来的任务是训练模型，即学习模型的参数。由于神经网络包含多层结构，计算梯度变得非常复杂。为了解决这个问题，我们采用误差反向传播算法（Backpropagation）来更新网络参数。
+### 前向计算与形状
 
-误差反向传播算法步骤：
-
-1. 从输入层开始，数据逐层传递到输出层，计算预测结果与实际数据之间的误差。
-
-2. 对于每一层，我们计算误差与上一层输出的关系。这需要对每一层的激活函数求导，以找到误差对权重的影响。
-
-3. 通过这种链式求导过程，我们可以计算出每一层权重对损失函数的梯度，从而更新权重以最小化误
-
-![mlp](../../../public/images/math-modeling/mlp.svg)
-
-我们通过矩阵$\boldsymbol{X} \in \mathbb{R}^{n\times d}$来表示$n$个样本的小批量，其中每个样本具有$d$个输入特征。对于具有$h$个隐藏单元的单隐藏层多层感知机，用$\boldsymbol{H} \in \mathbb{R}^{n\times h}$表示隐藏层的输出，称为**隐藏表示（hidden representations）**。在数学或代码中，$\boldsymbol{H}$也被称为隐藏层变量（hidden-layer variable）或隐藏变量（hidden variable）。因为隐藏层和输出层都是全连接的，所以我们有隐藏层权重$\boldsymbol{W}^{(1)} \in \mathbb{R}^{d\times h}$和隐藏层偏置$\boldsymbol{b}^{(1)} \in \mathbb{R}^{1\times h}$以及输出层权重$\boldsymbol{W}^{(2)} \in \mathbb{R}^{h\times q}$和输出层偏置$\boldsymbol{b}^{(2)} \in \mathbb{R}^{1\times q}$。形式上，我们按如下方式计算单隐藏层多层感知机的输出$\boldsymbol{O} \in \mathbb{R}^{n\times q}$：
-$$
-\begin{align} \boldsymbol{H} &= \boldsymbol{X}\boldsymbol{W}^{(1)} + \boldsymbol{b}^{(1)}, \\ \boldsymbol{O} &= \boldsymbol{H}\boldsymbol{W}^{(2)} + \boldsymbol{b}^{(2)}. \end{align} \tag{4.1.1} 
-$$
-注意在添加隐藏层之后，模型现在需要跟踪和更新额外的参数。可我们能从中得到什么好处呢？在上面定义的模型里，我们没有好处！原因很简单：上面的隐藏单元由输入的仿射函数给出，而输出（softmax操作前）只是隐藏单元的仿射函数。仿射函数的仿射函数本身就是仿射函数，但是我们之前的线性模型已经能够表示任何仿射函数。
-
- 我们可以证明这一等价性，即对于任意权重值，我们只需合并隐藏层，便可产生具有参数$\boldsymbol{W} = \boldsymbol{W}^{(1)}\boldsymbol{W}^{(2)}$和$\boldsymbol{b} = \boldsymbol{b}^{(1)}\boldsymbol{W}^{(2)} + \boldsymbol{b}^{(2)}$的等价单层模型：
-$$
-\boldsymbol{O} = (\boldsymbol{X}\boldsymbol{W}^{(1)} + \boldsymbol{b}^{(1)})\boldsymbol{W}^{(2)} + \boldsymbol{b}^{(2)} = \boldsymbol{X}\boldsymbol{W}^{(1)}\boldsymbol{W}^{(2)} + \boldsymbol{b}^{(1)}\boldsymbol{W}^{(2)} + \boldsymbol{b}^{(2)} = \boldsymbol{X}\boldsymbol{W} + \boldsymbol{b}. \tag{4.1.2}
-$$
-为了发挥多层架构的潜力，我们还需要一个额外的关键要素：在仿射变换之后对每个隐藏单元应用非线性的**激活函数（activation function）**$\sigma$。激活函数的输出（例如，$\sigma(\cdot)$）被称为**活性值（activations）**。一般来说，有了激活函数，就不可能再将我们的多层感知机退化成线性模型：
+一批 n 个样本、每个 d 个特征，用 $X\in\mathbb R^{n\times d}$ 表示。隐藏单元数 h、类别数 c：
 
 $$
-\begin{aligned} \boldsymbol{H} &= \sigma(\boldsymbol{X}\boldsymbol{W}^{(1)} + \boldsymbol{b}^{(1)}), \\ \boldsymbol{O} &= \boldsymbol{H}\boldsymbol{W}^{(2)} + \boldsymbol{b}^{(2)}. \end{aligned} \tag{4.1.3}
+H=\sigma(XW_1+b_1),\quad W_1\in\mathbb R^{d\times h},\quad b_1\in\mathbb R^h,
 $$
 
-由于$\boldsymbol{X}$中的每一行对应于小批量中的一个样本，出于记号习惯的考量，我们定义非线性函数$\sigma$也以按行的方式作用于其输入，即一次计算一个样本。应用于隐藏层的激活函数通常不仅按行操作，也按元素操作。这意味着在计算每一层的线性部分之后，我们可以计算每个活性值，而不需要查看其他隐藏单元所取的值。对于大多数激活函数都是这样。 
+$$
+Z=HW_2+b_2,\quad W_2\in\mathbb R^{h\times c},\quad b_2\in\mathbb R^c.
+$$
 
-为了构建更通用的多层感知机，我们可以继续堆叠这样的隐藏层，例如$\boldsymbol{H}^{(1)} = \sigma_1(\boldsymbol{X}\boldsymbol{W}^{(1)} + \boldsymbol{b}^{(1)})$和$\boldsymbol{H}^{(2)} = \sigma_2(\boldsymbol{H}^{(1)}\boldsymbol{W}^{(2)} + \boldsymbol{b}^{(2)})$​​，一层叠一层，从而产生更有表达能力的模型。
+H 是 $n\times h$，Z 是 $n\times c$。偏置沿样本行广播。若没有非线性，多个仿射层仍能合并为一个仿射层。
 
-**激活函数**：
+![多层感知机的形状与训练流程](/images/math-modeling/learning/neural-network.svg)
 
-1. *修正线性单元*（Rectified linear unit，*ReLU*）：
+### 激活与损失
 
-    给定元素，ReLU函数被定义为该元素与的最大值：
-   $$
-   RELU(x) = max(x,0)
-   $$
+ReLU 为 $\max(0,z)$，负区间梯度为0；0点不可导，框架通常约定反传值为0。sigmoid 把分数映射到(0,1)，适用于二分类概率；tanh 映射到(-1,1)。sigmoid、tanh 在饱和区导数很小，深层训练可能困难。
 
-   > ReLU函数通过将相应的活性值设为0，仅保留正元素并丢弃所有负元素。
-   >
-   > ![output_mlp_76f463_18_1](../../../public/images/math-modeling/output_mlp_76f463_18_1.svg)
-   >
-   > 输入为负时，ReLU函数的导数为0，而当输入为正时，ReLU函数的导数为1。 注意，当输入值精确等于0时，ReLU函数不可导。 在此时，我们默认使用左侧的导数，即当输入为0时导数为0。 我们可以忽略这种情况，因为输入可能永远都不会是0。 这里引用一句古老的谚语，“如果微妙的边界条件很重要，我们很可能是在研究数学而非工程”， 这个观点正好适用于这里。 下面我们绘制ReLU函数的导数。
-   >
-   > ![output_mlp_76f463_33_1](../../../public/images/math-modeling/output_mlp_76f463_33_1.svg)
-   >
-   > 使用ReLU的原因是，它求导表现得特别好：要么让参数消失，要么让参数通过。 这使得优化表现得更好，并且ReLU减轻了困扰以往神经网络的梯度消失问题
+多分类常用 softmax：$p_k=e^{z_k}/\sum_j e^{z_j}$，计算时减去最大分数提高数值稳定性。交叉熵为 $-\sum_k y_k\log p_k$；整数标签可由框架在内部处理，不一定手动独热。
 
-2. sigmoid函数:
+反向传播用链式法则计算损失对各参数的导数；优化器据此更新参数。两者不是同一步。梯度下降为 $\theta\leftarrow\theta-\eta\nabla_\theta L$；SGD 用小批量，Adam 等自适应方法用额外状态调节更新。
 
-   对于一个定义域在中的输入， *sigmoid函数*将输入变换为区间(0, 1)上的输出。 因此，sigmoid通常称为*挤压函数*（squashing function）： 它将范围（-inf, inf）中的任意输入压缩到区间（0, 1）中的某个值：
-   $$
-   sigmoid(x) = \frac{1}{1 + exp(-x)}
-   $$
+## 手算一个最小例子
 
-   > 对“激发”或“不激发”的生物神经元进行建模.sigmoid函数是一个自然的选择，因为它是一个平滑的、可微的阈值单元近似。 当我们想要将输出视作二元分类问题的概率时， sigmoid仍然被广泛用作输出单元上的激活函数 （sigmoid可以视为softmax的特例）。
-   >
-   > ![output_mlp_76f463_48_0](../../../public/images/math-modeling/output_mlp_76f463_48_0.svg)
+一个二分类神经元：输入 x=2、权重 w=0.5、偏置 b=0、真实标签 y=1。
 
-3.  tanh(双曲正切)函数:
+前向 $z=wx+b=1$，$p=\sigma(1)\approx0.7311$；交叉熵 $L=-\ln p\approx0.3133$。对 sigmoid 加二分类交叉熵，链式求导简化为：
 
-   与sigmoid函数类似， tanh(双曲正切)函数也能将其输入压缩转换到区间(-1, 1)上。
-   $$
-   tanh(x) = \frac{1 - exp(-2x)}{1 + exp(-2x)}
-   $$
-   
+$$
+\frac{\partial L}{\partial z}=p-y,\quad
+\frac{\partial L}{\partial w}=(p-y)x,\quad
+\frac{\partial L}{\partial b}=p-y.
+$$
 
-   全连接神经网络搭建：
+所以梯度约为 $-0.5379,-0.2689$。学习率0.1时，$w_{\mathrm{new}}\approx0.5538$、$b_{\mathrm{new}}\approx0.0269$；重新前向得到更大的正类概率和更小的损失。
 
-   ```python
-   import numpy as np
-   import torch
-   from collections import Counter
-   from sklearn import datasets
-   import torch.nn.functional as Fun
-   
-   # 1. 数据准备
-   dataset = datasets.load_iris()
-   dataut=dataset['data']
-   priciple=dataset['target']
-   input=torch.FloatTensor(dataset['data'])
-   label=torch.LongTensor(dataset['target'])
-   
-   # 2. 定义BP神经网络
-   class Net(torch.nn.Module):
-       def __init__(self, n_feature, n_hidden, n_output):
-           super(Net, self).__init__()
-           self.hidden = torch.nn.Linear(n_feature, n_hidden)   # 定义隐藏层网络
-           self.out = torch.nn.Linear(n_hidden, n_output)   # 定义输出层网络
-   
-       def forward(self, x):
-           x = Fun.relu(self.hidden(x))      # 隐藏层的激活函数,采用relu,也可以采用sigmod,tanh
-           x = self.out(x)                   # 输出层不用激活函数
-           return x
-   
-   # 3. 定义优化器损失函数
-   net = Net(n_feature=4, n_hidden=20, n_output=3)    #n_feature:输入的特征维度,n_hiddenb:神经元个数,n_output:输出的类别个数
-   optimizer = torch.optim.SGD(net.parameters(), lr=0.02) # 优化器选用随机梯度下降方式
-   loss_func = torch.nn.CrossEntropyLoss() # 对于多分类一般采用的交叉熵损失函数,
-   
-   # 4. 训练数据
-   for t in range(500):
-       out = net(input)                 # 输入input,输出out
-       loss = loss_func(out, label)     # 输出与label对比
-       optimizer.zero_grad()   # 梯度清零
-       loss.backward()         # 前馈操作
-       optimizer.step()        # 使用梯度优化器
-   
-   # 5. 得出结果
-   out = net(input) #out是一个计算矩阵，可以用Fun.softmax(out)转化为概率矩阵
-   prediction = torch.max(out, 1)[1] # 返回index  0返回原值
-   pred_y = prediction.detach().cpu().numpy()
-   target_y = label.detach().cpu().numpy()
-   
-   # 6.衡量准确率
-   accuracy = float((pred_y == target_y).astype(int).sum()) / float(target_y.size)
-   print("鸢尾花训练集准确率（不代表泛化）", accuracy)
-   
-   ```
+这是用同一个样本优化损失的演示，不是泛化验证。多隐藏层仍用同样的链式法则，只是中间导数更多。
 
-   ```python
-   
-   import numpy as np
-   import pandas as pd
-   import torch
-   from torch.utils.data import Dataset, DataLoader
-   
-   # 准备数据集
-   class TitanicDataset(Dataset):
-       def __init__(self, filepath):
-           xy = pd.read_csv(filepath)
-           # xy.shape() 可以得到xy的行列数
-           self.len = xy.shape[0]
-           # 选取相关的数据特征
-           feature = ["Pclass", "Sex", "SibSp", "Parch", "Fare"]
-           # np.array()将数据转换成矩阵，方便进行接下来的计算
-           self.fare_mean = xy["Fare"].mean()
-           features = xy[feature].copy()
-           features["Fare"] = features["Fare"].fillna(self.fare_mean)
-           encoded = pd.get_dummies(features, dtype=float)
-           self.feature_columns = encoded.columns
-           self.x_data = torch.from_numpy(encoded.to_numpy(dtype=np.float32))
-           self.y_data = torch.from_numpy(np.array(xy["Survived"]))
-   
-       # getitem函数，可以使用索引拿到数据
-       def __getitem__(self, index):
-           return self.x_data[index], self.y_data[index]
-   
-       # 返回数据的条数/长度
-       def __len__(self):
-           return self.len
-   
-   # 实例化自定义类，并传入数据地址
-   dataset = TitanicDataset('train.csv')
-   # num_workers是否要进行多线程服务，num_worker=2 就是2个进程并行运行
-   # 采用Mini-Batch的训练方法
-   train_loader = DataLoader(dataset = dataset,batch_size = 1,shuffle = True,num_workers = 0)
-   ```
+## 建模步骤与完整案例
 
-   ```python
-   # 定义模型
-   class Model(torch.nn.Module):
-       def __init__(self):
-           super(Model, self).__init__()
-           # 要先对选择的特征进行独热表示计算出维度，而后再选择神经网络开始的维度
-           self.linear1 = torch.nn.Linear(dataset.x_data.shape[1], 3)
-           self.linear2 = torch.nn.Linear(3, 1)
-   
-           self.sigmoid = torch.nn.Sigmoid()
-   
-       # 前馈
-       def forward(self, x):
-           x = self.sigmoid(self.linear1(x))
-           x = self.sigmoid(self.linear2(x))
-           return x
-   
-       # 测试函数
-       def test(self, x):
-           with torch.no_grad():
-               x = self.sigmoid(self.linear1(x))
-               x = self.sigmoid(self.linear2(x))
-               y = []
-               # 根据二分法原理，划分y的值
-               for i in x:
-                   if i > 0.5:
-                       y.append(1)
-                   else:
-                       y.append(0)
-               return y
-   
-   # 实例化模型
-   model = Model()
-   ```
+案例：用 Wine 数据训练一个小型 MLP。13个特征进入16个隐藏单元，再输出3类概率。参数量为 $13\times16+16+16\times3+3=275$。
 
-   ```python
-   # 定义损失函数
-   criterion = torch.nn.BCELoss(reduction='mean')
-   # 定义优化器
-   optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
-   
-   
-   # 防止windows系统报错
-   if __name__ == '__main__':
-       # 采用Mini-Batch的方法训练要采用多层嵌套循环
-       # 所有数据都跑100遍
-       for epoch in range(100):
-           # data从train_loader中取出数据（取出的是一个元组数据）：(x, y)
-           # enumerate可以获得当前是第几次迭代，内部迭代每一次跑一个Mini-Batch
-           for i, data in enumerate(train_loader, 0):
-               # inputs获取到data中的x的值，labels获取到data中的y值
-               x, y = data
-               x = x.float()
-               y = y.float()
-               y_pred = model(x)
-               y_pred = y_pred.squeeze(-1)
-               loss = criterion(y_pred, y)
-               print(epoch, i, loss.item())
-               optimizer.zero_grad()
-               loss.backward()
-               optimizer.step()
-   ```
+先分层留出测试，再从剩余样本分出早停验证集。缩放器只在实际用于梯度训练的部分拟合，验证集与测试集都只 transform。每轮用验证交叉熵决定是否保存当前参数，连续30轮没有足够改善就停止；最终测试只使用保存的最好模型。
 
-   ```python
-   # 测试
-   test_url = "https://raw.githubusercontent.com/minsuk-heo/kaggle-titanic/master/input/test.csv"
-   test_data=pd.read_csv(test_url)
-   feature = ["Pclass", "Sex", "SibSp", "Parch", "Fare"]
-   test_features = test_data[feature].copy()
-   test_features['Fare'] = test_features['Fare'].fillna(dataset.fare_mean)
-   encoded = pd.get_dummies(test_features, dtype=float).reindex(columns=dataset.feature_columns, fill_value=0)
-   test = torch.from_numpy(encoded.to_numpy(dtype=np.float32))
-   y=model.test(test.float())
-   
-   # 输出预测结果
-   output=pd.DataFrame({'PassengerId':test_data.PassengerId,'Survived':y})
-   output.to_csv('my_predict.csv',index=False)
-   
-   
-   
-   ```
+完整训练循环为：取输入 → 前向 → 计算损失 → 清理旧梯度 → 反向求梯度 → 优化器更新 → 在验证集检查 → 达到条件停止。不能在训练后直接把同一批样本的准确率当作未见数据效果。
 
-   
+## Python 实现与结果解释
 
-#### 时间序列最小示例
-
-这个案例独立于前面的 Titanic 模型，需要本地 `Bitcoin.csv` 的 `Bitcoin` 数值列。按时间排序后使用；先留出最后 200 个观测，再用训练段拟合缩放器。下面从窗口构造到模型训练、递归预测使用同一个 LSTM，避免把分类模型误当成时序模型。
+配套文件：[查看或下载本篇完整脚本](/downloads/math-modeling/mathematical-modeling-ml-neural-network.py)。
 
 ```python
 import numpy as np
-import pandas as pd
-import torch
-from torch import nn
-from sklearn.preprocessing import MinMaxScaler
+from copy import deepcopy
+from sklearn.datasets import load_wine
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.neural_network import MLPClassifier
+from sklearn.dummy import DummyClassifier
+from sklearn.metrics import log_loss, accuracy_score
 
-all_data = pd.read_csv("Bitcoin.csv")["Bitcoin"].to_numpy(dtype=float)
-train_window, test_data_size = 12, 200
-if len(all_data) <= test_data_size + train_window or not np.isfinite(all_data).all():
-    raise ValueError("需要足够长度且无缺失的有序数值序列")
-train_data, test_data = all_data[:-test_data_size], all_data[-test_data_size:]
-scaler = MinMaxScaler(feature_range=(-1, 1))
-scaled = scaler.fit_transform(train_data[:, None]).ravel()
-X = torch.tensor(np.stack([scaled[i:i+train_window] for i in range(len(scaled)-train_window)]), dtype=torch.float32).unsqueeze(-1)
-y = torch.tensor(scaled[train_window:], dtype=torch.float32).unsqueeze(-1)
+x, y, w, b = 2., 1., 0.5, 0.
+sigmoid = lambda z: 1/(1+np.exp(-z))
+p = sigmoid(w*x+b)
+old_loss = -np.log(p)
+gradient_w, gradient_b = (p-y)*x, p-y
+w -= 0.1*gradient_w
+b -= 0.1*gradient_b
+new_loss = -np.log(sigmoid(w*x+b))
+print("更新后的w、b、损失:", w, b, new_loss)
+assert new_loss < old_loss
 
-class ForecastLSTM(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.lstm = nn.LSTM(1, 32, batch_first=True)
-        self.fc = nn.Linear(32, 1)
+X, labels = load_wine(return_X_y=True)
+X_development, X_test, y_development, y_test = train_test_split(
+    X, labels, test_size=0.3, stratify=labels, random_state=42)
+X_train, X_valid, y_train, y_valid = train_test_split(
+    X_development, y_development, test_size=0.2,
+    stratify=y_development, random_state=42)
+scaler = StandardScaler().fit(X_train)
+z_train, z_valid = scaler.transform(X_train), scaler.transform(X_valid)
+network = MLPClassifier(
+    hidden_layer_sizes=(16,), activation="relu", solver="adam",
+    alpha=0.01, learning_rate_init=0.01, early_stopping=False, random_state=42)
+classes = np.unique(y_train)
+best_loss, stale, best_network, best_epoch = np.inf, 0, None, 0
+for epoch in range(500):
+    network.partial_fit(z_train, y_train, classes=classes)
+    validation_loss = log_loss(y_valid, network.predict_proba(z_valid), labels=classes)
+    if validation_loss < best_loss-1e-4:
+        best_loss, stale = validation_loss, 0
+        best_network, best_epoch = deepcopy(network), epoch+1
+    else:
+        stale += 1
+    if stale >= 30:
+        break
+probability = best_network.predict_proba(scaler.transform(X_test))
+prediction = best_network.classes_[probability.argmax(axis=1)]
+baseline = DummyClassifier(strategy="most_frequent").fit(X_train, y_train)
+print("网络与基线测试准确率:", accuracy_score(y_test, prediction), baseline.score(X_test, y_test))
+print("停止轮数、保存轮数:", epoch+1, best_epoch)
+assert probability.shape == (len(X_test), 3)
+assert np.allclose(probability.sum(axis=1), 1.)
 
-    def forward(self, x):
-        hidden, _ = self.lstm(x)
-        return self.fc(hidden[:, -1])
-
-torch.manual_seed(42)
-forecast_model = ForecastLSTM()
-optimizer = torch.optim.Adam(forecast_model.parameters(), lr=1e-3)
-for epoch in range(30):
-    forecast_model.train()
-    optimizer.zero_grad()
-    loss = nn.functional.mse_loss(forecast_model(X), y)
-    loss.backward()
-    optimizer.step()
-
-forecast_model.eval()
-history = scaled[-train_window:].tolist()
-with torch.no_grad():
-    for _ in range(12):
-        seq = torch.tensor(history[-train_window:], dtype=torch.float32).view(1, train_window, 1)
-        history.append(forecast_model(seq).item())
-prediction = scaler.inverse_transform(np.array(history[-12:])[:, None]).ravel()
-print("留出段前 12 步的递归预测 MSE:", np.mean((prediction-test_data[:12])**2))
-print("持久性基线 MSE:", np.mean((train_data[-1]-test_data[:12])**2))
 ```
 
-30 轮仅用于展示流程，预测效果取决于数据，不能由这段代码断言优于基线。调参时应在训练段内再划出较晚的验证段，最终留出段不参与选择。
+最多训练500轮，打印的停止轮数和保存轮数可以不同：验证效果最好的参数可能出现在更早的一轮。随机种子固定只是帮助复现，真实结论还应看多个种子和数据划分的稳定性。
 
-```python
-from tensorflow import keras
-from tensorflow.keras.datasets import mnist
-from tensorflow.keras.utils import to_categorical
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Activation
-from tensorflow.keras.optimizers import RMSprop
+## 方法选择与常见误区
 
-# 数据导入
-(x_train,y_train),(x_test,y_test) = mnist.load_data()
-print(x_train.shape,y_train.shape)
-print(x_test.shape,y_test.shape)
+- 所有隐藏单元用相同零权重初始化会产生对称性，通常需要合适随机初始化；偏置是否初始化为零是另一件事。
+- 过拟合时可减小网络、增加正则化、早停或补充数据；优化失败时还要检查尺度、学习率和梯度。
+- ReLU 的负区间可能长期没有梯度；sigmoid 饱和可能梯度过小；损失定义和输出激活必须匹配。
+- 图像常考虑 CNN，时间依赖可考虑 RNN/LSTM 等结构；只有真正需要时再增加结构复杂度。
+- PyTorch 中常见 `CrossEntropyLoss` 接收原始 logits，不要又先 softmax 再当 logits 传入。不同接口约定应对照文档。
+- 大网络不是自动优势；必须与线性、树等合理基线在相同数据边界和指标下比较。
 
-# 数据预处理
-x_train = x_train.reshape(x_train.shape[0],-1) / 255.0
-x_test = x_test.reshape(x_test.shape[0],-1) / 255.0
-y_train = to_categorical(y_train,num_classes=10)
-y_test = to_categorical(y_test,num_classes=10)
+## 练习
 
-# 直接使用keras.Sequential()搭建全连接网络模型
-model = Sequential()
-model.add(Dense(128, input_shape=(784,)))
-model.add(Activation('relu'))
-model.add(Dense(10))
-model.add(Activation('softmax'))
+1. 输入5维、隐藏4维、输出2维，两层全连接共多少参数？
+2. 为什么连续两层线性映射没有非线性时不能得到任意复杂关系？
+3. 反向传播与优化器分别做什么？
+4. 单样本更新后损失下降能证明模型泛化好吗？
+5. 多分类概率行和应满足什么条件？
 
-#lr为学习率，epsilon防止出现0，rho/decay分别对应公式中的beta_1和beta_2
-rmsprop = RMSprop(learning_rate=0.001, rho=0.9, epsilon=1e-08)
-model.compile(optimizer=rmsprop,loss='categorical_crossentropy',metrics=['accuracy'])
-print("---------------training---------------")
-model.fit(x_train,y_train,epochs=10,batch_size=32)
-print('\n')
-print("---------------testing---------------")
-loss,accuracy = model.evaluate(x_test,y_test)
-print('loss:',loss)
-print('accuracy:',accuracy)
-```
+## 参考答案
 
+1. 第一层 $5\times4+4=24$，第二层 $4\times2+2=10$，共34。
+2. 仿射函数的复合仍是仿射函数，可以合并成一个权重与偏置。
+3. 前者计算导数，后者根据导数与自身状态更新参数。
+4. 不能，只表明对该样本的目标下降；需独立验证。
+5. 各项非负，行和约为1；这检查概率计算形式，不代表概率已校准。
 
+## 复习卡片与下一步
 
-```python
-import numpy as np
-import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense
+先能手算一个神经元，再看层与层的尺寸，最后学习框架。框架实践可继续读站内 PyTorch 的张量、模型构建和自动求导笔记。下一篇在不能方便求导或存在离散编码时学习随机优化。
 
-# 模拟数据
-X = all_data[:-1]  # 输入序列
-y = all_data[1:]   # 目标序列
-# 重塑数据以适应LSTM
-X = X.reshape((X.shape[0], 1, 1))
-y = y.reshape((y.shape[0], 1))
+[上一篇 聚类算法](/notes/mathematical-modeling-ml-clustering/) · [下一篇 进化计算与群体智能](/notes/mathematical-modeling-evolutionary/)
 
-model = Sequential()
-model.add(LSTM(50, activation='relu', input_shape=(X.shape[1], X.shape[2])))  # 50个LSTM单元
-model.add(Dense(1))  # 输出层，因为我们的任务是回归，所以这里是1个神经元
-model.compile(optimizer='adam', loss='mse', metrics=['mse'])
-cut = int(len(X) * 0.8)
-history = model.fit(X[:cut], y[:cut], epochs=100, batch_size=32,
-                    validation_split=0.2, shuffle=False)
-test_loss = model.evaluate(X[cut:], y[cut:], return_dict=True)
-print('留出段 MSE:', test_loss['mse'])
-```
+## 参考资料
 
-### 示例运行条件
-
-各案例需分别运行，避免复用前一案例的 `model`。Titanic 示例需要对应字段完整的训练 CSV；测试集无标签时只能导出预测，不能计算测试准确率。TensorFlow 案例需要额外安装 TensorFlow，不能仅凭代码语法通过就视作完成数据集复现。
+- [Datawhale《数学建模导论》第9章](https://datawhalechina.github.io/intro-mathmodel/#/CH9/第九章-机器学习与统计模型)：用于建立知识目录，建议与本篇的手算和案例对照阅读。
+- [scikit-learn MLP](https://scikit-learn.org/stable/modules/neural_networks_supervised.html)。
+- [PyTorch 交叉熵接口](https://docs.pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html)。

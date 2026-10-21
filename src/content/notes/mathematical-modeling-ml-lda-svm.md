@@ -1,399 +1,148 @@
 ---
-title: '数学建模：线性判别与支持向量机'
-description: '线性判别分析（LDA）与支持向量机（SVM）'
+title: "数学建模：线性判别与支持向量机"
+description: "从投影与间隔理解 LDA、软间隔和核函数"
 pubDate: 2026-08-07
-updatedDate: 2026-10-19
-order: 11
+updatedDate: 2026-10-21
+order: 19
 category: '数学建模'
-tags: ['线性判别','SVM','机器学习','分类']
+tags: ["线性判别","SVM","机器学习","分类","零基础"]
 ---
 
-### [线性判别](https://blog.csdn.net/xiaoyingxixi1989/article/details/142370417?ops_request_misc=elastic_search_misc&request_id=3100290b811576dc65b3b19e8be2f8c6&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~all~top_click~default-1-142370417-null-null.142^v102^pc_search_result_base6&utm_term=%E7%BA%BF%E6%80%A7%E5%88%A4%E5%88%AB%E5%88%86%E6%9E%90&spm=1018.2226.3001.4187)与[支持向量机](https://blog.csdn.net/panss__/article/details/148094354?ops_request_misc=elastic_search_misc&request_id=ad0a5d74058ad32ddd708add90c0ea80&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~all~top_positive~default-1-148094354-null-null.142^v102^pc_search_result_base6&utm_term=%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E6%9C%BA&spm=1018.2226.3001.4187)
+> [专题学习地图](/notes/mathematical-modeling-roadmap/) · 第 19 / 27 篇
 
-#### 线性判别分析：
+## 学习目标与先修知识
 
-线性判别分析（LDA），由于是费舍尔所发明，故又名费舍尔判别。LDA在模式识别领域（比如人脸识别，舰艇识别等图形图像识别领域）中有非常广泛的应用。LDA是一种监督学习的降维技术，也就是说它可以同时实现降维和分类两个操作。LDA的思想可以用一句话概括，就是“投影后类内方差最小，类间方差最大”，如图所示。 我们要将数据在低维度上进行投影，投影后希望每一种类别数据的投影点尽可能的接近，而不同类别的数据的类别中心之间的距离尽可能的大。
+目标是区分 LDA 的投影思想和 SVM 的最大间隔思想，手算一个方向与分类边界，解释软间隔参数 C、核函数和 gamma，并用标准实现完成验证。先修为内积、矩阵、分类与标准化。
 
-![fe55adcbb4c19c4ea4d8837ecaea278a](../../../public/images/math-modeling/fe55adcbb4c19c4ea4d8837ecaea278a.png)
+可回看：[几何模型与线性代数](/notes/mathematical-modeling-geometry/) · [机器学习流程与 KNN](/notes/mathematical-modeling-ml-sklearn-knn/)。
 
-线性判别分析的流程：
+## 问题背景与使用时机
 
-- 对于给定有标签数据集$(x_i,y_i)$，计算出均值和协方差	。
+两类点可能沿某个方向重叠少，投影后便于分类；也可能适合用一条线隔开，并希望这条线离两侧最近的点都尽量远。这分别引出 LDA 和 SVM。
 
-- 投影到直线$y=\boldsymbol{w}^T\boldsymbol{x}$以后均值和协方差变成了$\boldsymbol{w}^T \boldsymbol{\mu}_i$和$\boldsymbol{w}^T \Sigma_i \boldsymbol{w}$。
+它们都能给出线性边界，但目标、概率假设与影响边界的数据不同。LDA 使用类别统计结构，SVM 强调间隔及违反间隔的代价。
 
-- 类内差别尽量小，类间差别尽可能大，列出目标函数：
-  $$
-  J = \frac{\boldsymbol{w}^T (\boldsymbol{\mu}_0 - \boldsymbol{\mu}_1)(\boldsymbol{\mu}_0 - \boldsymbol{\mu}_1)^T \boldsymbol{w}}{\boldsymbol{w}^T (\Sigma_0 + \Sigma_1)\boldsymbol{w}}
-  $$
+## 核心概念与符号
 
-- 记$S_w = \Sigma_0 + \Sigma_1$，$S_b = (\boldsymbol{\mu}_0 - \boldsymbol{\mu}_1)(\boldsymbol{\mu}_0 - \boldsymbol{\mu}_1)^T$，那目标函数就变成了一个广义瑞利商 $$J = \frac{\boldsymbol{w}^T S_b \boldsymbol{w}}{\boldsymbol{w}^T S_w \boldsymbol{w}}$$ 这是广义特征值/瑞利商优化问题，不能把下列等式约束二次问题直接称为凸优化；将分母归一后得到：
-  $$
-  \begin{cases} \min \quad -\boldsymbol{w}^T S_b \boldsymbol{w} \\ \text{s.t.}\quad \boldsymbol{w}^T S_w \boldsymbol{w} = 1 \end{cases} ​
-  $$
+### LDA 从类内与类间差异出发
 
+两类均值为 $\boldsymbol\mu_0,\boldsymbol\mu_1$。类内散布矩阵定义为：
 
+$$
+S_w=\sum_{c=0}^1\sum_{i:y_i=c}
+(\boldsymbol x_i-\boldsymbol\mu_c)(\boldsymbol x_i-\boldsymbol\mu_c)^T.
+$$
 
+它是离均差外积的和；若从样本协方差计算，第 c 类要乘 $n_c-1$。投影 $\boldsymbol w^T\boldsymbol x$ 后，希望均值分开、类内波动小：
 
+$$
+J(\boldsymbol w)=
+\frac{[\boldsymbol w^T(\boldsymbol\mu_1-\boldsymbol\mu_0)]^2}
+{\boldsymbol w^TS_w\boldsymbol w}.
+$$
 
+当 $S_w$ 可逆且问题非退化时，方向正比于 $S_w^{-1}(\boldsymbol\mu_1-\boldsymbol\mu_0)$。奇异或高维时可用正则化、收缩或合适分解。高斯类条件分布且共享协方差的 LDA 还可产生概率分类边界；类别先验会影响阈值。
 
+### SVM 从间隔出发
 
-线性可分:
+设标签为 $-1,+1$，边界 $\boldsymbol w^T\boldsymbol x+b=0$。点到边界距离为 $|\boldsymbol w^T\boldsymbol x+b|/\|\boldsymbol w\|$。软间隔模型为：
+
+$$
+\min_{\boldsymbol w,b,\boldsymbol\xi}\frac12\|\boldsymbol w\|^2+C\sum_i\xi_i,
+\qquad y_i(\boldsymbol w^T\boldsymbol x_i+b)\ge1-\xi_i,\quad \xi_i\ge0.
+$$
+
+C 越大越重罚违反间隔，越小越愿意容忍违反来换取较宽间隔。支持向量是影响边界的关键样本，许多远离间隔的训练点不直接决定最终解。
+
+### 核函数
+
+核通过 $K(x,z)$ 表示某特征空间内积。线性核为 $x^Tz$，多项式核可写 $(\gamma x^Tz+c)^d$，RBF 为 $\exp[-\gamma\|x-z\|^2]$。RBF 的 gamma 大时影响更局部、边界可更复杂。并非任意相似度都是合法半正定核，sigmoid 形式也不是任意参数下都满足要求。
+
+## 手算一个最小例子
+
+LDA 设均值差为 $(2,0)^T$，类内散布为 $\begin{bmatrix}2&0\\0&1\end{bmatrix}$，则方向为 $(1,0)^T$，表示主要沿 x 轴投影。方向乘任何非零常数不会改变投影排序；分类阈值还要结合先验和分布设定。
+
+SVM 一维样本为0、1属于负类，3、4属于正类。最近的异类点为1和3，最大间隔边界在中点2。取 $w=1,b=-2$，两侧支持点的函数分数恰为 -1和1，间隔宽度 $2/|w|=2$。
+
+查询2.5时分数为0.5，预测正类。这个分数不是0.5的类别概率；SVM 决策值与概率需要区分。
+
+## 建模步骤与完整案例
+
+案例：用 Iris 的4个尺寸预测品种。对 LDA，使用带收缩的共享协方差估计；对 SVM，把标准化与 RBF 分类器放入 Pipeline，在训练内部选择 C 与 gamma。最终测试只评价选择后的方案。
+
+LDA 也能用于监督降维，但最多有“类别数减1”个判别方向，并受原特征维数限制；它与不使用标签的 PCA 不同。SVM 可处理非线性边界，但缩放、核与参数选择要保持同样的验证边界。
+
+## Python 实现与结果解释
+
+配套文件：[查看或下载本篇完整脚本](/downloads/math-modeling/mathematical-modeling-ml-lda-svm.py)。
 
 ```python
 import numpy as np
+from sklearn.svm import SVC
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split, GridSearchCV, StratifiedKFold
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
 
-import matplotlib.pyplot as plt
+direction = np.linalg.solve([[2., 0.], [0., 1.]], [2., 0.])
+assert np.allclose(direction, [1., 0.])
+hand = SVC(kernel="linear", C=1e4).fit([[0.], [1.], [3.], [4.]], [-1, -1, 1, 1])
+print("手算SVM的w、b:", hand.coef_, hand.intercept_)
+assert np.allclose(hand.coef_, [[1.]], atol=1e-3)
+assert np.allclose(hand.intercept_, [-2.], atol=1e-3)
 
-from matplotlib.colors import ListedColormap
-
-from tqdm import tqdm, trange
-
-data = np.loadtxt('linear.csv', delimiter=',')
-
-print('数据集大小：', len(data))
-
-x = data[:, :2]
-
-y = data[:, 2]
-
-# 数据集可视化
-
-plt.figure()
-
-plt.scatter(x[y == -1, 0], x[y == -1, 1], color='red', label='y=-1')
-
-plt.scatter(x[y == 1, 0], x[y == 1, 1], color='blue', marker='x', label='y=1')
-
-plt.xlabel(r'$x_1$')
-
-plt.ylabel(r'$x_2$')
-
-plt.legend()
-
-plt.show()
-
+X, y = load_iris(return_X_y=True)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.3, stratify=y, random_state=42)
+lda = LinearDiscriminantAnalysis(solver="lsqr", shrinkage="auto")
+lda.fit(X_train, y_train)
+search = GridSearchCV(
+    make_pipeline(StandardScaler(), SVC(kernel="rbf")),
+    {"svc__C": [0.1, 1., 10.], "svc__gamma": ["scale", 0.1, 1.]},
+    cv=StratifiedKFold(5, shuffle=True, random_state=42)
+)
+search.fit(X_train, y_train)
+print("SVM参数:", search.best_params_)
+print("LDA测试准确率:", lda.score(X_test, y_test))
+print("SVM测试准确率:", search.score(X_test, y_test))
 ```
 
+手算部分验证最简单的边界；完整案例展示真实训练与独立测试。不要为了讲解 SMO 就先让小白实现整个求解器，理解输入、目标与边界后再研究成对更新、KKT 条件和收敛判据。
 
+## 方法选择与常见误区
 
-```python
-def SMO(x, y, ker, C, max_iter):
+| 情况 | 可优先比较 | 注意 |
+|---|---|---|
+| 类别近似共享协方差，想要线性解释 | LDA | 检查类分布与协方差稳定性 |
+| 中小规模非线性分类 | RBF SVM | 缩放、C与gamma需联合验证 |
+| 稀疏高维线性分类 | 线性分类器 | 计算量与正则化 |
+| 想无监督压缩输入 | PCA | 不使用类别标签 |
 
-    '''
+C 大不等于一定准确，也不等于“去掉了松弛变量”；gamma 大不等于一定能抓住真实规律。若不同类严重重叠，任何硬分隔都可能不合理。输出决策值不自动是已校准概率。
 
-    SMO算法
+## 练习
 
-    x，y：样本的值和类别
+1. LDA 与 PCA 都降维，它们最大的目标差别是什么？
+2. 上述 SVM 边界对查询1.5给出什么分类？
+3. 样本只有10个、特征100个，直接求类内散布逆矩阵为什么危险？
+4. 为什么 SVM 的 C 与 gamma 不能只看训练准确率来选？
 
-    ker：核函数，与线性回归中核函数的含义相同
+## 参考答案
 
-    C：惩罚系数
+1. LDA 使用标签寻找有利于类分离的方向，PCA 不使用标签，保留输入方差。
+2. 分数 $1.5-2=-0.5$，预测负类。
+3. 矩阵常秩不足或非常不稳定，应考虑收缩、正则化或适当分解。
+4. 参数可使模型过度适应训练点，需要训练内部验证评价对未见样本的效果。
 
-    max_iter：最大迭代次数
+## 复习卡片与下一步
 
-    '''
+LDA 记“类别均值差相对类内波动”，SVM 记“间隔加违反代价”，核记“隐式特征内积”。下一篇用可解释的条件分支建立非线性预测。
 
-    # 初始化参数
+[上一篇 朴素贝叶斯](/notes/mathematical-modeling-ml-naive-bayes/) · [下一篇 树模型与集成学习](/notes/mathematical-modeling-ml-tree-ensemble/)
 
-    m = x.shape[0]
+## 参考资料
 
-    alpha = np.zeros(m)
-
-
-
-    # 预先计算所有向量的两两内积，减少重复计算
-
-    K = np.zeros((m, m))
-
-    for i in range(m):
-
-        for j in range(m):
-
-            K[i, j] = ker(x[i], x[j])
-
-
-
-    for l in trange(max_iter):
-
-        # 开始迭代
-
-        for i in range(m):
-
-            # 有m个参数，每一轮迭代中依次更新
-
-            # 固定参数alpha_i与另一个随机参数alpha_j，并且保证i与j不相等
-
-            j = np.random.choice([l for l in range(m) if l != i])
-
-
-
-            # 用-b/2a更新alpha_i的值
-
-            eta = K[j, j] + K[i, i] - 2 * K[i, j] # 分母
-
-            e_i = np.sum(y * alpha * K[:, i]) - y[i] # 分子
-
-            e_j = np.sum(y * alpha * K[:, j]) - y[j]
-
-            alpha_i = alpha[i] + y[i] * (e_j - e_i) / (eta + 1e-5) # 防止除以0
-
-            zeta = alpha[i] * y[i] + alpha[j] * y[j]
-
-            # 将alpha_i和对应的alpha_j保持在[0,C]区间
-
-            # 0 <= (zeta - y_j * alpha_j) / y_i <= C
-
-            if y[i] == y[j]:
-
-                lower = max(0, zeta / y[i] - C)
-
-                upper = min(C, zeta / y[i])
-
-            else:
-
-                lower = max(0, zeta / y[i])
-
-                upper = min(C, zeta / y[i] + C)
-
-            alpha_i = np.clip(alpha_i, lower, upper)
-
-            alpha_j = (zeta - y[i] * alpha_i) / y[j]
-
-
-
-            # 更新参数
-
-            alpha[i], alpha[j] = alpha_i, alpha_j
-
-    return alpha
-
-# 设置超参数
-
-C = 1e8 # 由于数据集完全线性可分，我们不引入松弛变量
-
-max_iter = 1000
-
-np.random.seed(0)
-
-alpha = SMO(x, y, ker=np.inner, C=C, max_iter=max_iter)
-
-# 用alpha计算w，b和支持向量
-
-sup_idx = alpha > 1e-5 # 支持向量的系数不为零
-
-print('支持向量个数：', np.sum(sup_idx))
-
-w = np.sum((alpha[sup_idx] * y[sup_idx]).reshape(-1, 1) * x[sup_idx], axis=0)
-
-wx = x @ w.reshape(-1, 1)
-
-b = -0.5 * (np.max(wx[y == -1]) + np.min(wx[y == 1]))
-
-print('参数：', w, b)
-
-# 绘图
-
-X = np.linspace(np.min(x[:, 0]), np.max(x[:, 0]), 100)
-
-Y = -(w[0] * X + b) / (w[1] + 1e-5)
-
-plt.figure()
-
-plt.scatter(x[y == -1, 0], x[y == -1, 1], color='red', label='y=-1')
-
-plt.scatter(x[y == 1, 0], x[y == 1, 1], marker='x', color='blue', label='y=1')
-
-plt.plot(X, Y, color='black')
-
-# 用圆圈标记出支持向量
-
-plt.scatter(x[sup_idx, 0], x[sup_idx, 1], marker='o', color='none', 
-
-    edgecolor='purple', s=150, label='support vectors')
-
-plt.xlabel(r'$x_1$')
-
-plt.ylabel(r'$x_2$')
-
-plt.legend()
-
-plt.show()
-
-```
-
-线性不可分:
-
-```python
-data = np.loadtxt('spiral.csv', delimiter=',')
-
-print('数据集大小：', len(data))
-
-x = data[:, :2]
-
-y = data[:, 2]
-
-# 数据集可视化
-
-plt.figure()
-
-plt.scatter(x[y == -1, 0], x[y == -1, 1], color='red', label='y=-1')
-
-plt.scatter(x[y == 1, 0], x[y == 1, 1], marker='x', color='blue', label='y=1')
-
-plt.xlabel(r'$x_1$')
-
-plt.ylabel(r'$x_2$')
-
-plt.legend()
-
-plt.axis('square')
-
-plt.show()
-	
-```
-
-
-
-核函数：
-
-```python
-# 简单多项式核
-
-def simple_poly_kernel(d):
-
-    def k(x, y): 
-
-        return np.inner(x, y) ** d
-
-    return k
-
-# RBF核
-
-def rbf_kernel(sigma):
-
-    def k(x, y):
-
-        return np.exp(-np.inner(x - y, x - y) / (2.0 * sigma ** 2))
-
-    return k
-
-# 余弦相似度核
-
-def cos_kernel(x, y):
-
-    return np.inner(x, y) / np.linalg.norm(x, 2) / np.linalg.norm(y, 2)
-
-# sigmoid核
-
-def sigmoid_kernel(beta, c):
-
-    def k(x, y):
-
-        return np.tanh(beta * np.inner(x, y) + c)
-
-    return k
-
-# 测试不同核函数下样本会被如何核化：
-
-kernels = [
-
-    simple_poly_kernel(3), 
-
-    rbf_kernel(0.1), 
-
-    cos_kernel, 
-
-    sigmoid_kernel(1, -1)
-
-]
-
-ker_names = ['Poly(3)', 'RBF(0.1)', 'Cos', 'Sigmoid(1,-1)']
-
-C = 1e8
-
-max_iter = 500
-
-# 绘图准备，构造网格
-
-plt.figure()
-
-fig, axs = plt.subplots(2, 2, figsize=(10, 10))
-
-axs = axs.flatten()
-
-cmap = ListedColormap(['coral', 'royalblue'])
-
-# 开始求解 SVM
-
-for i in range(len(kernels)):
-
-    print('核函数：', ker_names[i])
-
-    alpha = SMO(x, y, kernels[i], C=C, max_iter=max_iter)
-
-    sup_idx = alpha > 1e-5 # 支持向量的系数不为零
-
-    sup_x = x[sup_idx] # 支持向量
-
-    sup_y = y[sup_idx]
-
-    sup_alpha = alpha[sup_idx]
-
-    # 用支持向量计算 w^T*x
-
-    def wx(x_new):
-
-        s = 0
-
-        for xi, yi, ai in zip(sup_x, sup_y, sup_alpha):
-
-            s += yi * ai * kernels[i](xi, x_new)
-
-        return s
-
-    # 计算b*
-
-    neg = [wx(xi) for xi in sup_x[sup_y == -1]]
-
-    pos = [wx(xi) for xi in sup_x[sup_y == 1]]
-
-    b = -0.5 * (np.max(neg) + np.min(pos))
-
-    # 构造网格并用 SVM 预测分类
-
-    G = np.linspace(-1.5, 1.5, 100)
-
-    G = np.meshgrid(G, G)
-
-    X = np.array([G[0].flatten(), G[1].flatten()]).T # 转换为每行一个向量的形式
-
-    Y = np.array([wx(xi) + b for xi in X])
-
-    Y[Y < 0] = -1
-
-    Y[Y >= 0] = 1
-
-    Y = Y.reshape(G[0].shape)
-
-    axs[i].contourf(G[0], G[1], Y, cmap=cmap, alpha=0.5)
-
-    # 绘制原数据集的点
-
-    axs[i].scatter(x[y == -1, 0], x[y == -1, 1], color='red', label='y=-1')
-
-    axs[i].scatter(x[y == 1, 0], x[y == 1, 1], marker='x', color='blue', label='y=1')
-
-    axs[i].set_title(ker_names[i])
-
-    axs[i].set_xlabel(r'$x_1$')
-
-    axs[i].set_ylabel(r'$x_2$')
-
-    axs[i].legend()
-
-plt.show()
-
-```
-
-核函数示例中，多项式核应使用非负整数次数，RBF 的 sigma 必须大于 0，余弦核要求输入非零。sigmoid 核并非任意参数下都半正定；图上的可分类现象不能替代合法核的条件检查。
+- [Datawhale《数学建模导论》第9章](https://datawhalechina.github.io/intro-mathmodel/#/CH9/第九章-机器学习与统计模型)：用于建立知识目录，建议与本篇的手算和案例对照阅读。
+- [scikit-learn LDA 与 QDA](https://scikit-learn.org/stable/modules/lda_qda.html)。
+- [scikit-learn SVM](https://scikit-learn.org/stable/modules/svm.html)。

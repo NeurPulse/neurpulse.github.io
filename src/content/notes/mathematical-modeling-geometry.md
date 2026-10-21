@@ -1,289 +1,160 @@
 ---
-title: '数学建模：几何模型'
-description: '向量表示法、旋转矩阵与NumPy线性代数'
+title: "数学建模：几何模型与线性代数"
+description: "从距离、投影和旋转走到定位、方程与分解"
 pubDate: 2026-08-07
-updatedDate: 2026-10-19
-order: 4
+updatedDate: 2026-10-21
+order: 7
 category: '数学建模'
-tags: ['几何模型','向量','NumPy','线性代数']
+tags: ["几何模型","向量","NumPy","线性代数","零基础"]
 ---
 
-## 几何模型
+> [专题学习地图](/notes/mathematical-modeling-roadmap/) · 第 7 / 27 篇
 
-### 向量表示法与几何建模
+## 学习目标与先修知识
+
+目标是把位置、方向和距离写成向量，手算一个旋转与定位问题，理解方程组、最小二乘、特征值和 SVD 分别在做什么。先修为数组形状、矩阵乘法与平方根；不要求先掌握抽象线性空间理论。
+
+可回看：[必备数学与 Python 基础](/notes/mathematical-modeling-foundations/)。
+
+## 问题背景与使用时机
+
+几何建模常见于定位、路线、设施选址、姿态变化和三维重构。例如，知道一个设备到几个基站的距离，能否恢复设备坐标？第一步不是寻找机器学习模型，而是把距离关系写成方程。
+
+选择坐标系是建模的一部分。坐标原点、轴方向、长度单位不同，输入的数字就不同，但同一物理关系应保持一致。
+
+## 核心概念与符号
+
+点 $P=(x,y)$ 的位置可写成列向量。两点距离为：
 
 $$
-x = [x_1,x_2,\dots,x_n]^T
+d(P,Q)=\|\boldsymbol p-\boldsymbol q\|_2
+=\sqrt{(x_P-x_Q)^2+(y_P-y_Q)^2}.
 $$
+
+内积为 $\boldsymbol a^T\boldsymbol b=\|\boldsymbol a\|\|\boldsymbol b\|\cos\theta$。内积为零时两个非零向量垂直；向量在单位方向 $\boldsymbol u$ 上的有符号投影长度为 $\boldsymbol u^T\boldsymbol x$。
+
+采用右手坐标系、主动旋转和列向量，二维逆时针旋转为：
+
+$$
+R(\theta)=
+\begin{bmatrix}\cos\theta&-\sin\theta\\\sin\theta&\cos\theta\end{bmatrix},
+\qquad\boldsymbol p_{\mathrm{new}}=R\boldsymbol p.
+$$
+
+旋转保持长度，$R^TR=I$、$\det R=1$。三维旋转一般不可交换；$R_zR_yR_x$ 作用于列向量时，右侧 $R_x$ 先作用。固定轴旋转与随物体运动的轴旋转应明确区分。
+
+方程组 $A\boldsymbol x=\boldsymbol b$ 用系数矩阵描述多个关系。可逆方阵有唯一解；方程太多、带噪声或秩不足时，需要看可解性与最小二乘，不能默认矩阵都有逆。
+
+## 手算一个最小例子
+
+### 旋转
+
+点 $(3,4)$ 绕原点逆时针转 $90^\circ$，余弦为 0、正弦为 1：
+
+$$
+\begin{bmatrix}0&-1\\1&0\end{bmatrix}
+\begin{bmatrix}3\\4\end{bmatrix}
+=\begin{bmatrix}-4\\3\end{bmatrix}.
+$$
+
+旋转前后长度都为 5，这是一项很好的自检。
+
+### 三基站定位
+
+三个基站为 $A=(0,0),B=(10,0),C=(0,10)$，测得距离平方为 $25,65,45$。未知点满足：
+
+$$
+x^2+y^2=25,\quad(x-10)^2+y^2=65,\quad x^2+(y-10)^2=45.
+$$
+
+第二式减第一式得 $-20x+100=40$，故 $x=3$；第三式减第一式得 $-20y+100=20$，故 $y=4$。再代回第一式验证 $9+16=25$。只解差分线性式而不检查原距离，可能漏掉不一致。
+
+## 建模步骤与完整案例
+
+案例：设备在平面内定位。假设基站坐标准确、距离使用相同单位、忽略高度差。先用无噪声距离确认方程，再加入小测量误差。
+
+有误差时，三个圆通常没有共同交点。可最小化各测量距离残差：
+
+$$
+\min_{\boldsymbol p}\sum_i\left(\|\boldsymbol p-\boldsymbol a_i\|-r_i\right)^2.
+$$
+
+这里变量为两个坐标，目标是残差平方和，参数是已知基站与测距。输出除位置外还应包含距离残差及对噪声的敏感程度。若基站几乎共线，某些方向的定位会不稳定，增加数值精度不能替代更好的几何布局。
+
+## Python 实现与结果解释
+
+配套文件：[查看或下载本篇完整脚本](/downloads/math-modeling/mathematical-modeling-geometry.py)。
 
 ```python
 import numpy as np
-x = np.array([1, 2, 3, 5, 8])
-# array([1, 2, 3, 5, 8])
+from scipy.optimize import least_squares
+
+point = np.array([3., 4.])
+R = np.array([[0., -1.], [1., 0.]])
+rotated = R @ point
+print("旋转后:", rotated)
+assert np.allclose(rotated, [-4., 3.])
+assert np.isclose(np.linalg.norm(rotated), np.linalg.norm(point))
+
+anchors = np.array([[0., 0.], [10., 0.], [0., 10.]])
+ranges = np.linalg.norm(anchors-point, axis=1)
+A = 2*(anchors[1:]-anchors[0])
+b = (ranges[0]**2-ranges[1:]**2
+     + np.sum(anchors[1:]**2, axis=1)-np.sum(anchors[0]**2))
+linear_position = np.linalg.solve(A, b)
+assert np.allclose(linear_position, point)
+
+observed = ranges + np.array([0.1, -0.1, 0.05])
+def residual(position):
+    return np.linalg.norm(position-anchors, axis=1)-observed
+
+fit = least_squares(residual, x0=linear_position)
+print("带噪定位:", fit.x, "距离残差:", residual(fit.x))
+assert fit.success
+
+# SVD：把矩阵分解后再重建，是比逐项比较奇异向量更可靠的检查。
+matrix = np.array([[1., 2.], [2., 4.], [3., 6.]])
+U, singular_values, Vh = np.linalg.svd(matrix, full_matrices=False)
+assert np.allclose(U @ np.diag(singular_values) @ Vh, matrix)
+print("奇异值:", singular_values)
 ```
 
-> 如果需要求一个点旋转后的点的坐标，需要用这个点的坐标乘旋转矩阵
+无噪声解必须重现 $(3,4)$；带噪声时通常略有偏离。`fit.success` 表示求解器满足停止条件，不表示真实位置必然准确，也不是全局最优的普遍保证。
 
-二维坐标变换：旋转矩阵
-$$
-\begin{bmatrix} cos\theta & -sin\theta \\ sin\theta & cos\theta \end{bmatrix}
-$$
+## 方法选择与常见误区
 
-```python
-import numpy as np
+### 特征值、SVD 与伪逆
 
-# 设定旋转角度，这里我们以30度为例
-theta = np.radians(30)  # 将30度转换为弧度
+特征关系 $A\boldsymbol v=\lambda\boldsymbol v$ 表示某些方向只被伸缩而不改变方向，适用于方阵；特征向量可整体变号，重复特征值的基也不唯一。
 
-# 创建旋转矩阵
-rotation_matrix = np.array([
-    [np.cos(theta), -np.sin(theta)],
-    [np.sin(theta), np.cos(theta)]
-])
-a,b = 5,3
-# 假设我们有一个点 (a, b)
-point = np.array([a, b])
+SVD 为 $A=U\Sigma V^T$，可用于任意实矩阵。NumPy 第三个返回值是 `Vh`，即 $V$ 的共轭转置。上例两列成比例，只有一个显著非零奇异值，说明两列信息冗余；下一阶段的 PCA 会利用这种结构降维。
 
-# 通过旋转矩阵变换这个点的坐标
-rotated_point = rotation_matrix.dot(point)
+伪逆 $A^+$ 不等于奇异矩阵的普通逆。$A^+\boldsymbol b$ 给出最小范数的最小二乘解，不能保证任意 b 都满足原方程。
 
-print("原坐标为:", point)
-print("旋转后的坐标为:", rotated_point)
-# 原坐标为: [5 3]
-# 旋转后的坐标为: [2.83012702 5.09807621]
+位置可由明确几何关系描述时，先尝试方程或优化；传感器有偏差时还需校准；若关系复杂且有大量标注，可再引入学习模型。地理经纬度也不能不加处理就当成普通平面米制坐标。
 
-```
+## 练习
 
-三维旋转矩阵
+1. 点 $(1,0)$ 逆时针旋转 $90^\circ$ 后是什么？
+2. 向量 $(1,2)$ 与 $(2,-1)$ 是否垂直？
+3. 三个带噪声圆没有共同交点，是否说明不能定位？
+4. SVD 重建中把 Vh 再转置一次会怎样？
 
-z轴不变
-$$
-R_{z}(\alpha)=\begin{bmatrix} cos\alpha & -sin\alpha & 0 \\ sin\alpha & cos\alpha & 0 \\ 0 & 0 & 1\end{bmatrix}
-$$
-y轴不变
-$$
-R_{y}(\beta)=\begin{bmatrix} cos\beta & 0 & sin\beta \\ 0 & 1 & 0 \\ -sin\beta & 0 & cos\beta\end{bmatrix}
-$$
-x轴不变
-$$
-R_{x}(\gamma)=\begin{bmatrix} 1 & 0 & 0 \\ 0 & cos\gamma & -sin\gamma \\ 0 & sin\gamma & cos\gamma \end{bmatrix}
-$$
+## 参考答案
 
-> 如果一点需要绕三个旋转轴旋转，最终的旋转矩阵就为上面三个旋转矩阵的乘积 $ R = R_{z}(\alpha)R_{y}(\beta)R_{x}(\gamma)$
+1. $(0,1)$；注意主动旋转方向和列向量约定。
+2. 内积 $1\times2+2(-1)=0$，两个非零向量垂直。
+3. 可以按误差模型做最小二乘或稳健估计，并报告残差；不能要求噪声数据严格满足全部等式。
+4. 对一般矩阵会破坏正确的乘法与重建，因为 NumPy 已经返回转置后的形式；偶然对称时数值可能迷惑人，应按定义写代码。
 
-```python
-import numpy as np
+## 复习卡片与下一步
 
-# 定义旋转角度（以弧度为单位）
-alpha = np.radians(30)  # 绕 Z 轴旋转
-beta = np.radians(45)   # 绕 Y 轴旋转
-gamma = np.radians(60)  # 绕 X 轴旋转
+复习卡：距离看差向量；投影看内积；旋转先约定坐标与顺序；求解先检查秩和残差；分解用重建验证。下一篇把静态位置关系扩展为随时间变化的动力系统。
 
-# 定义旋转矩阵
-R_z = np.array([[np.cos(alpha), -np.sin(alpha), 0],
-                [np.sin(alpha), np.cos(alpha), 0],
-                [0, 0, 1]])
+[上一篇 回归与曲线拟合](/notes/mathematical-modeling-regression/) · [下一篇 微分方程与动力系统](/notes/mathematical-modeling-differential-equations/)
 
-R_y = np.array([[np.cos(beta), 0, np.sin(beta)],
-                [0, 1, 0],
-                [-np.sin(beta), 0, np.cos(beta)]])
+## 参考资料
 
-R_x = np.array([[1, 0, 0],
-                [0, np.cos(gamma), -np.sin(gamma)],
-                [0, np.sin(gamma), np.cos(gamma)]])
-
-# 总旋转矩阵
-R = R_z @ R_y @ R_x
-
-# 定义点P的坐标
-P = np.array([1, 2, 3])
-
-# 计算旋转后的坐标
-P_rotated = R @ P
-
-print("旋转后P点的坐标为:", P_rotated)
-# 旋转后P点的坐标为: [3.39062937 0.11228132 1.57829826]
-
-```
-
-欧拉角旋转顺序
-
-- **Z-Y-X（Roll-Pitch-Yaw）**：首先绕z轴旋转*α*（Yaw），然后绕*新位置的*yy轴旋转*β*（Pitch），最后绕*新位置的*x轴旋转γ*（Roll）。
-- **Z-X-Y（Yaw-Pitch-Roll）**：首先绕z轴旋转α*（Yaw），然后绕*新位置的*xx轴旋转*β*（Pitch），最后再次绕y轴旋转γ*（Roll）。
-
-```python
-
-
-# 定义欧拉角（以弧度为单位）
-alpha = np.radians(30)  # 绕 z 轴的 Yaw 角度
-beta = np.radians(45)   # 绕 y 轴的 Pitch 角度
-gamma = np.radians(60)  # 绕 x 轴的 Roll 角度
-
-# 构建对应的旋转矩阵
-R_z = np.array([[np.cos(alpha), -np.sin(alpha), 0],
-                [np.sin(alpha), np.cos(alpha), 0],
-                [0, 0, 1]])
-R_y = np.array([[np.cos(beta), 0, np.sin(beta)],
-                [0, 1, 0],
-                [-np.sin(beta), 0, np.cos(beta)]])
-R_x = np.array([[1, 0, 0],
-                [0, np.cos(gamma), -np.sin(gamma)],
-                [0, np.sin(gamma), np.cos(gamma)]])
-
-# 总旋转矩阵，注意乘法的顺序
-R = np.dot(R_x, np.dot(R_y, R_z))
-
-print("组合旋转矩阵为:")
-print(R)
-# 组合旋转矩阵为:
-# [[ 0.61237244 -0.35355339  0.70710678]
-#  [ 0.78033009  0.12682648 -0.61237244]
-#  [ 0.12682648  0.9267767   0.35355339]]
-```
-
-### Numpy 与线性代数
-
-**创建向量和矩阵**
-
-```python
-import numpy as np
-# 创建向量
-vector = np.array([1, 2, 3])
-# 创建矩阵
-matrix = np.array([[1, 2, 3],
-                   [4, 5, 6],
-                   [7, 8, 9]])
-```
-
-**向量和矩阵的基本属性**
-
-```python
-# 向量的维度
-print(vector.shape) # (3, )
-# 矩阵的维度
-print(matrix.shape) # (3, 3)
-# 矩阵的行数和列数
-print(matrix.shape[0])  # 行数, 3
-print(matrix.shape[1])  # 列数, 3
-```
-
-**索引和切片**
-
-```python
-# 索引
-print(vector[0])  # 输出第一个元素, 1
-print(matrix[1, 1])  # 输出第二行第二列的元素, 5
-
-# 切片
-print(vector[0:2])  # 输出前两个元素, [1, 2]
-print(matrix[0:2, 0:2])  # 输出左上角的2x2子矩阵, [[1, 2], [4, 5]]
-```
-
-**向量和矩阵的运算**
-
-```python
-# 向量加法
-vector1 = np.array([1, 2, 3])
-vector2 = np.array([4, 5, 6])
-print(np.add(vector1, vector2))
-# [5, 7, 9]
-
-# 矩阵乘法
-matrix1 = np.array([[1, 2], [3, 4]])
-matrix2 = np.array([[5, 6], [7, 8]])
-print(np.dot(matrix1, matrix2))  # 或使用 matrix1 @ matrix2
-# [[19, 22],
-#  [43, 50]]
-```
-
-**线性代数基本运算**
-
-```python
-import numpy as np
-
-# 数量乘法示例
-scalar = 5
-scaled_vector = scalar * vector
-print("Scaled vector:", scaled_vector)
-# Scaled vector: [ 5 10 15]
-
-# 矩阵的转置示例
-transposed_matrix = matrix.T
-print("Transposed matrix:\n", transposed_matrix)
-# Transposed matrix:
-# [[1, 4, 7]
-#  [2, 5, 8]
-#  [3, 6, 9]]
-
-# 计算行列式示例
-matrix_determinant = np.linalg.det(matrix)
-print("Matrix determinant:", matrix_determinant)
-# Matrix determinant: 0.0
-
-# 求解线性方程组示例
-A = np.array([[3, 1], [1, 2]])
-b = np.array([9, 8])
-solution = np.linalg.solve(A, b)
-print("Solution of the linear system:", solution)
-# Solution of the linear system: [2. 3.]
-```
-
-**numpy.linalg 的使用**
-
-> NumPy中的 `linalg` 子模块包含了一系列关于线性代数的函数。
->
-> 求解方程组,计算特征值、特征向量,执行奇异值分解
-
-**计算逆矩阵**
-
-```python
-import numpy as np
-# If the matrix is singular, use the pseudo-inverse
-pseudo_inverse_matrix = np.linalg.pinv(matrix)
-print("Pseudo-inverse of the matrix:")
-print(pseudo_inverse_matrix)
-# Pseudo-inverse of the matrix:
-# [[-6.38888889e-01 -1.66666667e-01  3.05555556e-01]
-#  [-5.55555556e-02  4.20756436e-17  5.55555556e-02]
-#  [ 5.27777778e-01  1.66666667e-01 -1.94444444e-01]]
-```
-
-**特征值和特征向量**
-
-```python
-eigenvalues, eigenvectors = np.linalg.eig(matrix)
-print(eigenvalues)
-# [ 1.61168440e+01 -1.11684397e+00 -1.30367773e-15]
-
-print(eigenvectors)
-# [[-0.23197069 -0.78583024  0.40824829]
-#  [-0.52532209 -0.08675134 -0.81649658]
-#  [-0.8186735   0.61232756  0.40824829]]
-```
-
-**奇异值分解**
-
-```python
-U, S, V = np.linalg.svd(matrix)
-print(U)
-# [[-0.21483724  0.88723069  0.40824829]
-#  [-0.52058739  0.24964395 -0.81649658]
-#  [-0.82633754 -0.38794278  0.40824829]]
-
-print(S)
-# [1.68481034e+01 1.06836951e+00 4.41842475e-16]
-
-print(V)
-# [[-0.47967118 -0.57236779 -0.66506441]
-#  [-0.77669099 -0.07568647  0.62531805]
-#  [-0.40824829  0.81649658 -0.40824829]]
-```
-
-**范数计算**
-
-```python
-norm = np.linalg.norm(vector)
-print(norm)
-# 3.7416573867739413
-```
-
+- [Datawhale《数学建模导论》第1章](https://datawhalechina.github.io/intro-mathmodel/#/CH1/第1章-解析方法与几何模型)：用于建立知识目录，建议与本篇的手算和案例对照阅读。
+- [NumPy 线性代数](https://numpy.org/doc/stable/reference/routines.linalg.html)。
+- [SciPy 非线性最小二乘](https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html)。
