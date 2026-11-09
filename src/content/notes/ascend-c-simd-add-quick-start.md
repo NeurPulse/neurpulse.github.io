@@ -275,6 +275,8 @@ cmake --build cpp-add/build -j
 
 本篇的两个版本都以 UB 为输入和输出缓冲，属于 **Memory 矢量计算**。官方教程还列出了显式使用向量寄存器的 **Reg 矢量计算**样例。 [昇腾社区 Add 算子快速入门](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/latest/programug/Ascendcopdevg/docs/zh/guide/getting_started/quick_start/simd_programming/add_op_quick_start.md) · [asc-devkit 同章文档](https://asc.gitcode.com/guide/getting_started/quick_start/simd_programming/add_op_quick_start.html)
 
+沿官方入门路线继续往下，可以先用打印观察每个线程的编号，再让线程按索引取数。 [SIMT HelloWorld](/notes/ascend-c-simt-hello-world/) · [SIMT Gather](/notes/ascend-c-simt-gather-quick-start/)
+
 ## 伪代码
 
 去掉 C API 和 C++ API 的拼写差异，两个实现都可以按下面的顺序重写。这里保留了关键的分工、数据所在位置和等待点。

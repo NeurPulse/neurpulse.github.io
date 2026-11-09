@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 530 209" role="img" aria-labelledby="title desc">
+  <title id="title">Gather 的重复索引</title>
+  <desc id="desc">索引清单的第 0 项和第 2 项都是 2，两个线程读取同一个输入值 30，分别写入输出的第 0 项和第 2 项。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <path d="M0 0 7 3.5 0 7Z" fill="#36546e"/>
+    </marker>
+  </defs>
+  <rect x="2" y="2" width="526" height="205" rx="14" fill="#f7fafc" stroke="#cedae4"/>
+  <g font-family="system-ui, 'Microsoft YaHei', sans-serif" text-anchor="middle" fill="#16344c">
+    <g font-size="19" font-weight="600">
+      <text x="91" y="36">读索引</text>
+      <text x="265" y="36">取输入</text>
+      <text x="439" y="36">写输出</text>
+    </g>
+    <g fill="#e4f1ff" stroke="#9ebed9">
+      <rect x="17" y="59" width="148" height="44" rx="8"/>
+      <rect x="17" y="139" width="148" height="44" rx="8"/>
+    </g>
+    <rect x="195" y="90" width="140" height="62" rx="8" fill="#fff0d9" stroke="#d0ae77"/>
+    <g fill="#e6f5ec" stroke="#9ec6ad">
+      <rect x="365" y="59" width="148" height="44" rx="8"/>
+      <rect x="365" y="139" width="148" height="44" rx="8"/>
+    </g>
+    <g stroke="#36546e" stroke-width="1.8" fill="none" marker-end="url(#arrow)">
+      <path d="M165 81L191 103"/>
+      <path d="M165 161L191 139"/>
+      <path d="M335 103L361 81"/>
+      <path d="M335 139L361 161"/>
+    </g>
+    <g font-family="ui-monospace, Consolas, monospace" font-size="18" dominant-baseline="central">
+      <text x="91" y="81">index[0] = 2</text>
+      <text x="91" y="161">index[2] = 2</text>
+      <text x="265" y="121">input[2] = 30</text>
+      <text x="439" y="81">output[0] = 30</text>
+      <text x="439" y="161">output[2] = 30</text>
+    </g>
+  </g>
+</svg>

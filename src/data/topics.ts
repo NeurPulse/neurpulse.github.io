@@ -99,6 +99,8 @@ export const TOPIC_GUIDES: Record<string, TopicGuide> = {
       { label: '异构系统与编程模型', postId: 'cann-architecture-and-ascend-npu' },
       { label: 'HelloWorld 与核函数启动', postId: 'ascend-c-kernel-and-spmd-basics' },
       { label: 'SIMD Add 快速入门', postId: 'ascend-c-simd-add-quick-start' },
+      { label: 'SIMT HelloWorld 与线程编号', postId: 'ascend-c-simt-hello-world' },
+      { label: 'SIMT Gather 快速入门', postId: 'ascend-c-simt-gather-quick-start' },
       { label: '带 Tiling 的 Add 算子实践', postId: 'ascend-c-add-operator-walkthrough' },
       { label: '调试与性能分析', postId: 'ascend-c-on-device-debugging' },
     ],

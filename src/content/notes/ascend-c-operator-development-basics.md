@@ -242,6 +242,8 @@ Ascend C 算子开发的本质是把数据按块从 Global Memory 搬到 Local M
 2. [异构系统与编程模型](/notes/cann-architecture-and-ascend-npu/) 理解数据在主机和设备之间怎么走。
 3. [HelloWorld 与核函数启动](/notes/ascend-c-kernel-and-spmd-basics/) 先跑通一段只打印消息的设备代码。
 4. [SIMD Add 快速入门](/notes/ascend-c-simd-add-quick-start/) 把开头的 CPU 加法写成完整的设备计算。
+5. [SIMT HelloWorld](/notes/ascend-c-simt-hello-world/) 读懂线程块、线程编号和四项启动配置。
+6. [SIMT Gather 快速入门](/notes/ascend-c-simt-gather-quick-start/) 用全局线程编号处理清单里的每一项。
 
 ## 伪代码
 
