@@ -2,6 +2,7 @@
 title: 'Ascend C 算子开发基础：何时自定义以及硬件如何抽象'
 description: '梳理 Ascend C 的定位、适用场景、API 层级，以及 Global/Local Memory 下的数据搬运与计算流程。'
 pubDate: 2026-08-27
+updatedDate: 2026-11-09
 category: 'CANN / Ascend C'
 tags: ['Ascend C', 'CANN', '算子开发', 'AI Core']
 order: 1
@@ -9,14 +10,38 @@ order: 1
 
 ## 学习目标
 
-这篇笔记回答三个问题：Ascend C 是什么、什么时候需要自定义算子，以及 Ascend C 如何抽象 AI Core。学完后应能判断是否真的需要开发自定义算子，并能描述数据从 Global Memory 搬入、计算、再搬出的完整过程。
+从两组数字相加开始，认识算子、昇腾 NPU、CANN 和 Ascend C 各自负责什么。读完可以用一句普通的 Python 加法说明算子做了什么，也能说出把同一计算交给 NPU 后多了哪些工作。
 
 ## 先修知识
 
-- 算子、Tensor 与 TensorDesc
-- CANN 在 AI 软件栈中的位置
-- Host、Device 与 AI Core 的基本分工
-- C/C++ 变量、循环、函数、数组与指针
+能读懂列表和加法就可以开始。遇到 `shape`、`dtype` 时可以查阅 [算子与张量基础](/notes/cann-operator-and-tensor-basics/)。C++ 指针和核函数启动语法会在后面的 HelloWorld 和 Add 笔记里展开。
+
+## 先算一次 Add
+
+有两组同样长的数字，要把第一个位置的两个数相加，第二个位置的两个数相加。输入是 `[1, 2, 3]` 和 `[10, 20, 30]`，手算结果是 `[11, 22, 33]`。
+
+```python
+x = [1, 2, 3]
+y = [10, 20, 30]
+assert len(x) == len(y)
+z = [0] * len(x)
+for i in range(len(x)):
+    z[i] = x[i] + y[i]
+print(z)  # [11, 22, 33]
+```
+
+这条规则就叫**逐元素加法**。在框架里，完成这一规则的操作叫 Add **算子**，输入输出的数字会装在张量（Tensor）里。第 `i` 个结果只依赖两个输入的第 `i` 个数，因此不同位置的工作可以分开做。
+
+## 从一行加法到 NPU
+
+| 名词 | 在这个例子里负责什么 |
+|---|---|
+| PyTorch 等框架 | 接收用户写的张量加法，根据张量所在设备分派计算 |
+| 昇腾 NPU | 实际执行加法的专用硬件，内部有可并行工作的计算核 |
+| CANN | 为昇腾 NPU 提供运行时、算子库和编译工具。Host 通过它申请设备内存、启动计算并等待结果 |
+| Ascend C | 写设备侧实现的语言与接口。开发者可以指定怎样分块、搬运和计算 |
+
+同一条数学规则可以有 CPU 实现和 NPU 实现。上面的循环已经表达了规则。编写 Ascend C 版本时，还要告诉设备各个核负责哪些位置、去哪里读输入、在什么时刻写回结果。 [Ascend C 概述与学习路径](https://asc.gitcode.com/guide/getting_started/ascend_c_overview_and_learning_path.html)
 
 ## Ascend C 是什么
 
@@ -28,12 +53,13 @@ Ascend C 是 CANN 面向昇腾 NPU 算子开发提供的编程语言和 API 体�
 
 | 层级 | 定位 | 适合场景 |
 |---|---|---|
+| 语言扩展层 C API | 用指针和数组表达地址、搬运、计算与同步 | 直接控制数据位置，理解底层操作 |
 | 基础 API | 基于 Tensor 的细粒度 C++ 类库接口 | 需要灵活控制搬运、计算和同步 |
 | 高阶 API | 封装常见单核算法 | 快速实现卷积、矩阵运算等常用算法 |
 | 算子模板库 | 提供较完整的算子实现骨架 | 复用成熟结构并定制扩展 |
 | Python 前端（PyAsc） | 使用 Python 接口表达底层计算 | 偏好 Python 开发体验的场景 |
 
-学习路线通常先掌握基础 API 的数据流与同步逻辑，再使用高阶 API 和模板减少重复工作。
+快速入门会用 C API 和 C++ 基础 API 各写一遍 Add。对照阅读时，先在两份代码中分别找出搬入、加法、搬出，再看它们怎样表达同一段内存。
 
 下图是课程给出的 Ascend C 总体架构。它把基础 API、高阶 API、算子模板库和 Python 前端放在同一张图中，适合用来确认不同开发入口所处的层级。
 
@@ -77,7 +103,7 @@ Ascend C 将复杂硬件简化为三类关键组件：
 | 存储单元 | Local Memory | AI Core 内部缓冲区的统称，使用 `LocalTensor` 表示 |
 | 搬运单元 | DMA | 在 Global/Local Memory 之间及不同 Local 层级间搬运数据 |
 
-AI Core 可访问的 Device 内存称为 **Global Memory**，对应 `GlobalTensor`。计算单元通常不能直接对 Global Memory 中的数据进行运算，数据需要先通过 DMA 搬到 Local Memory。
+AI Core 可访问的设备全局内存称为 **Global Memory（GM）**。在 C++ 版 Add 里，`GlobalTensor` 用来描述其中一段内存。该样例的向量计算在片上缓冲区 **UB** 中进行，由搬运单元把数据在 GM 和 UB 之间来回传递。
 
 ## 最小数据流
 
@@ -209,3 +235,25 @@ Ascend C 算子开发的本质是把数据按块从 Global Memory 搬到 Local M
 ## 图片来源
 
 本文图片取自 [CANN Learning Hub：Ascend C 算子开发的基本概念](https://gitcode.com/cann/cann-learning-hub/blob/master/tutorials/ascendc_operator_development_light/01_basic_overview/01.04_ascend_c_op_dev_basic_concepts.ipynb)，本地保存仅用于学习笔记。
+
+## 入门阅读顺序
+
+1. [环境准备](/notes/ascend-c-quick-start-environment/) 检查设备、编译器和样例版本。
+2. [异构系统与编程模型](/notes/cann-architecture-and-ascend-npu/) 理解数据在主机和设备之间怎么走。
+3. [HelloWorld 与核函数启动](/notes/ascend-c-kernel-and-spmd-basics/) 先跑通一段只打印消息的设备代码。
+4. [SIMD Add 快速入门](/notes/ascend-c-simd-add-quick-start/) 把开头的 CPU 加法写成完整的设备计算。
+
+## 伪代码
+
+从算子的数学规则出发，先写出 CPU 参考结果，之后就有办法检查设备实现。
+
+```text
+约定 Add 接收两组等长数字，每个位置独立相加
+用普通循环计算参考答案 golden
+
+在 Host 准备设备内存并复制输入
+把不同的输入区间分给不同 Block
+每个 Block 把自己的输入搬到片上，算完再把结果写回设备内存
+Host 等待任务完成并取回结果
+比较设备结果和 golden
+```

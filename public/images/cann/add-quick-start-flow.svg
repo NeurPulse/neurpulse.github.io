@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 324" role="img" aria-labelledby="title desc">
+  <title id="title">Add 算子的内存路径</title>
+  <desc id="desc">从 Host 复制 x 和 y 到 GM，再搬入一个 Block 的 UB 中计算，结果 z 经 GM 拷回 Host。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <path d="M0 0 7 3.5 0 7Z" fill="#36546e"/>
+    </marker>
+  </defs>
+  <rect x="2" y="2" width="496" height="320" rx="15" fill="#f7fafc" stroke="#cedae4"/>
+  <g font-family="system-ui, 'Microsoft YaHei', sans-serif" fill="#16344c">
+    <g fill="#fff" stroke="#bdcdd9">
+      <rect x="130" y="22" width="151" height="46" rx="9"/>
+      <rect x="323" y="22" width="151" height="46" rx="9"/>
+    </g>
+    <g fill="#e4f1ff" stroke="#9ebed9">
+      <rect x="130" y="119" width="151" height="46" rx="9"/>
+      <rect x="323" y="119" width="151" height="46" rx="9"/>
+    </g>
+    <rect x="130" y="217" width="344" height="81" rx="11" fill="#e6f5ec" stroke="#9ec6ad"/>
+    <g stroke="#36546e" stroke-width="2" fill="none" marker-end="url(#arrow)">
+      <path d="M169 69V114"/>
+      <path d="M361 118V73"/>
+      <path d="M169 166V212"/>
+      <path d="M361 216V170"/>
+    </g>
+    <g font-size="23" font-weight="600">
+      <text x="23" y="48">Host</text>
+      <text x="23" y="144">GM</text>
+      <text x="23" y="254">UB</text>
+    </g>
+    <g font-size="17" fill="#41596c">
+      <text x="23" y="70">主机内存</text>
+      <text x="23" y="166">设备全局</text>
+      <text x="23" y="277">核内片上</text>
+      <text x="184" y="100">拷到设备</text>
+      <text x="375" y="100">拷回主机</text>
+      <text x="184" y="197">搬入本块</text>
+      <text x="375" y="197">写回本块</text>
+    </g>
+    <g font-size="22" text-anchor="middle" dominant-baseline="central">
+      <text x="206" y="45">输入 x、y</text>
+      <text x="399" y="45">结果 z</text>
+      <text x="206" y="142">完整 x、y</text>
+      <text x="399" y="142">完整 z</text>
+      <text x="302" y="257">一个 Block 内计算 x + y</text>
+    </g>
+  </g>
+</svg>

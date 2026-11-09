@@ -2,6 +2,7 @@
 title: 'CANN 架构与昇腾 NPU：从异构计算到 AI Core'
 description: '梳理 CANN 的软件桥梁作用、Host/Device 分工以及昇腾 NPU 与 AI Core 的内部结构。'
 pubDate: 2026-08-27
+updatedDate: 2026-11-09
 category: 'CANN / Ascend C'
 tags: ['CANN', '昇腾NPU', 'AI Core', '异构计算']
 order: 2
@@ -9,13 +10,12 @@ order: 2
 
 ## 学习目标
 
-这篇笔记解释为什么 AI 计算需要异构架构，以及 CANN 如何连接上层框架与昇腾 NPU。学完后应能说明 Host 与 Device 的分工、NPU 内部主要模块，以及 AI Core 中计算、存储和控制模块如何协同。
+跟着一次加法，分清代码在哪里运行、数据在哪里存放、每个计算核负责哪一段。学完后可以从 Host 内存一路追到 NPU 核内的 UB，再把结果追到 Host。
 
 ## 先修知识
 
-- 算子、Tensor、shape 与 format
-- CPU、内存和并行计算的基础概念
-- 矩阵乘法的基本计算过程
+- [Ascend C 算子开发基础](/notes/ascend-c-operator-development-basics/) 用一段普通的加法代码介绍了算子。
+- 阅读下面的例子只需理解列表下标。想实际运行 Ascend C 样例，可先看 [环境准备](/notes/ascend-c-quick-start-environment/)。
 
 ## 问题背景：为什么需要异构计算
 
@@ -28,7 +28,7 @@ CPU：程序控制、任务调度、数据组织
 NPU：矩阵、向量等密集型并行计算
 ```
 
-以两个 `16×16` 矩阵相乘为例，朴素算法包含 `16×16×16=4096` 次标量乘加。专用 Vector 或 Cube 单元可以同时处理更多数据，显著缩短理想计算周期。实际端到端性能还会受到数据搬运、指令调度、同步和利用率影响，不能只看理论峰值。
+比如要把两个数组的 8 对数字相加，可以让两个计算核各处理 4 对。在模型里，把多个算子的中间结果留在设备内存，后面的算子就可以接着用。若只为了给两三个数做一次加法而来回复制，数据传输和任务启动也会占时间。
 
 ## CANN 是什么
 
@@ -66,6 +66,12 @@ Host 汇总结果并继续业务逻辑
 | Device | 昇腾 NPU 与设备内存 | 承接矩阵、向量等密集型并行计算 |
 
 优化程序时不仅要关注 NPU 上的计算速度，也要关注 Host 与 Device 之间的数据传输成本。
+
+### 跟着下标 5 走一遍
+
+设 Host 上的 `x[5] = 6`、`y[5] = 60`。Host 首先把两个输入数组复制到 **GM（Global Memory，设备全局内存）**。分到下标 5 的 Block 从 GM 取出自己的输入片段，放进 **UB（Unified Buffer，向量核内的片上缓冲区）**。向量单元算出 `66`，搬运单元把它写回 GM 的 `z[5]`。最后，Host 等设备算完，再把整个结果数组复制回主机内存。 [异构系统与编程模型](https://asc.gitcode.com/guide/getting_started/quick_start/heterogeneous_system_and_programming_model.html)
+
+此时有两次不同的跨层搬运。Host 和 GM 之间由 Host 发起复制。GM 和 UB 之间由正在执行的核函数发起搬运。
 
 下图展示了典型服务器中 Host 与昇腾 Device 的物理关系，以及任务和数据在两侧之间的流动。
 
@@ -132,6 +138,31 @@ AI CPU 补充处理不适合 AI Core 的任务，例如轻量逻辑、并行度�
 下图是课程给出的 AI Core 总体架构。可以把它按“计算、存储、控制”三部分阅读：先找到 Cube、Vector 和 Scalar，再观察各级缓冲区与指令队列如何把它们连接起来。
 
 ![AI Core 的内部架构](/images/cann/ai_core_architecture.png)
+
+## SPMD、SIMD 和 SIMT 分别在描述什么
+
+| 概念 | 要回答的问题 | 用 8 个数来想 |
+|---|---|---|
+| SPMD（单程序多数据） | 多个 Block 怎样分工？ | 每个 Block 跑同一份核函数。Block 0 取下标 0～3，Block 1 取下标 4～7 |
+| SIMD（单指令多数据） | 核内怎样做同样的运算？ | 向量加法指令对一组对应元素做相加 |
+| SIMT（单指令多线程） | 怎样从线程视角写并行程序？ | 每个线程可以按自己的索引取数据和判断分支。实际支持情况取决于 NPU 架构 |
+
+下面是普通 Python，只演示 SPMD 的**区间分工**。先猜 `i = 5` 会由哪个 Block 打印，再运行看结果。
+
+```python
+total = 8
+blocks = 2
+per_block = total // blocks
+
+for block_idx in range(blocks):
+    begin = block_idx * per_block
+    indices = list(range(begin, begin + per_block))
+    print(f"Block {block_idx}: {indices}")
+# Block 0: [0, 1, 2, 3]
+# Block 1: [4, 5, 6, 7]
+```
+
+这里用循环依次展示每个 Block 的区间。真实核函数由运行时分发给多个 Block，各自用自己的 `block_idx` 算出起点。计算区间确定后，Block 内再发起 SIMD 向量操作。 [编程模型概述](https://asc.gitcode.com/guide/programming_guide/programming_model/programming_model_overview.html)
 
 ## 完整计算流程
 
@@ -222,3 +253,17 @@ CANN 的本质是连接 AI 应用与昇腾 NPU 的异构计算软件栈，通过
 ## 图片来源
 
 本文图片取自 [CANN Learning Hub：CANN 架构与昇腾 NPU 原理](https://gitcode.com/cann/cann-learning-hub/blob/master/tutorials/ascendc_operator_development_light/01_basic_overview/01.03_cann_arch_ascend_npu_principle.ipynb)，本地保存仅用于学习笔记。
+
+下一篇先用一个只打印消息的 Kernel 验证调用路径。 [HelloWorld 与核函数启动](/notes/ascend-c-kernel-and-spmd-basics/)
+
+## 伪代码
+
+```text
+Host 把输入复制到设备 GM，提交核函数
+设备运行时启动多个 Block
+    每个 Block 根据编号找到自己的数据区间
+    搬运单元把该区间的两个输入从 GM 搬进本核 UB
+    向量单元在 UB 中进行逐元素加法
+    搬运单元把本段结果写回 GM
+Host 等待设备任务完成，把 GM 中的结果复制回主机
+```

@@ -2,6 +2,7 @@
 title: '算子与张量基础：从模型节点到数据布局'
 description: '梳理算子、Tensor、TensorDesc、shape、format 与 axis 的核心概念及其关系。'
 pubDate: 2026-08-27
+updatedDate: 2026-11-09
 category: 'CANN / Ascend C'
 tags: ['CANN', '算子', 'Tensor', 'Ascend C']
 order: 3
@@ -9,13 +10,11 @@ order: 3
 
 ## 学习目标
 
-这篇笔记解决 Ascend C 入门前最基础的两个问题：算子是什么，以及算子如何理解和处理数据。学完后应能区分算子名称与算子类型、Tensor 与 TensorDesc，并能解释 shape、format、axis 三者分别描述什么。
+先用一组数字认识张量，再看算子怎样根据形状和类型读写它。读完可以手算一个 Add、读懂 shape 和 dtype，以及算出 Ascend C 样例应为输入申请多少字节。
 
 ## 先修知识
 
-- Python 与 NumPy 基础
-- 标量、向量、矩阵的基本概念
-- 神经网络由多个计算层连接而成的基本认识
+- 从数字和列表开始即可。下文的 NumPy 代码用于观察数组的形状、类型和字节数。
 
 ## 问题背景：为什么先学算子
 
@@ -88,7 +87,19 @@ print(z.shape)  # (2, 2)
 print(z.dtype)  # float32
 ```
 
-这里的 `x`、`y` 和 `z` 是 Tensor；加法是算子；`shape` 和 `dtype` 是描述 Tensor 的元信息。
+先看左上角。它由 `1 + 5` 得到 `6`。右下角由 `4 + 8` 得到 `12`，所以结果是 `[[6, 8], [10, 12]]`。这里的 `x`、`y` 和 `z` 是张量，加法是算子，`shape` 和 `dtype` 是数据的说明。
+
+### 从形状算到内存大小
+
+`x` 有 2 行 2 列，一共有 4 个元素。每个 `float32` 元素占 4 字节，所以一份 `x` 的数据占 16 字节。可以接着运行下面三行来验证。
+
+```python
+print(x.size)      # 4 个元素
+print(x.itemsize)  # 每个元素 4 字节
+print(x.nbytes)    # 16 字节
+```
+
+这三个量在 Add 的 C++ 样例里分别对应数组元素数、`sizeof(float)` 和 `totalByteSize`。申请整份设备内存时按字节数，核内向量加法则按元素数。 [SIMD Add 快速入门](/notes/ascend-c-simd-add-quick-start/)
 
 ## Shape：每个轴有多长
 
@@ -204,3 +215,15 @@ axis   → 本次操作选中哪一个维度
 ## 图片来源
 
 本文图片取自 [CANN Learning Hub：人工智能与算子基础](https://gitcode.com/cann/cann-learning-hub/blob/master/tutorials/ascendc_operator_development_light/01_basic_overview/01.02_ai_and_operator_basics.ipynb)，本地保存仅用于学习笔记。
+
+## 伪代码
+
+用本篇的同形状逐元素加法来读算子的输入和输出。
+
+```text
+读入张量 x 和 y 的形状、元素类型与数据
+确认二者形状和类型相同，计算总元素数
+为输出准备同样形状和类型的空间
+遍历每个位置，把 x 和 y 在此处的值相加并写入 z
+返回 z 和它的形状、类型
+```
