@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">数据科学导引第一章逻辑图</title>
+  <desc id="desc">两个研究方向共同进入数据、数学结构、模型、算法、评估与应用的流程，规模、维数、类型和噪声是贯穿流程的挑战。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#64748b"/>
+    </marker>
+    <style>
+      text { font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", sans-serif; }
+      .title { font-size: 34px; font-weight: 700; fill: #172033; }
+      .subtitle { font-size: 19px; fill: #64748b; }
+      .card-title { font-size: 25px; font-weight: 700; fill: #172033; }
+      .card-text { font-size: 18px; fill: #475569; }
+      .step-title { font-size: 23px; font-weight: 700; fill: #172033; }
+      .step-text { font-size: 16px; fill: #64748b; }
+      .note { font-size: 20px; fill: #334155; }
+    </style>
+  </defs>
+  <rect width="1200" height="720" rx="24" fill="#f8fafc"/>
+  <text x="600" y="60" text-anchor="middle" class="title">本章逻辑：从数据到知识</text>
+  <text x="600" y="94" text-anchor="middle" class="subtitle">两个研究方向 × 一条分析流程 × 四类现实困难</text>
+
+  <rect x="70" y="130" width="500" height="132" rx="18" fill="#e8f1ff" stroke="#8db7ef" stroke-width="2"/>
+  <text x="320" y="178" text-anchor="middle" class="card-title">用数据的方法研究科学</text>
+  <text x="320" y="214" text-anchor="middle" class="card-text">从观测中发现结构、规律与机制</text>
+  <text x="320" y="242" text-anchor="middle" class="card-text">例：行星运动、基因组、天体信息</text>
+
+  <rect x="630" y="130" width="500" height="132" rx="18" fill="#e8f8f2" stroke="#83c9b1" stroke-width="2"/>
+  <text x="880" y="178" text-anchor="middle" class="card-title">用科学的方法研究数据</text>
+  <text x="880" y="214" text-anchor="middle" class="card-text">研究采集、表示、建模、计算与评估</text>
+  <text x="880" y="242" text-anchor="middle" class="card-text">例：统计学、机器学习、数据库</text>
+
+  <path d="M320 262 L320 292 L570 292 L570 320" fill="none" stroke="#64748b" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <path d="M880 262 L880 292 L630 292 L630 320" fill="none" stroke="#64748b" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <g>
+    <rect x="45" y="340" width="190" height="120" rx="16" fill="#ffffff" stroke="#a9b7ca" stroke-width="2"/>
+    <text x="140" y="391" text-anchor="middle" class="step-title">数据</text>
+    <text x="140" y="425" text-anchor="middle" class="step-text">样本、特征、标签</text>
+
+    <rect x="275" y="340" width="190" height="120" rx="16" fill="#ffffff" stroke="#a9b7ca" stroke-width="2"/>
+    <text x="370" y="385" text-anchor="middle" class="step-title">数学结构</text>
+    <text x="370" y="418" text-anchor="middle" class="step-text">度量、网络、代数</text>
+    <text x="370" y="443" text-anchor="middle" class="step-text">拓扑、函数</text>
+
+    <rect x="505" y="340" width="190" height="120" rx="16" fill="#fff5df" stroke="#dfae55" stroke-width="2.5"/>
+    <text x="600" y="385" text-anchor="middle" class="step-title">模型</text>
+    <text x="600" y="418" text-anchor="middle" class="step-text">从观测反推结构</text>
+    <text x="600" y="443" text-anchor="middle" class="step-text">正问题 ↔ 反问题</text>
+
+    <rect x="735" y="340" width="190" height="120" rx="16" fill="#ffffff" stroke="#a9b7ca" stroke-width="2"/>
+    <text x="830" y="391" text-anchor="middle" class="step-title">算法</text>
+    <text x="830" y="425" text-anchor="middle" class="step-text">随机化、分布式计算</text>
+
+    <rect x="965" y="340" width="190" height="120" rx="16" fill="#ffffff" stroke="#a9b7ca" stroke-width="2"/>
+    <text x="1060" y="385" text-anchor="middle" class="step-title">评估与应用</text>
+    <text x="1060" y="418" text-anchor="middle" class="step-text">泛化、过拟合</text>
+    <text x="1060" y="443" text-anchor="middle" class="step-text">回到真实任务</text>
+  </g>
+
+  <g stroke="#64748b" stroke-width="2.5" marker-end="url(#arrow)">
+    <line x1="235" y1="400" x2="265" y2="400"/>
+    <line x1="465" y1="400" x2="495" y2="400"/>
+    <line x1="695" y1="400" x2="725" y2="400"/>
+    <line x1="925" y1="400" x2="955" y2="400"/>
+  </g>
+
+  <rect x="70" y="525" width="1060" height="128" rx="18" fill="#fff0f0" stroke="#e4a3a3" stroke-width="2"/>
+  <text x="600" y="572" text-anchor="middle" class="card-title">贯穿全流程的四类困难</text>
+  <text x="600" y="612" text-anchor="middle" class="note">数据量大 · 数据维数高 · 数据类型复杂 · 噪声大</text>
+  <text x="600" y="642" text-anchor="middle" class="card-text">训练表现好不等于泛化好，计算可行也不等于结论可靠</text>
+</svg>

@@ -15,6 +15,31 @@ interface TopicGuide {
 
 // 固定专题锚点，新增或合并分类时不会改变已有分享链接。
 export const TOPIC_GUIDES: Record<string, TopicGuide> = {
+  '数据科学': {
+    id: 'category-data-science',
+    summary: '沿着问题、数据、表示、模型、算法与评估，系统学习《数据科学导引》的核心方法。',
+    audience: '希望把数据处理、统计学习、数据挖掘与复杂数据应用连成完整知识体系的读者。',
+    prerequisites: '可以从基础概念开始；矩阵、概率、距离和模型评估按需要查阅附录或相关基础笔记。',
+    outcome: '能根据任务选择数据处理方法与模型，理解基本假设，并用合理评估检查结论。',
+    steps: [
+      { label: '全书学习地图', postId: 'data-science-guide-roadmap' },
+      { label: '第一章：数据、模型与反问题', postId: 'data-science-guide-introduction' },
+      { label: '第二章：数据预处理', postId: 'data-science-guide-preprocessing' },
+      { label: '第三章：回归模型', postId: 'data-science-guide-regression' },
+      { label: '第四章：分类模型', postId: 'data-science-guide-classification' },
+      { label: '第五章：集成模型', postId: 'data-science-guide-ensemble' },
+      { label: '第六章：聚类模型', postId: 'data-science-guide-clustering' },
+      { label: '第七章：关联规则挖掘', postId: 'data-science-guide-association-rules' },
+      { label: '第八章：降维', postId: 'data-science-guide-dimensionality-reduction' },
+      { label: '第九章：特征选择', postId: 'data-science-guide-feature-selection' },
+      { label: '第十章：EM 算法', postId: 'data-science-guide-em-algorithm' },
+      { label: '第十一章：概率图模型', postId: 'data-science-guide-graphical-models' },
+      { label: '第十二章：文本分析', postId: 'data-science-guide-text-analysis' },
+      { label: '第十三章：图与网络分析', postId: 'data-science-guide-network-analysis' },
+      { label: '第十四章：深度学习', postId: 'data-science-guide-deep-learning' },
+      { label: '第十五章：分布式计算', postId: 'data-science-guide-distributed-computing' },
+    ],
+  },
   'AI 技术与原理': {
     id: 'category-ai-handbook',
     summary: '面向零基础，从最小数学、机器学习与大模型机制，逐步学习 RAG、微调、Agent、评估与系统交付。',
