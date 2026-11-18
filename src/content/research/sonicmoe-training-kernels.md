@@ -2,16 +2,31 @@
 title: 'SonicMoE 如何加速细粒度 MoE 训练'
 description: '用四个 token 和一个可手算的梯度，读懂 SonicMoE 的显存优化、GPU 内核和路由策略，再设计一个单卡能验证的分组矩阵乘实验。'
 pubDate: 2026-11-17
+updatedDate: 2026-11-18
 kind: record
 category: '论文精读'
 tags: ['SonicMoE', 'MoE', 'GPU 算子', '分组矩阵乘', 'ICLR']
 ---
 
-同样是四个 token、每个选两个专家，一批可能让四个专家各处理两行，另一批却让一个专家处理四行、另外两个各处理一行。两批的理论乘加次数可以相同，矩阵的形状、显存里的数据流动和 GPU 的利用率却会不同。**这正是 MoE 训练里值得研究的算子问题。**
+## 论文信息
 
-Wentao Guo、Mayank Mishra、Xinle Cheng、Ion Stoica 和 Tri Dao 在 ICLR 2026 主会发表了 *SonicMoE: Accelerating MoE with IO and Tile-aware Optimizations*。作者改写了反向传播以释放中间激活，把访存和矩阵乘排在一起，也调整了训练路由以减少计算块的浪费。下面的性能数字采用 ICLR 正式版，源码分析固定到提交 `7396f3e`。[ICLR 论文主页](https://proceedings.iclr.cc/paper_files/paper/2026/hash/6ed5bf446f59e2c6646d23058c86424b-Abstract-Conference.html) · [作者实现](https://github.com/Dao-AILab/sonic-moe/tree/7396f3e604827d8186c2e16e64b28ee33d3defd0)
+- **题名与发表**　*SonicMoE: Accelerating MoE with IO and Tile-aware Optimizations*，ICLR 2026 主会。本文按会议正式版核对图表。[ICLR 论文主页](https://proceedings.iclr.cc/paper_files/paper/2026/hash/6ed5bf446f59e2c6646d23058c86424b-Abstract-Conference.html) · [会议版 PDF](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf)
+- **作者与机构**　Wentao Guo（普林斯顿大学）、Mayank Mishra（加州大学伯克利分校）、Xinle Cheng（普林斯顿大学）、Ion Stoica（加州大学伯克利分校）、Tri Dao（普林斯顿大学、Together AI）。[论文首页](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=1)
+- **源码版本**　实现分析固定到提交 `7396f3e`。[作者实现](https://github.com/Dao-AILab/sonic-moe/tree/7396f3e604827d8186c2e16e64b28ee33d3defd0)
 
-## 从四个 token 看懂动态形状
+## 一句话总结
+
+SonicMoE 重排反向计算、融合专家矩阵乘与访存，并让训练路由对齐计算块，在 H100 的细粒度 7B 配置中把单层峰值激活显存降到了 ScatterMoE 的约 55%。[图 5 与第 6.1 节](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=8)
+
+## 研究动机
+
+同样是四个 token、每个选两个专家，一批可能让四个专家各处理两行，另一批却让一个专家处理四行、另外两个各处理一行。两批的理论乘加次数可以相同，矩阵的形状、显存里的数据流动和 GPU 的利用率却会不同。
+
+对训练来说，专家变窄、每个 token 选更多专家，会增加需要为反向传播保留的宽向量。另一种情况是固定每个 token 选中的专家数，增加专家总数。此时分给单个专家的行更少，一个只用了几行的计算块也要占用 GPU。原文用图 1 比较相同主要算量下的显存与吞吐，用图 3 单独看后一个问题浪费了多少乘加。[图 1](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=2) · [图 3](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=7)
+
+## 核心方法
+
+### 从四个 token 看懂动态形状
 
 MoE 是混合专家模型。一个专家可以先理解为一个小型前馈网络。路由器读入每个 token 的特征向量，在 $E$ 个专家中选出 $k$ 个，并为每个选中的专家分配权重。专家完成计算后，模型按这些权重合并结果。
 
@@ -41,7 +56,7 @@ MoE 是混合专家模型。一个专家可以先理解为一个小型前馈网�
 - **整理数据会占用带宽。** 如果先把属于同一专家的行复制到新矩阵，再启动矩阵乘去读取它们，同一批数据便多经历了一次写和一次读。反向传播还会遇到类似的整理和归约。
 - **稀疏会放大尾块开销。** 在 $T,k$ 固定时增加专家总数 $E$，每位专家平均分得的行数 $Tk/E$ 下降。GPU 按固定大小的小块（tile）做矩阵乘，一位专家最后剩下的少数几行，仍可能占用一个计算块。
 
-## 改写反向传播，提前释放专家输出
+### 改写反向传播，提前释放专家输出
 
 先看一个 token 与一个专家，省略偏置。把激活后的向量记作 $a$，第二次矩阵乘的权重记作 $W_2$，专家输出为 $y=aW_2$。路由器用权重 $s$ 把这个专家的结果加进总输出 $o$。若上游传回梯度 $g=\partial L/\partial o$，就有
 
@@ -58,7 +73,7 @@ $$
 
 单层为反向保留的主要大张量是 $X$ 和 $H$，另有路由索引和权重。按 BF16 估算，这两个大张量约占 **$2Td+4Tkn$ 字节**。在上述 $kn$ 固定的比较中，这部分缓存不会随专家变细而增大。这个估算覆盖长期保留的主要激活。模型权重、优化器状态和前向临时缓冲区有各自的显存开销。[论文第 3 节、算法 2 和算法 3](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=4)
 
-## 让数据搬运与矩阵乘配合
+### 让数据搬运与矩阵乘配合
 
 **把取行合进加载过程。** 假设一个专家需要原输入的第 2、5、9 行。矩阵乘在加载当前计算块时，可以按路由索引直接取这几行。这样省下一整份重排矩阵的写回和再次读取。反向中按专家收集输出梯度也能用类似方法。
 
@@ -68,7 +83,7 @@ $$
 
 一个值得记住的取舍是，作者在 Hopper 上保留了部分独立的 scatter。把这些按索引写回的操作强行融进内核，会牺牲原有的异步写回能力。图 8 中的前向 3 个内核和反向 5 个内核，对应图中画出的专家计算流程。[论文第 4 节](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=6) · [图 8 的计算图与图 9 的流水线](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=19)
 
-## 用 token rounding 减少不满的计算块
+### 用 token rounding 减少不满的计算块
 
 只看行方向，假设一个 tile 覆盖 128 行。下面是一个教学例子。
 
@@ -82,27 +97,49 @@ $$
 
 **三项创新的验证方式由此分开。** 梯度重排和内核融合保留原有数学计算，可以用参考实现检查输出和梯度的数值误差。Token rounding 会改变训练时哪些专家处理哪些 token，部分 token 参与的专家数也可能改变。因此它还要接受训练质量和下游任务评估。[论文第 5 节、算法 4 与图 4](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=7)
 
-## 怎么读论文的实验结果
+## 相对前作的创新点
 
-以下为作者在 ICLR 正式版中报告的结果。每一行的对照对象、硬件和指标都很重要。
+| 前作与沿用的做法 | SonicMoE 具体改了什么 | 双方原文 |
+| --- | --- | --- |
+| **ScatterMoE** 的算法 1、2 已支持按路由读写。求路由权重梯度时，它用上游梯度和前向留下的专家输出做内积。 | SonicMoE 改在较窄的专家隐藏维上做内积，复用反向本来就要算的乘积，再从保留的门控输入重算激活，使宽输出 $Y$ 在前向汇总后即可释放。作者在表 4 也列出 Megatron 有相似梯度路径，具体贡献还包括在同一内核收尾中计算激活梯度与路由权重梯度。 | [ScatterMoE 算法 2](https://arxiv.org/html/2403.08245v2#alg2) · [SonicMoE 算法 3](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=5) · [表 4](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=18) |
+| **ScatterMoE** 已把前向的按行读取并入分组乘法。它计算权重梯度时会先分组，再调用 `groupXTY`。 | SonicMoE 把融合读取扩展到归约长度随专家变化的权重梯度乘法，还把 SwiGLU 及其梯度放进内核收尾，让线程组交错执行矩阵乘和访存。这样既减少单独发起的读写，又能让剩下的传输与计算重叠。 | [ScatterMoE 第 3.2.1 节](https://arxiv.org/html/2403.08245v2#S3.SS2.SSS1) · [SonicMoE 第 4 节](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=6) · [图 8、9](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=19) |
+| **Rectify-Router** 已会在 top-k 之后重分配 token，用高分 token 填充固定专家容量里的空位。 | SonicMoE 把调整目标改为每位专家实际行数附近的 **GEMM 块大小的整数倍**。例如 128 行一块，130 行可收为 128，126 行可补为 128。计算块因此能装满，训练期间每个 token 实际走的专家数也可能改变。 | [Rectify-Router 原文，图 1 与两种纠正方法](https://aclanthology.org/2024.emnlp-main.739.pdf) · [SonicMoE 算法 4、图 4](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=7) |
 
-| 实验条件 | 结果 | 数字对应的范围 |
-|---|---|---|
-| H100，细粒度 7B，BF16，对照 ScatterMoE | $n=256$ 的配置下，单层峰值激活显存约下降 **45%**。摘要报告细粒度 7B 的 MoE 计算吞吐为对照的 **1.86 倍** | 单个 MoE 层的激活显存与计算吞吐 |
-| 7B 模型，用 FSDP-2 完整训练 | SonicMoE 用 **64 张 H100** 达到 **2130 亿 token/天**，ScatterMoE 用 **96 张 H100** 达到 **2250 亿 token/天** | 多卡训练在各自卡数下的实际总吞吐 |
-| B300，OLMoE 规模的 7B 配置 | 相比作者整合的 DeepGEMM++ 对照，前向和反向分别相对提速 **28.7%**、**22.1%** | 指定硬件、模型配置与对照实现下的结果 |
-| Token rounding，128 个专家选 2 个，$n=1024$ | 前向吞吐提高 **16.5%**，反向提高 **6.1%**，两者合计提高 **9.4%** | MoE 主要内核的计时，路由器耗时另计。摘要另报告了高稀疏设置下约 **1.16 倍**的代表性收益 |
-| 1.4B 参数、100B 训练 token，比较 token rounding 与标准 top-k | 验证困惑度 **13.22 对 13.32**，11 项下游任务平均准确率均为 **52.0%** | 表 1(c) 的训练条件。每位专家平均 512 个 token，tile 为 128。验证和下游评估统一使用标准 top-k |
+## 实验设置
 
-汇报时可以把 45% 和 64 张对 96 张这两组数字放在一起。第一组回答“具体省掉了哪类资源”，第二组回答“单层改动放进完整训练还有多少实际价值”。有关模型质量的结论，应和表 1 的模型大小、训练量及评估路由一起引用。[正式版摘要](https://proceedings.iclr.cc/paper_files/paper/2026/hash/6ed5bf446f59e2c6646d23058c86424b-Abstract-Conference.html) · [图 5–7、表 1 与实验设置](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=8)
+- **单层怎么测。** 记 $T$ 为一批 token 数、$d$ 为模型宽度、$n$ 为专家隐藏宽度、$E$ 为专家总数、$k$ 为每个 token 选中的专家数。图 2 在 H100、B300 上把 BF16 专家层的前向和反向分别计时，单位为毫秒，柱内还列出路由、搬运和乘法等步骤。图 5 记录单层峰值激活显存（GiB），图 6 记录计算吞吐（TFLOPS）。DeepGEMM++ 是作者给 DeepGEMM 配上优化的周边算子后得到的基线。[图 2](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=5) · [图 5、6](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=8) · [表 9 的形状](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=25)
+- **整模型怎么测。** 7B MoE 通过 lm-engine 和 FSDP-2 在多台 H100 节点训练，每个 8 卡节点内部实行 ZeRO-3 分片，再在节点间复制。指标是所有卡合计每天处理的 token 数。[第 6.2 节第 2 段](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=9)
+- **路由怎么测。** 速度实验在 H100 上固定 $T,d,n,k$，改变专家数。图 7 单独计 MoE 主要内核，路由器耗时另计。质量实验用去重的 FineWeb-Edu 训练 OLMoE 架构，序列长 4096。比较训练时使用 token rounding 和标准 top-k 的两组模型，验证困惑度和下游准确率都用标准 top-k 测量。[图 7 与第 6.3.2 节](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=10) · [表 1](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=9) · [附录 F、G](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=24)
 
-## 单卡可以从哪里入手优化
+## 主要结果
+
+<span id="怎么读论文的实验结果"></span>
+
+下表采用 ICLR 正式版。每行都保留比较对象和计量单位，方便从数字回到原图。
+
+| 条件与指标 | SonicMoE 与基线的结果 | 原文位置 |
+| --- | --- | --- |
+| H100，细粒度 7B 单层，`(T,d,n,E,k)=(24576,1536,256,128,8)`，BF16 | 以 ScatterMoE 的峰值激活显存为 100%，SonicMoE 约用 **55%**，即减少 **45%**。 | [图 5 的 7B 面板、第 6.1 节](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=8) |
+| 同一 H100 细粒度 7B 单层，前向与反向分开计时 | 前向 **1.237 对 2.255 ms**，反向 **2.173 对 3.968 ms**（SonicMoE 对 ScatterMoE）。用柱顶时间合计，基线时间除以 SonicMoE 时间约为 **1.825**。摘要另报细粒度 7B 的计算吞吐为 **1.86 倍**，这两个数分别按各自出处引用。 | [图 2(a) 柱顶耗时](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=5) · [正式版摘要](https://proceedings.iclr.cc/paper_files/paper/2026/hash/6ed5bf446f59e2c6646d23058c86424b-Abstract-Conference.html) |
+| B300，OLMoE 规模 7B 单层，`(T,d,n,E,k)=(32768,2048,1024,64,8)` | 对 DeepGEMM++，前向 **2.982 对 4.185 ms**，反向 **5.976 对 7.671 ms**。以各自的基线耗时为分母，分别缩短 **28.7%**、**22.1%**，对应约 **1.40 倍**、**1.28 倍**的速度。 | [图 2(b)](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=5) |
+| 7B、FSDP-2 多卡完整训练 | SonicMoE 用 **64 张 H100** 达到 **2130 亿 token/天**，ScatterMoE 用 **96 张 H100** 达到 **2250 亿 token/天**。两项总吞吐接近，所用卡数不同。 | [第 6.2 节第 2 段，原文未单列图表](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=9) |
+| H100，`(T,d,n,E,k)=(16384,1536,1024,128,2)`，每块 128 行 | 相比标准 top-k，token rounding 的前向计算吞吐提高 **16.5%**，反向提高 **6.1%**，合计提高 **9.4%**。计时覆盖 MoE 主要内核。摘要另以 **1.16 倍**概括高稀疏场景的代表性收益。 | [图 7 上排右两图、第 6.3.2 节](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=10) · [附录 F 的形状](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=24) |
+| 1.4B 模型，1000 亿训练 token，128 个专家选 2 个。平均每专家 512 个 token，每块 128 行 | token rounding 对标准 top-k 的验证困惑度为 **13.22 对 13.32**，11 项下游任务的平均准确率均为 **52.0%**。 | [表 1(c)，第 6.3.1 节](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=9) |
+
+## 优点与不足
+
+- **显存收益可以解释。** 梯度等式说明哪一份专家输出可以提前释放，图 5 则量出了节省的单层峰值激活显存。完整训练还要容纳权重、优化器状态与通信缓冲区，节省比例需要按整模型另测。[算法 3](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=5) · [图 5](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=8)
+- **路由的速度与质量分别有证据。** 图 7 验证了选定形状下主要内核的吞吐收益。表 1(c) 的两组平均准确率接近。部署到新的负载时，还要计入路由器耗时，并核对训练后各项任务的表现。[图 7](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=10) · [表 1](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=9)
+
+## 对我的启发
+
+### 单卡可以从哪里入手优化
 
 **第一轮研究问题可以定为“动态专家负载下的 MoE 分组矩阵乘配置选择与复用”。** 可以先看前向的第二次矩阵乘 $A_e W_{2,e}$。如果总 token 数相同，一批分布均匀，另一批集中在少数专家，原来选出的分块与调度配置还合适吗？
 
 固定提交的源码里已经有一套复用机制。它对相关张量的首维分桶，例如 65–512 属于一个范围。缓存键还包含其他维度、步长类别、数据类型等信息。在走多候选调优的路径时，首次进入某个键会选择配置，以后命中便复用。**这段分桶代码读取了张量形状，没有直接读取每位专家的 token 数值。** 这使负载分布成为值得测量的变量。是否真的存在配置复用损失，仍是假设。[分桶、缓存键与调优结果复用的源码](https://github.com/Dao-AILab/sonic-moe/blob/7396f3e604827d8186c2e16e64b28ee33d3defd0/sonicmoe/functional/__init__.py#L104)
 
-### 一轮能决定是否继续的实验
+#### 一轮能决定是否继续的实验
 
 1. **建立正确性基线。** 在个人电脑上用 PyTorch 实现一个小型 MoE 层，固定输入、专家权重和路由，核对前向输出、输入梯度和参数梯度。H800 属于 Hopper，可用作原版 SonicMoE 的候选设备，先在实际镜像上通过官方测试。A800 属于 Ampere，可用于 PyTorch 或 Triton 练习。原版与改动版的性能比较始终在同一张通过测试的卡上进行。[作者的环境要求](https://github.com/Dao-AILab/sonic-moe/tree/7396f3e604827d8186c2e16e64b28ee33d3defd0#installation) · [官方正确性测试](https://github.com/Dao-AILab/sonic-moe/blob/7396f3e604827d8186c2e16e64b28ee33d3defd0/tests/moe_test.py) · [NVIDIA 设备架构表](https://docs.nvidia.com/datacenter/tesla/tesla-release-notes-551-61/index.html)
 2. **只改变专家负载。** 固定 $T,E,d,n,k$ 和 BF16，生成均匀、明显偏斜、带空专家的三组路由，每种实现重放同一组数据。记录各专家行数、缓存键、命中情况、所选配置、目标矩阵乘和整层耗时。隔离调优缓存，交换不同负载的首次出现顺序，再单独改变总 token 数。[作者的标准 top-k 单层基准](https://github.com/Dao-AILab/sonic-moe/blob/7396f3e604827d8186c2e16e64b28ee33d3defd0/benchmarks/moe-cute.py)
@@ -111,7 +148,7 @@ $$
 
 单卡、单层、固定路由足以研究配置选择，也能把正确性和性能问题控制在容易定位的范围内。如果改的是 token rounding，还需要相应规模的模型训练和质量评估。如果转向 NPU，可以沿用梯度等式和分组问题的分析，但需根据目标硬件重新实现数据搬运、同步和计算流水线。**目前完成的实测是下面的 CPU 梯度算例，H800 单层速度和候选策略的收益仍待设备实验。**
 
-### 研一阶段要掌握到什么程度
+#### 研一阶段要掌握到什么程度
 
 | 阶段 | 重点 | 自检方式 |
 |---|---|---|
@@ -121,7 +158,7 @@ $$
 
 阅读源码可以依次看作者的正确性测试、单层基准、前后向实现与分桶逻辑，然后挑一个归约或聚合算子。带着已经测到的瓶颈进入 QuACK 的矩阵乘实现，更容易看出一个 tile 参数究竟影响了什么。[SonicMoE 实现目录](https://github.com/Dao-AILab/sonic-moe/tree/7396f3e604827d8186c2e16e64b28ee33d3defd0/sonicmoe/functional) · [QuACK 项目](https://github.com/Dao-AILab/quack)
 
-## 在个人电脑上验证路由梯度
+### 在个人电脑上验证路由梯度
 
 下面的 NumPy 代码使用开头的 4 个 token 和 4 位专家，共 8 个 token–专家分配。固定激活后的 $a$ 与专家索引，对**已经选中的聚合权重**逐个作中心差分。取损失 $L=\tfrac12\sum_t\langle o_t,o_t\rangle$，因此 $g_t=o_t$。这一步单独检验 $\partial L/\partial s$，路由器 logits 之前的链式求导属于另一步。
 
@@ -162,7 +199,7 @@ assert max(algebra_errors) < 1e-12 and max(difference_errors) < 1e-8
 
 使用 float64 运行，8 项中两种解析公式的最大绝对差约为 `8.88e-16`，新公式与中心差分的最大绝对差约为 `3.26e-11`。这些是梯度误差。论文的显存和吞吐需要按前面的基准在 GPU 上采集。
 
-## 十分钟汇报提纲
+### 十分钟汇报提纲
 
 用四个 token 画出动态形状，重点手算路由权重梯度，再用 130 行与 126 行解释尾块。汇报末尾，把论文已测出的结果和自己准备验证的问题分别讲清楚。独立的 Markdown 提纲包含八页的时间分配、可直接使用的开场和收尾，以及导师可能追问的三个问题。[下载十分钟汇报提纲（Markdown）](https://neurpulse.github.io/downloads/sonicmoe-briefing.md)
 

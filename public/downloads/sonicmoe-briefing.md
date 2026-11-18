@@ -32,13 +32,13 @@ $$
 
 ### 第 7 页的数字与适用范围
 
-| 证据 | 在会上怎么说 |
-|---|---|
-| H100 细粒度 7B，相对 ScatterMoE | 指定配置里，MoE **单层峰值激活显存减少约 45%**。论文摘要报告的 MoE **计算吞吐为 1.86 倍**。 |
-| 7B 完整训练，FSDP-2 | SonicMoE **64 张 H100，每天 2130 亿 token**。ScatterMoE **96 张 H100，每天 2250 亿 token**。卡数不同，总吞吐接近。 |
-| Token rounding 的质量 | 1.4B 模型用 100B token 训练。验证困惑度为 **13.22 对 13.32**，11 个下游任务平均准确率均为 **52.0%**。验证和下游评估统一使用标准 top-k。 |
+| 证据 | 在会上怎么说 | 对照位置 |
+|---|---|---|
+| H100 细粒度 7B，BF16，24,576 个 token，128 位专家选 8 位，每个专家隐藏宽度 256 | 相比 ScatterMoE，MoE **单层峰值激活显存减少约 45%**。图中两者的前向耗时分别为 **1.237 与 2.255 ms**，反向为 **2.173 与 3.968 ms**。摘要另报告 MoE **计算吞吐为 1.86 倍**。 | [图 5 显存](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=8) · [图 2(a) 耗时](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=5) · [摘要](https://proceedings.iclr.cc/paper_files/paper/2026/hash/6ed5bf446f59e2c6646d23058c86424b-Abstract-Conference.html) |
+| 7B 完整训练，FSDP-2 | SonicMoE **64 张 H100，每天 2130 亿 token**。ScatterMoE **96 张 H100，每天 2250 亿 token**。卡数不同，总吞吐接近。 | [第 6.2 节第 2 段，原文以正文报告](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=9) |
+| 1.4B、1000 亿训练 token、128 位专家选 2 位 | Token rounding 对标准 top-k 的验证困惑度为 **13.22 对 13.32**，11 项下游任务平均准确率均为 **52.0%**。验证和下游评估统一使用标准 top-k。 | [表 1(c)](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=9) |
 
-以上为论文作者报告的实验。配套的 CPU 示例检查了 8 个路由权重的梯度，与数值差分之间的最大绝对差约为 $3.26\times10^{-11}$。H800 的单层性能仍需另行测量。[论文图 5–7 与表 1](https://proceedings.iclr.cc/paper_files/paper/2026/file/6ed5bf446f59e2c6646d23058c86424b-Paper-Conference.pdf#page=8)
+以上为论文作者报告的实验。配套的 CPU 示例检查了 8 个路由权重的梯度，与数值差分之间的最大绝对差约为 $3.26\times10^{-11}$。H800 的单层性能仍需另行测量。[完整笔记的 CPU 梯度算例](https://neurpulse.github.io/research/sonicmoe-training-kernels/#在个人电脑上验证路由梯度)
 
 ## 可直接使用的开场和收尾
 
