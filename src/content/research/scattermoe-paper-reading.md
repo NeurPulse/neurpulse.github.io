@@ -5,7 +5,7 @@ pubDate: 2026-11-18
 updatedDate: 2026-11-19
 kind: record
 category: '论文精读'
-tags: ['算子开发', 'MoE', 'Triton', 'GPU']
+tags: ['算子开发', 'MoE', 'Triton', 'GPU', '论文笔记']
 ---
 
 ## 论文信息
@@ -14,6 +14,7 @@ tags: ['算子开发', 'MoE', 'Triton', 'GPU']
 - **作者 / 机构**　Shawn Tan、Yikang Shen、Rameswar Panda、Aaron Courville。论文首页的联系邮箱分别对应 Mila、IBM、IBM、蒙特利尔大学。
 - **发表**　第一届 Conference on Language Modeling（COLM 2024）。[会议收录列表](https://2024.colmweb.org/AcceptedPapers.html) · [会议版 PDF](https://openreview.net/pdf?id=YDZ7GeFLxq)
 - **阅读入口**　[arXiv:2403.08245](https://arxiv.org/abs/2403.08245) · [可直接跳转图表的网页全文](https://arxiv.org/html/2403.08245v2) · [作者的 Triton 实现](https://github.com/shawntan/scattermoe)
+- **同组精读**　[稀疏门控 MoE](/research/sparsely-gated-moe-paper-reading/) 解释为什么只算少数专家，[Switch Transformers](/research/switch-transformers-paper-reading/) 展示容量溢出，[Mixtral](/research/mixtral-paper-reading/) 和 [DeepSeekMoE](/research/deepseekmoe-paper-reading/) 给出两种实际模型的路由设计。[MegaBlocks](/research/megablocks-paper-reading/) 尤其适合与下文的 GPU 实现对读。
 
 ## 一句话总结
 
